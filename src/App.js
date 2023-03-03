@@ -1,15 +1,12 @@
 import { FaceMesh } from "@mediapipe/face_mesh";
 import React, { useRef, useEffect } from "react";
-import * as Facemesh from "@mediapipe/face_mesh";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { MPParts } from "MP";
-import { drawConnectors } from "@mediapipe/drawing_utils";
 
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  const connect = drawConnectors;
   var camera = null;
 
   function onResults(results) {
@@ -28,39 +25,17 @@ function App() {
       0, 0,
       canvasElement.width, canvasElement.height
     );
-    if (results.multiFaceLandmarks) {
-      for (const landmarks of results.multiFaceLandmarks) {
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
-        //   color: "#C0C0C070",
-        //   lineWidth: 1,
-        // });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, {
-          color: "#FF3030",
-        });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, {
-        //   color: "#FF3030",
-        // });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, {
-          color: "#30FF30",
-        });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, {
-        //   color: "#30FF30",
-        // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_FACE_OVAL, {
-        //   color: "#E0E0E0",
-        // });
-        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
-        //   color: "#E0E0E0",
-        // });
-
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_IRIS, {
-          color: "#000000",
-          lineWidth: 3,
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_IRIS, {
-          color: "#000000",
-          lineWidth: 3,
-        });
+    if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
+      const landmarks = results.multiFaceLandmarks[0];
+      canvasCtx.strokeStyle = "red";
+      canvasCtx.lineWidth = 2;
+      // draw landmarks points
+      for (let i = 0; i < landmarks.length; i++) {
+        const { x, y } = landmarks[i];
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+        canvasCtx.stroke();
+        canvasCtx.closePath();
       }
     }
     canvasCtx.restore();
@@ -99,19 +74,7 @@ function App() {
   return (
     <center>
       <div className="App">
-        <Webcam ref={webcamRef}
-          style={{
-            display: "none",
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: -9,
-          }}
-        />
+        <Webcam ref={webcamRef} style={{ display: "none" }} />
         <canvas
           ref={canvasRef}
           className="output_canvas"
