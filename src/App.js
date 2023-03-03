@@ -57,10 +57,12 @@ function App() {
         // });
 
         connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_IRIS, {
-          color: "#E0E0E0",
+          color: "#000000",
+          lineWidth: 3,
         });
         connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_IRIS, {
-          color: "#E0E0E0",
+          color: "#000000",
+          lineWidth: 3,
         });
       }
     }
