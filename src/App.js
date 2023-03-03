@@ -1,7 +1,7 @@
 import { FaceMesh } from "@mediapipe/face_mesh";
 import React, { useRef, useEffect } from "react";
 import * as Facemesh from "@mediapipe/face_mesh";
-import * as cam from "@mediapipe/camera_utils";
+import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { MPParts } from "MP";
 import { drawConnectors } from "@mediapipe/drawing_utils";
@@ -13,6 +13,7 @@ function App() {
   var camera = null;
 
   function onResults(results) {
+    console.log("results", results);
     // const video = webcamRef.current.video;
     const videoWidth = webcamRef.current.video.videoWidth;
     const videoHeight = webcamRef.current.video.videoHeight;
@@ -32,26 +33,33 @@ function App() {
     );
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
-          color: "#C0C0C070",
-          lineWidth: 1,
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, {
-          color: "#FF3030",
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, {
-          color: "#FF3030",
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, {
-          color: "#30FF30",
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, {
-          color: "#30FF30",
-        });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_FACE_OVAL, {
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_TESSELATION, {
+        //   color: "#C0C0C070",
+        //   lineWidth: 1,
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYE, {
+        //   color: "#FF3030",
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_EYEBROW, {
+        //   color: "#FF3030",
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYE, {
+        //   color: "#30FF30",
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_EYEBROW, {
+        //   color: "#30FF30",
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_FACE_OVAL, {
+        //   color: "#E0E0E0",
+        // });
+        // connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
+        //   color: "#E0E0E0",
+        // });
+
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_RIGHT_IRIS, {
           color: "#E0E0E0",
         });
-        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LIPS, {
+        connect(canvasCtx, landmarks, Facemesh.FACEMESH_LEFT_IRIS, {
           color: "#E0E0E0",
         });
       }
@@ -78,13 +86,13 @@ function App() {
       typeof webcamRef.current !== "undefined" &&
       webcamRef.current !== null
     ) {
-      camera = new cam.Camera(webcamRef.current.video, {
-        onFrame: async () => {
-          await faceMesh.send({ image: webcamRef.current.video });
-        },
-        width: 640,
-        height: 480,
-      });
+      camera = new cameraUtils.Camera(
+        webcamRef.current.video,
+        {
+          onFrame: async () => {
+            await faceMesh.send({ image: webcamRef.current.video });
+          },
+        });
       camera.start();
     }
   }, []);
@@ -92,20 +100,19 @@ function App() {
   return (
     <center>
       <div className="App">
-        <Webcam
-          ref={webcamRef}
+        <Webcam ref={webcamRef}
           style={{
+            display: "none",
             position: "absolute",
             marginLeft: "auto",
             marginRight: "auto",
+
             left: 0,
             right: 0,
             textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
+            zindex: -9,
           }}
-        />{" "}
+        />
         <canvas
           ref={canvasRef}
           className="output_canvas"
@@ -117,8 +124,6 @@ function App() {
             right: 0,
             textAlign: "center",
             zindex: 9,
-            width: 640,
-            height: 480,
           }}
         ></canvas>
       </div>
