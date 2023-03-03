@@ -27,6 +27,7 @@ function App() {
     );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
+      console.log(landmarks[0]);
       canvasCtx.strokeStyle = "red";
       canvasCtx.lineWidth = 2;
       // draw landmarks points
