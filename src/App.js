@@ -2,7 +2,7 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import React, { useRef, useEffect } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
-import { MPParts } from "MP";
+import { decodeLandmarks, MPParts } from "MP";
 
 function App() {
   const webcamRef = useRef(null);
