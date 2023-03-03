@@ -27,16 +27,20 @@ function App() {
     );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
-      console.log(landmarks[0]);
+      const decodedLandmarks = decodeLandmarks(landmarks, {
+        height: videoHeight, width: videoWidth,
+      }); // { idx: { x, y}}
       canvasCtx.strokeStyle = "red";
       canvasCtx.lineWidth = 2;
-      // draw landmarks points
-      for (let i = 0; i < landmarks.length; i++) {
-        const { x, y } = landmarks[i];
-        canvasCtx.beginPath();
-        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-        canvasCtx.stroke();
-        canvasCtx.closePath();
+      // draw decoded landmarks, loop through each landmark key
+      for (const key in decodedLandmarks) {
+        if (decodedLandmarks.hasOwnProperty(key)) {
+          const { x, y } = decodedLandmarks[key];
+          canvasCtx.beginPath();
+          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+          canvasCtx.stroke();
+          canvasCtx.closePath();
+        }
       }
     }
     canvasCtx.restore();
