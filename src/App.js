@@ -4,11 +4,12 @@ import * as Facemesh from "@mediapipe/face_mesh";
 import * as cam from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { MPParts } from "MP";
+import { drawConnectors } from "@mediapipe/drawing_utils";
 
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  const connect = window.drawConnectors;
+  const connect = drawConnectors;
   var camera = null;
 
   function onResults(results) {
