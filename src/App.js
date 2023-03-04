@@ -2,7 +2,7 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import React, { useRef, useEffect } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
-import { decodeLandmarks, MPParts, rectFromPoints } from "MP";
+import { decodeLandmarks, grayscale2image, MPParts, rectFromPoints, results2sample } from "MP";
 
 function App() {
   const webcamRef = useRef(null);
@@ -21,81 +21,40 @@ function App() {
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    // canvasCtx.drawImage(
-    //   results.image,
-    //   0, 0,
-    //   canvasElement.width, canvasElement.height
-    // );
+    canvasCtx.drawImage(
+      results.image,
+      0, 0,
+      canvasElement.width, canvasElement.height
+    );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
       const decodedLandmarks = decodeLandmarks(landmarks, {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
-      // canvasCtx.strokeStyle = "red";
-      // canvasCtx.lineWidth = 2;
-      // // draw landmarks points
-      // for (const key in decodedLandmarks) {
-      //   if (decodedLandmarks.hasOwnProperty(key)) {
-      //     const element = decodedLandmarks[key];
-      //     const { x, y } = element;
-      //     canvasCtx.beginPath();
-      //     canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-      //     canvasCtx.stroke();
-      //     canvasCtx.closePath();
-      //   }
-      // }
-
-      function extract(pts) {
-        const SIZE = 32;
-        const ROI = rectFromPoints(pts, { height: videoHeight, width: videoWidth, }, 5);
-        if (null === ROI) {
-          return new ImageData(
-            new Uint8ClampedArray(SIZE * SIZE * 4),
-            SIZE, SIZE
-          );
+      canvasCtx.strokeStyle = "red";
+      canvasCtx.lineWidth = 2;
+      // draw landmarks points
+      for (const key in decodedLandmarks) {
+        if (decodedLandmarks.hasOwnProperty(key)) {
+          const element = decodedLandmarks[key];
+          const { x, y } = element;
+          canvasCtx.beginPath();
+          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+          canvasCtx.stroke();
+          canvasCtx.closePath();
         }
-        // cut out the part and resize to SIZE x SIZE
-        const canvas = intermediateCanvasRef.current;
-        canvas.width = SIZE;
-        canvas.height = SIZE;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          results.image,
-          ROI.x, ROI.y, ROI.width, ROI.height,
-          0, 0, SIZE, SIZE
-        );
-
-        const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
-        const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
-        for (let i = 0; i < SIZE * SIZE * 4; i += 4) {
-          const r = rgba[i];
-          const g = rgba[i + 1];
-          const b = rgba[i + 2];
-          const grayValue = Math.floor(0.2989 * r + 0.5870 * g + 0.1140 * b);
-          gray[i] = grayValue;
-          gray[i + 1] = grayValue;
-          gray[i + 2] = grayValue;
-          gray[i + 3] = 255;
-        }
-        return new ImageData(gray, SIZE, SIZE);
       }
 
-      const leftEye = extract(
-        MPParts.leftEye.map((idx) => decodedLandmarks[idx])
-      );
-      const rightEye = extract(
-        MPParts.rightEye.map((idx) => decodedLandmarks[idx])
-      );
-
-      canvasCtx.putImageData(leftEye, 0, 0);
-      canvasCtx.putImageData(rightEye, leftEye.width, 0);
-      // get the image data as a Uint8ClampedArray of grayscale values
-      const data = canvasCtx.getImageData(0, 0, leftEye.width + rightEye.width, leftEye.height).data;
-      // draw text
-      canvasCtx.fillStyle = "red";
-      canvasCtx.font = "20px Arial";
-      canvasCtx.fillText(data.length + " bytes.", 10, leftEye.height + 20);
-      // console.log(data);
+      const sample = results2sample(results, intermediateCanvasRef.current, {
+        padding: 5,
+        visibilityThreshold: 0.5,
+        presenceThreshold: 0.5,
+        SIZE: 32,
+      });
+      const leftEyeImage = grayscale2image(sample.leftEye, 32);
+      const rightEyeImage = grayscale2image(sample.rightEye, 32);
+      canvasCtx.putImageData(leftEyeImage, 0, 0);
+      canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
     }
     canvasCtx.restore();
   }

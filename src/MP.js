@@ -83,3 +83,81 @@ export function rectFromPoints(pts, { height, width, }, padding = 0) {
     y2: B.y,
   };
 }
+
+function _toGrayscale(rgba) {
+  const gray = new Uint8ClampedArray(Math.ceil(rgba.length / 4));
+  for (let i = 0, j = 0; i < rgba.length; i += 4, j++) {
+    const r = rgba[i];
+    const g = rgba[i + 1];
+    const b = rgba[i + 2];
+    const grayValue = Math.floor(0.2989 * r + 0.5870 * g + 0.1140 * b);
+    gray[j] = grayValue;
+  }
+  return gray;
+}
+
+function _points2crop(pts, canvas, {
+  videoHeight, videoWidth, padding, SIZE
+}) {
+  const ROI = rectFromPoints(pts, { height: videoHeight, width: videoWidth, }, padding);
+  if (null === ROI) return new Uint8ClampedArray(SIZE * SIZE);
+
+  // cut out the part and resize to SIZE x SIZE
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(
+    results.image,
+    ROI.x, ROI.y, ROI.width, ROI.height,
+    0, 0, SIZE, SIZE
+  );
+
+  const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
+  return _toGrayscale(rgba);
+}
+
+export function grayscale2image(gray, size) {
+  const imgData = new ImageData(size, size);
+  for (let i = 0, j = 0; i < gray.length; i++, j += 4) {
+    imgData.data[j] = gray[i];
+    imgData.data[j + 1] = gray[i];
+    imgData.data[j + 2] = gray[i];
+    imgData.data[j + 3] = 255;
+  }
+  return imgData;
+}
+
+export function results2sample(results, tmpCanvas, {
+  padding = 5,
+  visibilityThreshold = 0.5, presenceThreshold = 0.5,
+  SIZE = 32,
+}) {
+  if (!results) return null;
+  if (!results.multiFaceLandmarks) return null;
+  if (results.multiFaceLandmarks.length < 1) return null;
+
+  const { height, width, } = results.image;
+  const landmarks = results.multiFaceLandmarks[0];
+  const decoded = decodeLandmarks(landmarks, {
+    height, width, visibilityThreshold, presenceThreshold,
+  });
+
+  const leftEye = _points2crop(
+    MPParts.leftEye.map(idx => decoded[idx]),
+    tmpCanvas,
+    { videoHeight: height, videoWidth: width, padding, SIZE }
+  );
+  const rightEye = _points2crop(
+    MPParts.rightEye.map(idx => decoded[idx]),
+    tmpCanvas,
+    { videoHeight: height, videoWidth: width, padding, SIZE }
+  );
+
+  return {
+    time: Date.now(),
+    leftEye,
+    rightEye,
+    // copy x and y coordinates of the landmarks
+    points: landmarks.map(pt => ({ x: pt.x, y: pt.y, })),
+  };
+}
