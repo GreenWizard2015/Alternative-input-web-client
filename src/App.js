@@ -20,11 +20,11 @@ function App() {
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    // canvasCtx.drawImage(
-    //   results.image,
-    //   0, 0,
-    //   canvasElement.width, canvasElement.height
-    // );
+    canvasCtx.drawImage(
+      results.image,
+      0, 0,
+      canvasElement.width, canvasElement.height
+    );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
       const decodedLandmarks = decodeLandmarks(landmarks, {
@@ -33,12 +33,15 @@ function App() {
       canvasCtx.strokeStyle = "red";
       canvasCtx.lineWidth = 2;
       // draw landmarks points
-      for (let i = 0; i < decodedLandmarks.length; i++) {
-        const { x, y } = decodedLandmarks[i];
-        canvasCtx.beginPath();
-        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-        canvasCtx.stroke();
-        canvasCtx.closePath();
+      for (const key in decodedLandmarks) {
+        if (decodedLandmarks.hasOwnProperty(key)) {
+          const element = decodedLandmarks[key];
+          const { x, y } = element;
+          canvasCtx.beginPath();
+          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+          canvasCtx.stroke();
+          canvasCtx.closePath();
+        }
       }
 
       function extract(pts) {
