@@ -48,7 +48,7 @@ function App() {
       const SIZE = 32 * 4;
       const sample = results2sample(results, intermediateCanvasRef.current, {
         // mode: "rect", padding: 5,
-        mode: "circle", padding: 2,
+        mode: "circle", padding: 1.25,
         visibilityThreshold: 0.5, presenceThreshold: 0.5,
         SIZE,
       });

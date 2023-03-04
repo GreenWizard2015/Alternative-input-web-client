@@ -26,18 +26,21 @@ export const MPParts = {
   ],
 };
 
+function _isValidPoint(point, { visibilityThreshold, presenceThreshold }) {
+  return true; // consider all points valid
+  if (point.visibility && (point.visibility < visibilityThreshold)) return false;
+  if (point.presence && (point.presence < presenceThreshold)) return false;
+  return true;
+}
+
 export function decodeLandmarks(landmarks, {
   height, width, visibilityThreshold = 0.5, presenceThreshold = 0.5,
 }) {
   const points = {};
   for (let idx = 0; idx < landmarks.length; idx++) {
     const mark = landmarks[idx];
-    // if (
-    //   (mark.visibility && (mark.visibility < visibilityThreshold)) ||
-    //   (mark.presence && (mark.presence < presenceThreshold))
-    // ) {
-    //   continue;
-    // }
+    if (!_isValidPoint(mark, { visibilityThreshold, presenceThreshold })) continue;
+
     const x_px = Math.floor(mark.x * width);
     const y_px = Math.floor(mark.y * height);
     points[idx] = { x: x_px, y: y_px, };
@@ -131,7 +134,7 @@ function _toGrayscale(rgba) {
 }
 
 function _points2crop(pts, canvas, {
-  mode = "rect",
+  mode,
   padding, SIZE, image
 }) {
   const ROI = _CROP_MODES[mode](pts, { height: image.height, width: image.width, padding });
@@ -163,9 +166,9 @@ export function grayscale2image(gray, size) {
 }
 
 export function results2sample(results, tmpCanvas, {
-  mode = "rect", padding = 5,
+  mode = "circle", padding = 1.25,
   visibilityThreshold = 0.5, presenceThreshold = 0.5,
-  SIZE = 32,
+  SIZE = 40,
 }) {
   if (!results) return null;
   if (!results.multiFaceLandmarks) return null;
@@ -188,11 +191,19 @@ export function results2sample(results, tmpCanvas, {
     { mode, padding, SIZE, image: results.image }
   );
 
+  const pointsArray = new Float32Array(468 * 2);
+  for (let i = 0; i < 468; i++) {
+    const pt = _isValidPoint(landmarks[i], { visibilityThreshold, presenceThreshold }) ?
+      landmarks[i] : { x: -10, y: -10 };
+
+    pointsArray[i * 2] = pt.x;
+    pointsArray[i * 2 + 1] = pt.y;
+  }
+
   return {
     time: Date.now(),
     leftEye,
     rightEye,
-    // copy x and y coordinates of the landmarks
-    points: landmarks.map(pt => ({ x: pt.x, y: pt.y, })),
+    points: pointsArray,
   };
 }
