@@ -20,6 +20,7 @@ function App() {
     canvasCtx.fillStyle = "white";
     canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
+    // draw image from video stream
     // canvasCtx.drawImage(
     //   image,
     //   0, 0,
@@ -60,26 +61,30 @@ function App() {
       <canvas
         ref={canvasRef}
         id="canvas"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          zindex: 9,
-        }}
         onClick={(e) => {
           e.preventDefault();
           // toggle fullscreen
           const canvas = canvasRef.current;
-          if (canvas.requestFullscreen) {
-            canvas.requestFullscreen();
-          } else if (canvas.mozRequestFullScreen) { /* Firefox */
-            canvas.mozRequestFullScreen();
-          } else if (canvas.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-            canvas.webkitRequestFullscreen();
-          } else if (canvas.msRequestFullscreen) { /* IE/Edge */
-            canvas.msRequestFullscreen();
+          if (!document.fullscreenElement) {
+            if (canvas.requestFullscreen) {
+              canvas.requestFullscreen();
+            } else if (canvas.mozRequestFullScreen) { /* Firefox */
+              canvas.mozRequestFullScreen();
+            } else if (canvas.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+              canvas.webkitRequestFullscreen();
+            } else if (canvas.msRequestFullscreen) { /* IE/Edge */
+              canvas.msRequestFullscreen();
+            }
+          } else {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { /* Firefox */
+              document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+              document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE/Edge */
+              document.msExitFullscreen();
+            }
           }
         }}
       />
