@@ -45,7 +45,7 @@ export function decodeLandmarks(landmarks, {
   return points;
 }
 
-export function rectFromPoints(points, { height, width, }, padding = 0) {
+export function rectFromPoints(pts, { height, width, }, padding = 0) {
   // find min and max x and y
   const minmm = pts.reduce((acc, pt) => {
     return {

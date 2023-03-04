@@ -58,12 +58,12 @@ function App() {
         ctx.drawImage(
           results.image,
           ROI.x, ROI.y, ROI.width, ROI.height,
-          0, 0, width, height
+          0, 0, SIZE, SIZE
         );
 
-        const rgba = ctx.getImageData(0, 0, ROI.width, ROI.height).data;
+        const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
         const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
-        for (let i = 0; i < SIZE * SIZE; i += 4) {
+        for (let i = 0; i < SIZE * SIZE * 4; i += 4) {
           const r = rgba[i];
           const g = rgba[i + 1];
           const b = rgba[i + 2];
