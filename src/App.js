@@ -31,7 +31,7 @@ function App() {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
       canvasCtx.strokeStyle = "red";
-      canvasCtx.lineWidth = 2;
+      canvasCtx.lineWidth = 1;
       // draw decoded landmarks, loop through each landmark key
       for (const key in decodedLandmarks) {
         if (decodedLandmarks.hasOwnProperty(key)) {
@@ -55,8 +55,8 @@ function App() {
 
     faceMesh.setOptions({
       maxNumFaces: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minDetectionConfidence: 0.2,
+      minTrackingConfidence: 0.2,
     });
 
     faceMesh.onResults(onResults);
