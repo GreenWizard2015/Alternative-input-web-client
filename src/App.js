@@ -61,7 +61,7 @@ function App() {
         const height = maxmm.y - minmm.y;
 
         if ((width < 5) || (height < 5)) {
-          // empty image (SIZE x SIZE)
+          // empty image (SIZE x SIZE) black
           return new ImageData(SIZE, SIZE);
         }
 
@@ -85,10 +85,10 @@ function App() {
         MPParts.rightEye.map((idx) => decodedLandmarks[idx])
       );
 
-      // draw left eye
+      // grayscale filter and x2
+      canvasCtx.filter = "grayscale(100%) scale(2)";
       canvasCtx.putImageData(leftEye, 0, 0);
-      // draw right eye
-      canvasCtx.putImageData(rightEye, 0, 32);
+      canvasCtx.putImageData(rightEye, 32, 0);
     }
     canvasCtx.restore();
   }
