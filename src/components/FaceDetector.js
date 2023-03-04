@@ -5,7 +5,8 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import { decodeLandmarks, results2sample } from "MP";
 
 const DEFAULT_SETTINGS = {
-  mode: "circle", padding: 1.25,
+  // mode: "circle", padding: 1.25,
+  mode: "rect", padding: 5,
   visibilityThreshold: 0.2, presenceThreshold: 0.2,
   SIZE: 32 * 4,
 
@@ -16,6 +17,8 @@ const DEFAULT_SETTINGS = {
 export default function FaceDetector({ children, onFrame, ...settings }) {
   const webcamRef = useRef(null);
   const intermediateCanvasRef = useRef(null);
+  const callbackRef = useRef(null);
+  useEffect(() => { callbackRef.current = onFrame; }, [onFrame]);
   // store settings and dont relay on props
   const Settings = React.useMemo(
     () => ({ ...DEFAULT_SETTINGS, ...settings }),
@@ -23,6 +26,8 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
   );
 
   function onResults(results) {
+    if (!callbackRef.current) return;
+
     const { videoWidth, videoHeight } = webcamRef.current.video;
     const { SIZE, mode, padding, visibilityThreshold, presenceThreshold } = Settings;
     const sample = results2sample(results, intermediateCanvasRef.current, {
@@ -37,7 +42,7 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
       visibilityThreshold, presenceThreshold,
     }) : null;
 
-    onFrame({
+    callbackRef.current({
       results,
       sample,
       image: results.image,
