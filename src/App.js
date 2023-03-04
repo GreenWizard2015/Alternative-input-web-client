@@ -30,18 +30,7 @@ function App() {
       const decodedLandmarks = decodeLandmarks(landmarks, {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
-      // canvasCtx.strokeStyle = "red";
-      // canvasCtx.lineWidth = 1;
-      // // draw decoded landmarks, loop through each landmark key
-      // for (const key in decodedLandmarks) {
-      //   if (decodedLandmarks.hasOwnProperty(key)) {
-      //     const { x, y } = decodedLandmarks[key];
-      //     canvasCtx.beginPath();
-      //     canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-      //     canvasCtx.stroke();
-      //     canvasCtx.closePath();
-      //   }
-      // }
+
       function extract(pts) {
         const SIZE = 32;
         // find min and max x and y
@@ -85,10 +74,12 @@ function App() {
         MPParts.rightEye.map((idx) => decodedLandmarks[idx])
       );
 
-      // grayscale filter and x2
-      canvasCtx.filter = "grayscale(1) scale(2)";
+      canvasCtx.filter = "grayscale(1)";
       canvasCtx.putImageData(leftEye, 0, 0);
       canvasCtx.putImageData(rightEye, 32, 0);
+      // get the image data as a Uint8ClampedArray of grayscale values
+      const data = canvasCtx.getImageData(0, 0, 64, 32).data;
+      console.log(data);
     }
     canvasCtx.restore();
   }
