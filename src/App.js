@@ -30,6 +30,16 @@ function App() {
       const decodedLandmarks = decodeLandmarks(landmarks, {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
+      canvasCtx.strokeStyle = "red";
+      canvasCtx.lineWidth = 2;
+      // draw landmarks points
+      for (let i = 0; i < decodedLandmarks.length; i++) {
+        const { x, y } = decodedLandmarks[i];
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+        canvasCtx.stroke();
+        canvasCtx.closePath();
+      }
 
       function extract(pts) {
         const SIZE = 32;
@@ -39,13 +49,13 @@ function App() {
             x: Math.min(acc.x, pt.x),
             y: Math.min(acc.y, pt.y),
           };
-        }, { x: Number.MAX_SAFE_INTEGER, y: Number.MAX_SAFE_INTEGER });
+        }, { x: videoWidth, y: videoHeight });
         const maxmm = pts.reduce((acc, pt) => {
           return {
             x: Math.max(acc.x, pt.x),
             y: Math.max(acc.y, pt.y),
           };
-        }, { x: Number.MIN_SAFE_INTEGER, y: Number.MIN_SAFE_INTEGER });
+        }, { x: 0, y: 0 });
         const width = maxmm.x - minmm.x;
         const height = maxmm.y - minmm.y;
 
@@ -60,7 +70,7 @@ function App() {
         canvas.height = SIZE;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(
-          webcamRef.current.video,
+          results.image,
           minmm.x, minmm.y, width, height,
           0, 0, SIZE, SIZE
         );
@@ -80,18 +90,18 @@ function App() {
         return new ImageData(gray, SIZE, SIZE);
       }
 
-      const leftEye = extract(
-        MPParts.leftEye.map((idx) => decodedLandmarks[idx])
-      );
-      const rightEye = extract(
-        MPParts.rightEye.map((idx) => decodedLandmarks[idx])
-      );
+      // const leftEye = extract(
+      //   MPParts.leftEye.map((idx) => decodedLandmarks[idx])
+      // );
+      // const rightEye = extract(
+      //   MPParts.rightEye.map((idx) => decodedLandmarks[idx])
+      // );
 
-      canvasCtx.putImageData(leftEye, 0, 0);
-      canvasCtx.putImageData(rightEye, 32, 0);
-      // get the image data as a Uint8ClampedArray of grayscale values
-      const data = canvasCtx.getImageData(0, 0, 64, 32).data;
-      console.log(data);
+      // canvasCtx.putImageData(leftEye, 0, 0);
+      // canvasCtx.putImageData(rightEye, 32, 0);
+      // // get the image data as a Uint8ClampedArray of grayscale values
+      // const data = canvasCtx.getImageData(0, 0, 64, 32).data;
+      // console.log(data);
     }
     canvasCtx.restore();
   }

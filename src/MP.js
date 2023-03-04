@@ -32,14 +32,14 @@ export function decodeLandmarks(landmarks, {
   const points = {};
   for (let idx = 0; idx < landmarks.length; idx++) {
     const mark = landmarks[idx];
-    if (
-      (mark.visibility && (mark.visibility < visibilityThreshold)) ||
-      (mark.presence && (mark.presence < presenceThreshold))
-    ) {
-      continue;
-    }
-    const x_px = Math.min(Math.floor(mark.x * width), width - 1);
-    const y_px = Math.min(Math.floor(mark.y * height), height - 1);
+    // if (
+    //   (mark.visibility && (mark.visibility < visibilityThreshold)) ||
+    //   (mark.presence && (mark.presence < presenceThreshold))
+    // ) {
+    //   continue;
+    // }
+    const x_px = Math.floor(mark.x * width);
+    const y_px = Math.floor(mark.y * height);
     points[idx] = { x: x_px, y: y_px, };
   }
   return points;
