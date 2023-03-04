@@ -86,7 +86,7 @@ function App() {
       );
 
       // grayscale filter and x2
-      canvasCtx.filter = "grayscale(100%) scale(2)";
+      canvasCtx.filter = "grayscale(1) scale(2)";
       canvasCtx.putImageData(leftEye, 0, 0);
       canvasCtx.putImageData(rightEye, 32, 0);
     }
