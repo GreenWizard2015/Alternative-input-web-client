@@ -8,12 +8,14 @@ function App() {
 
   function onFrame({
     results, sample, image,
-    landmarks, decodedLandmarks, settings,
+    landmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    // clear canvas by filling it with white color
+    canvasCtx.fillStyle = "white";
+    canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
     // canvasCtx.drawImage(
     //   image,
@@ -21,7 +23,12 @@ function App() {
     //   canvasElement.width, canvasElement.height
     // );
 
-    if (decodedLandmarks) {
+    if (landmarks) {
+      const { visibilityThreshold, presenceThreshold } = settings;
+      const decodedLandmarks = decodeLandmarks(landmarks, {
+        height: canvasElement.height, width: canvasElement.width,
+        visibilityThreshold, presenceThreshold,
+      });
       canvasCtx.strokeStyle = "red";
       canvasCtx.lineWidth = 2;
       // draw landmarks points

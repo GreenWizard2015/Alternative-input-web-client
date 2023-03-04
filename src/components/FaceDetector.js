@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { FaceMesh } from "@mediapipe/face_mesh";
-import { decodeLandmarks, results2sample } from "MP";
+import { results2sample } from "MP";
 
 const DEFAULT_SETTINGS = {
   mode: "circle", padding: 1.25,
@@ -36,16 +36,11 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
     });
 
     const landmarks = sample ? results.multiFaceLandmarks[0] : null;
-    const decodedLandmarks = landmarks ? decodeLandmarks(landmarks, {
-      height: videoHeight, width: videoWidth,
-      visibilityThreshold, presenceThreshold,
-    }) : null;
-
     callbackRef.current({
       results,
       sample,
       image: results.image,
-      landmarks, decodedLandmarks, sample,
+      landmarks,
       settings: Settings,
     });
   }
