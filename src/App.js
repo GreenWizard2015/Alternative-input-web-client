@@ -55,8 +55,8 @@ function App() {
         }
         // cut out the part and resize to SIZE x SIZE
         const canvas = document.createElement("canvas");
-        canvas.width = ROI.width;
-        canvas.height = ROI.height;
+        canvas.width = SIZE;
+        canvas.height = SIZE;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(
           results.image,
