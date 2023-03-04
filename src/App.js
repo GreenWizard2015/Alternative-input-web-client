@@ -45,45 +45,19 @@ function App() {
       // }
 
       function extract(pts) {
-        const SIZE = 32;
-        // find min and max x and y
-        const minmm = pts.reduce((acc, pt) => {
-          return {
-            x: Math.min(acc.x, pt.x),
-            y: Math.min(acc.y, pt.y),
-          };
-        }, { x: videoWidth, y: videoHeight });
-        const maxmm = pts.reduce((acc, pt) => {
-          return {
-            x: Math.max(acc.x, pt.x),
-            y: Math.max(acc.y, pt.y),
-          };
-        }, { x: 0, y: 0 });
-        if (((maxmm.x - minmm.x) < 5) || ((maxmm.y - minmm.y) < 5)) {
-          // empty image (SIZE x SIZE) black
-          return new ImageData(SIZE, SIZE);
+        const ROI = rectFromPoints(pts, { height: videoHeight, width: videoWidth, }, 5);
+        if (null === ROI) {
+          return null;
         }
-
-        // add padding 5px and clip to video size
-        minmm = {
-          x: Math.max(0, minmm.x - 5),
-          y: Math.max(0, minmm.y - 5),
-        };
-        maxmm = {
-          x: Math.min(videoWidth, maxmm.x + 5),
-          y: Math.min(videoHeight, maxmm.y + 5),
-        };
-        const width = maxmm.x - minmm.x;
-        const height = maxmm.y - minmm.y;
-
+        const SIZE = 32;
         // cut out the part and resize to SIZE x SIZE
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = ROI.width;
+        canvas.height = ROI.height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(
           results.image,
-          minmm.x, minmm.y, width, height,
+          ROI.x, ROI.y, ROI.width, ROI.height,
           0, 0, width, height
         );
 

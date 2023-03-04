@@ -44,3 +44,43 @@ export function decodeLandmarks(landmarks, {
   }
   return points;
 }
+
+export function rectFromPoints(points, { height, width, }, padding = 0) {
+  // find min and max x and y
+  const minmm = pts.reduce((acc, pt) => {
+    return {
+      x: Math.min(acc.x, pt.x),
+      y: Math.min(acc.y, pt.y),
+    };
+  }, { x: width, y: height });
+  const maxmm = pts.reduce((acc, pt) => {
+    return {
+      x: Math.max(acc.x, pt.x),
+      y: Math.max(acc.y, pt.y),
+    };
+  }, { x: 0, y: 0 });
+  if (((maxmm.x - minmm.x) < 5) || ((maxmm.y - minmm.y) < 5)) {
+    return null;
+  }
+
+  const A = {
+    x: Math.max(0, minmm.x - padding),
+    y: Math.max(0, minmm.y - padding),
+  };
+  const B = {
+    x: Math.min(width, maxmm.x + padding),
+    y: Math.min(height, maxmm.y + padding),
+  };
+
+  return {
+    x: A.x,
+    y: A.y,
+    width: B.x - A.x,
+    height: B.y - A.y,
+
+    x1: A.x,
+    y1: A.y,
+    x2: B.x,
+    y2: B.y,
+  };
+}
