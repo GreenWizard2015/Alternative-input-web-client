@@ -20,29 +20,29 @@ function App() {
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasCtx.drawImage(
-      results.image,
-      0, 0,
-      canvasElement.width, canvasElement.height
-    );
+    // canvasCtx.drawImage(
+    //   results.image,
+    //   0, 0,
+    //   canvasElement.width, canvasElement.height
+    // );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
       const decodedLandmarks = decodeLandmarks(landmarks, {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
-      canvasCtx.strokeStyle = "red";
-      canvasCtx.lineWidth = 2;
-      // draw landmarks points
-      for (const key in decodedLandmarks) {
-        if (decodedLandmarks.hasOwnProperty(key)) {
-          const element = decodedLandmarks[key];
-          const { x, y } = element;
-          canvasCtx.beginPath();
-          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-          canvasCtx.stroke();
-          canvasCtx.closePath();
-        }
-      }
+      // canvasCtx.strokeStyle = "red";
+      // canvasCtx.lineWidth = 2;
+      // // draw landmarks points
+      // for (const key in decodedLandmarks) {
+      //   if (decodedLandmarks.hasOwnProperty(key)) {
+      //     const element = decodedLandmarks[key];
+      //     const { x, y } = element;
+      //     canvasCtx.beginPath();
+      //     canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+      //     canvasCtx.stroke();
+      //     canvasCtx.closePath();
+      //   }
+      // }
 
       function extract(pts) {
         const SIZE = 32;
@@ -68,17 +68,9 @@ function App() {
         }
 
         // cut out the part and resize to SIZE x SIZE
-        const canvas = document.createElement("canvas");
-        canvas.width = SIZE;
-        canvas.height = SIZE;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-          results.image,
+        const rgba = results.image.getImageData(
           minmm.x, minmm.y, width, height,
-          0, 0, SIZE, SIZE
-        );
-
-        const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
+        ).data;
         const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
         for (let i = 0; i < SIZE * SIZE; i += 4) {
           const r = rgba[i];
@@ -93,17 +85,21 @@ function App() {
         return new ImageData(gray, SIZE, SIZE);
       }
 
-      // const leftEye = extract(
-      //   MPParts.leftEye.map((idx) => decodedLandmarks[idx])
-      // );
-      // const rightEye = extract(
-      //   MPParts.rightEye.map((idx) => decodedLandmarks[idx])
-      // );
+      const leftEye = extract(
+        MPParts.leftEye.map((idx) => decodedLandmarks[idx])
+      );
+      const rightEye = extract(
+        MPParts.rightEye.map((idx) => decodedLandmarks[idx])
+      );
 
-      // canvasCtx.putImageData(leftEye, 0, 0);
-      // canvasCtx.putImageData(rightEye, 32, 0);
+      canvasCtx.putImageData(leftEye, 0, 0);
+      canvasCtx.putImageData(rightEye, 32, 0);
       // // get the image data as a Uint8ClampedArray of grayscale values
-      // const data = canvasCtx.getImageData(0, 0, 64, 32).data;
+      const data = canvasCtx.getImageData(0, 0, 64, 32).data;
+      // draw text
+      canvasCtx.fillStyle = "red";
+      canvasCtx.font = "20px Arial";
+      canvasCtx.fillText(data.length + " bytes.", 10, 50);
       // console.log(data);
     }
     canvasCtx.restore();
