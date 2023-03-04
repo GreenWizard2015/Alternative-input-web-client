@@ -26,30 +26,11 @@ export const MPParts = {
   ],
 };
 
-/*
-Python:
-def decodeLandmarks(landmarks, HW, VISIBILITY_THRESHOLD, PRESENCE_THRESHOLD):
-  H, W = HW
-  points = {}
-  for idx, mark in enumerate(landmarks.landmark):
-    if (
-      (mark.HasField('visibility') and (mark.visibility < VISIBILITY_THRESHOLD)) or
-      (mark.HasField('presence') and (mark.presence < PRESENCE_THRESHOLD))
-    ):
-      continue
-    
-    x_px = min(math.floor(mark.x * W), W - 1)
-    y_px = min(math.floor(mark.y * H), H - 1)
-    points[idx] = (x_px, y_px)
-    continue
-  return points
-*/
-
 export function decodeLandmarks(landmarks, {
   height, width, visibilityThreshold = 0.5, presenceThreshold = 0.5,
 }) {
   const points = {};
-  for (const idx = 0; idx < landmarks.length; idx++) {
+  for (let idx = 0; idx < landmarks.length; idx++) {
     const mark = landmarks[idx];
     if (
       (mark.visibility && (mark.visibility < visibilityThreshold)) ||
