@@ -68,9 +68,11 @@ function App() {
         }
 
         // cut out the part and resize to SIZE x SIZE
-        const rgba = results.image.getImageData(
-          minmm.x, minmm.y, width, height,
-        ).data;
+        const rgba = results.image
+          .getContext("2d")
+          .getImageData(minmm.x, minmm.y, width, height,)
+          .data;
+
         const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
         for (let i = 0; i < SIZE * SIZE; i += 4) {
           const r = rgba[i];
