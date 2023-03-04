@@ -45,7 +45,21 @@ export function decodeLandmarks(landmarks, {
   return points;
 }
 
-export function rectFromPoints(pts, { height, width, }, padding = 0) {
+function _ABRect(A, B) {
+  return {
+    x: A.x,
+    y: A.y,
+    width: B.x - A.x,
+    height: B.y - A.y,
+
+    x1: A.x,
+    y1: A.y,
+    x2: B.x,
+    y2: B.y,
+  };
+}
+
+function _rectFromPoints(pts, { height, width, }, padding = 0) {
   // find min and max x and y
   const minmm = pts.reduce((acc, pt) => {
     return {
@@ -71,17 +85,38 @@ export function rectFromPoints(pts, { height, width, }, padding = 0) {
     y: Math.min(height, maxmm.y + padding),
   };
 
-  return {
-    x: A.x,
-    y: A.y,
-    width: B.x - A.x,
-    height: B.y - A.y,
+  return _ABRect(A, B);
+}
 
-    x1: A.x,
-    y1: A.y,
-    x2: B.x,
-    y2: B.y,
+function _circleROI(pts, { height, width, }, padding = 1.5) {
+  const centerPtCum = pts.reduce((acc, pt) => {
+    return {
+      x: acc.x + pt.x,
+      y: acc.y + pt.y,
+    };
+  }, { x: 0, y: 0 });
+  const centerPt = {
+    x: centerPtCum.x / pts.length,
+    y: centerPtCum.y / pts.length,
   };
+
+  const radius = pts.reduce((acc, pt) => {
+    const dx = pt.x - centerPt.x;
+    const dy = pt.y - centerPt.y;
+    return Math.max(acc, Math.sqrt(dx * dx + dy * dy));
+  }, 0);
+  if (radius < 5) return null;
+
+  const R = Math.ceil(radius * padding);
+  const A = {
+    x: Math.max(0, centerPt.x - R),
+    y: Math.max(0, centerPt.y - R),
+  };
+  const B = {
+    x: Math.min(width, centerPt.x + R),
+    y: Math.min(height, centerPt.y + R),
+  };
+  return _ABRect(A, B);
 }
 
 function _toGrayscale(rgba) {
@@ -99,7 +134,8 @@ function _toGrayscale(rgba) {
 function _points2crop(pts, canvas, {
   padding, SIZE, image
 }) {
-  const ROI = rectFromPoints(pts, { height: image.height, width: image.width, }, padding);
+  // const ROI = _rectFromPoints(pts, { height: image.height, width: image.width, }, padding);
+  const ROI = _circleROI(pts, { height: image.height, width: image.width, });
   if (null === ROI) return new Uint8ClampedArray(SIZE * SIZE);
 
   // cut out the part and resize to SIZE x SIZE
