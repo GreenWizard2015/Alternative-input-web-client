@@ -49,7 +49,7 @@ export function decodeLandmarks(landmarks, {
   height, width, visibilityThreshold = 0.5, presenceThreshold = 0.5,
 }) {
   const points = {};
-  for (let idx = 0; idx < landmarks.length; idx++) {
+  for (const idx = 0; idx < landmarks.length; idx++) {
     const mark = landmarks[idx];
     if (
       (mark.visibility && (mark.visibility < visibilityThreshold)) ||
@@ -59,7 +59,7 @@ export function decodeLandmarks(landmarks, {
     }
     const x_px = Math.min(Math.floor(mark.x * width), width - 1);
     const y_px = Math.min(Math.floor(mark.y * height), height - 1);
-    points[idx] = [x_px, y_px];
+    points[idx] = { x: x_px, y: y_px, };
   }
   return points;
 }
