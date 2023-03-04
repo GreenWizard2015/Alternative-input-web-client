@@ -59,7 +59,7 @@ function _ABRect(A, B) {
   };
 }
 
-function _rectFromPoints(pts, { height, width, }, padding = 0) {
+function _rectFromPoints(pts, { height, width, padding = 0 }) {
   // find min and max x and y
   const minmm = pts.reduce((acc, pt) => {
     return {
@@ -88,7 +88,7 @@ function _rectFromPoints(pts, { height, width, }, padding = 0) {
   return _ABRect(A, B);
 }
 
-function _circleROI(pts, { height, width, }, padding = 1.5) {
+function _circleROI(pts, { height, width, padding = 1.5 }) {
   const centerPtCum = pts.reduce((acc, pt) => {
     return {
       x: acc.x + pt.x,
@@ -108,16 +108,15 @@ function _circleROI(pts, { height, width, }, padding = 1.5) {
   if (radius < 5) return null;
 
   const R = Math.ceil(radius * padding);
-  const A = {
-    x: Math.max(0, centerPt.x - R),
-    y: Math.max(0, centerPt.y - R),
-  };
-  const B = {
-    x: Math.min(width, centerPt.x + R),
-    y: Math.min(height, centerPt.y + R),
-  };
+  const A = { x: centerPt.x - R, y: centerPt.y - R };
+  const B = { x: centerPt.x + R, y: centerPt.y + R };
   return _ABRect(A, B);
 }
+
+const _CROP_MODES = {
+  "rect": _rectFromPoints,
+  "circle": _circleROI,
+};
 
 function _toGrayscale(rgba) {
   const gray = new Uint8ClampedArray(Math.ceil(rgba.length / 4));
@@ -132,10 +131,10 @@ function _toGrayscale(rgba) {
 }
 
 function _points2crop(pts, canvas, {
+  mode = "rect",
   padding, SIZE, image
 }) {
-  // const ROI = _rectFromPoints(pts, { height: image.height, width: image.width, }, padding);
-  const ROI = _circleROI(pts, { height: image.height, width: image.width, });
+  const ROI = _CROP_MODES[mode](pts, { height: image.height, width: image.width, padding });
   if (null === ROI) return new Uint8ClampedArray(SIZE * SIZE);
 
   // cut out the part and resize to SIZE x SIZE
@@ -164,7 +163,7 @@ export function grayscale2image(gray, size) {
 }
 
 export function results2sample(results, tmpCanvas, {
-  padding = 5,
+  mode = "rect", padding = 5,
   visibilityThreshold = 0.5, presenceThreshold = 0.5,
   SIZE = 32,
 }) {
@@ -181,12 +180,12 @@ export function results2sample(results, tmpCanvas, {
   const leftEye = _points2crop(
     MPParts.leftEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { padding, SIZE, image: results.image }
+    { mode, padding, SIZE, image: results.image }
   );
   const rightEye = _points2crop(
     MPParts.rightEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { padding, SIZE, image: results.image }
+    { mode, padding, SIZE, image: results.image }
   );
 
   return {

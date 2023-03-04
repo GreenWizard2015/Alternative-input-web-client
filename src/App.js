@@ -45,14 +45,15 @@ function App() {
         }
       }
 
+      const SIZE = 32 * 4;
       const sample = results2sample(results, intermediateCanvasRef.current, {
-        padding: 5,
-        visibilityThreshold: 0.5,
-        presenceThreshold: 0.5,
-        SIZE: 32,
+        // mode: "rect", padding: 5,
+        mode: "circle", padding: 2,
+        visibilityThreshold: 0.5, presenceThreshold: 0.5,
+        SIZE,
       });
-      const leftEyeImage = grayscale2image(sample.leftEye, 32);
-      const rightEyeImage = grayscale2image(sample.rightEye, 32);
+      const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
+      const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
       canvasCtx.putImageData(leftEyeImage, 0, 0);
       canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
     }
