@@ -5,10 +5,9 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import { decodeLandmarks, results2sample } from "MP";
 
 const DEFAULT_SETTINGS = {
-  // mode: "circle", padding: 1.25,
-  mode: "rect", padding: 5,
+  mode: "circle", padding: 1.25,
   visibilityThreshold: 0.2, presenceThreshold: 0.2,
-  SIZE: 32 * 4,
+  SIZE: 40,
 
   maxNumFaces: 1,
   minDetectionConfidence: 0.2, minTrackingConfidence: 0.2,

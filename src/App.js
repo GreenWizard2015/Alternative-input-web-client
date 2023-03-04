@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { grayscale2image } from "MP";
 import FaceDetector from "components/FaceDetector";
+import "./app.css";
 
 function App() {
   const canvasRef = useRef(null);
@@ -10,12 +11,9 @@ function App() {
     landmarks, decodedLandmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
-    // Set canvas width
-    canvasElement.width = image.width;
-    canvasElement.height = image.height;
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
-    //canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     canvasCtx.drawImage(
       image,
@@ -47,24 +45,35 @@ function App() {
   }
 
   return (
-    <center>
-      <div className="App">
-        <FaceDetector onFrame={onFrame} />
-        <canvas
-          ref={canvasRef}
-          className="output_canvas"
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-          }}
-        />
-      </div>
-    </center>
+    <>
+      <FaceDetector onFrame={onFrame} />
+      <canvas
+        ref={canvasRef}
+        id="canvas"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+          zindex: 9,
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          // toggle fullscreen
+          const canvas = canvasRef.current;
+          if (canvas.requestFullscreen) {
+            canvas.requestFullscreen();
+          } else if (canvas.mozRequestFullScreen) { /* Firefox */
+            canvas.mozRequestFullScreen();
+          } else if (canvas.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+            canvas.webkitRequestFullscreen();
+          } else if (canvas.msRequestFullscreen) { /* IE/Edge */
+            canvas.msRequestFullscreen();
+          }
+        }}
+      />
+    </>
   );
 }
 
