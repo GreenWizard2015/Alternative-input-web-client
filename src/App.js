@@ -7,6 +7,7 @@ import { decodeLandmarks, MPParts, rectFromPoints } from "MP";
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const intermediateCanvasRef = useRef(null);
   var camera = null;
 
   function onResults(results) {
@@ -54,7 +55,7 @@ function App() {
           );
         }
         // cut out the part and resize to SIZE x SIZE
-        const canvas = document.createElement("canvas");
+        const canvas = intermediateCanvasRef.current;
         canvas.width = SIZE;
         canvas.height = SIZE;
         const ctx = canvas.getContext("2d");
@@ -87,13 +88,13 @@ function App() {
       );
 
       canvasCtx.putImageData(leftEye, 0, 0);
-      canvasCtx.putImageData(rightEye, 32, 0);
+      canvasCtx.putImageData(rightEye, leftEye.width, 0);
       // get the image data as a Uint8ClampedArray of grayscale values
-      const data = canvasCtx.getImageData(0, 0, 64, 32).data;
+      const data = canvasCtx.getImageData(0, 0, leftEye.width + rightEye.width, leftEye.height).data;
       // draw text
       canvasCtx.fillStyle = "red";
       canvasCtx.font = "20px Arial";
-      canvasCtx.fillText(data.length + " bytes.", 10, 50);
+      canvasCtx.fillText(data.length + " bytes.", 10, leftEye.height + 20);
       // console.log(data);
     }
     canvasCtx.restore();
@@ -133,6 +134,7 @@ function App() {
     <center>
       <div className="App">
         <Webcam ref={webcamRef} style={{ display: "none" }} />
+        <canvas ref={intermediateCanvasRef} style={{ display: "none" }} />
         <canvas
           ref={canvasRef}
           className="output_canvas"
@@ -145,7 +147,7 @@ function App() {
             textAlign: "center",
             zindex: 9,
           }}
-        ></canvas>
+        />
       </div>
     </center>
   );
