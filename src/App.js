@@ -1,7 +1,8 @@
 import React, { useRef } from "react";
-import { decodeLandmarks, grayscale2image } from "MP";
+import { decodeLandmarks, grayscale2image } from "utils/MP";
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
+import { toggleFullscreen } from "utils/canvas";
 
 function App() {
   const canvasRef = useRef(null);
@@ -63,29 +64,7 @@ function App() {
         id="canvas"
         onClick={(e) => {
           e.preventDefault();
-          // toggle fullscreen
-          const canvas = canvasRef.current;
-          if (!document.fullscreenElement) {
-            if (canvas.requestFullscreen) {
-              canvas.requestFullscreen();
-            } else if (canvas.mozRequestFullScreen) { /* Firefox */
-              canvas.mozRequestFullScreen();
-            } else if (canvas.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-              canvas.webkitRequestFullscreen();
-            } else if (canvas.msRequestFullscreen) { /* IE/Edge */
-              canvas.msRequestFullscreen();
-            }
-          } else {
-            if (document.exitFullscreen) {
-              document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) { /* Firefox */
-              document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-              document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { /* IE/Edge */
-              document.msExitFullscreen();
-            }
-          }
+          toggleFullscreen(canvasRef.current);
         }}
       />
     </>
