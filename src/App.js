@@ -15,11 +15,11 @@ function App() {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-    canvasCtx.drawImage(
-      image,
-      0, 0,
-      canvasElement.width, canvasElement.height
-    );
+    // canvasCtx.drawImage(
+    //   image,
+    //   0, 0,
+    //   canvasElement.width, canvasElement.height
+    // );
 
     if (decodedLandmarks) {
       canvasCtx.strokeStyle = "red";
