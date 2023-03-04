@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { grayscale2image } from "MP";
+import { decodeLandmarks, grayscale2image } from "MP";
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
 
