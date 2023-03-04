@@ -20,28 +20,75 @@ function App() {
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasCtx.drawImage(
-      results.image,
-      0, 0,
-      canvasElement.width, canvasElement.height
-    );
+    // canvasCtx.drawImage(
+    //   results.image,
+    //   0, 0,
+    //   canvasElement.width, canvasElement.height
+    // );
     if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
       const landmarks = results.multiFaceLandmarks[0];
       const decodedLandmarks = decodeLandmarks(landmarks, {
         height: videoHeight, width: videoWidth,
       }); // { idx: { x, y}}
-      canvasCtx.strokeStyle = "red";
-      canvasCtx.lineWidth = 1;
-      // draw decoded landmarks, loop through each landmark key
-      for (const key in decodedLandmarks) {
-        if (decodedLandmarks.hasOwnProperty(key)) {
-          const { x, y } = decodedLandmarks[key];
-          canvasCtx.beginPath();
-          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-          canvasCtx.stroke();
-          canvasCtx.closePath();
+      // canvasCtx.strokeStyle = "red";
+      // canvasCtx.lineWidth = 1;
+      // // draw decoded landmarks, loop through each landmark key
+      // for (const key in decodedLandmarks) {
+      //   if (decodedLandmarks.hasOwnProperty(key)) {
+      //     const { x, y } = decodedLandmarks[key];
+      //     canvasCtx.beginPath();
+      //     canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+      //     canvasCtx.stroke();
+      //     canvasCtx.closePath();
+      //   }
+      // }
+      function extract(pts) {
+        const SIZE = 32;
+        // find min and max x and y
+        const minmm = pts.reduce((acc, pt) => {
+          return {
+            x: Math.min(acc.x, pt.x),
+            y: Math.min(acc.y, pt.y),
+          };
+        }, { x: Number.MAX_SAFE_INTEGER, y: Number.MAX_SAFE_INTEGER });
+        const maxmm = pts.reduce((acc, pt) => {
+          return {
+            x: Math.max(acc.x, pt.x),
+            y: Math.max(acc.y, pt.y),
+          };
+        }, { x: Number.MIN_SAFE_INTEGER, y: Number.MIN_SAFE_INTEGER });
+        const width = maxmm.x - minmm.x;
+        const height = maxmm.y - minmm.y;
+
+        if ((width < 5) || (height < 5)) {
+          // empty image (SIZE x SIZE)
+          return new ImageData(SIZE, SIZE);
         }
+
+        // cut out the part and resize to SIZE x SIZE
+        const canvas = document.createElement("canvas");
+        canvas.width = SIZE;
+        canvas.height = SIZE;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(
+          webcamRef.current.video,
+          minmm.x, minmm.y, width, height,
+          0, 0, SIZE, SIZE
+        );
+        return ctx.getImageData(0, 0, SIZE, SIZE);
       }
+
+      const leftEye = extract(
+        MPParts.leftEye.map((idx) => decodedLandmarks[idx])
+      );
+      const rightEye = extract(
+        MPParts.rightEye.map((idx) => decodedLandmarks[idx])
+      );
+
+      // draw left eye
+      canvasCtx.putImageData(leftEye, 0, 0);
+      // draw right eye
+      canvasCtx.putImageData(rightEye, 0, 32);
     }
     canvasCtx.restore();
   }
