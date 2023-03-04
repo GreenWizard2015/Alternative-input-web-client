@@ -168,7 +168,7 @@ export function grayscale2image(gray, size) {
 export function results2sample(results, tmpCanvas, {
   mode = "circle", padding = 1.25,
   visibilityThreshold = 0.5, presenceThreshold = 0.5,
-  SIZE = 40,
+  SIZE = 32,
 }) {
   if (!results) return null;
   if (!results.multiFaceLandmarks) return null;

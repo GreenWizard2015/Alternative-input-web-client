@@ -1,36 +1,29 @@
-import { FaceMesh } from "@mediapipe/face_mesh";
-import React, { useRef, useEffect } from "react";
-import * as cameraUtils from "@mediapipe/camera_utils";
-import Webcam from "react-webcam";
-import { decodeLandmarks, grayscale2image, results2sample } from "MP";
+import React, { useRef } from "react";
+import { grayscale2image } from "MP";
+import FaceDetector from "components/FaceDetector";
 
 function App() {
-  const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  const intermediateCanvasRef = useRef(null);
-  var camera = null;
 
-  function onResults(results) {
-    const { videoWidth, videoHeight } = webcamRef.current.video;
-
-    // Set canvas width
-    canvasRef.current.width = videoWidth;
-    canvasRef.current.height = videoHeight;
-
+  function onFrame({
+    results, sample, image,
+    landmarks, decodedLandmarks,
+  }) {
     const canvasElement = canvasRef.current;
+    // Set canvas width
+    canvasElement.width = image.width;
+    canvasElement.height = image.height;
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    //canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
     canvasCtx.drawImage(
-      results.image,
+      image,
       0, 0,
       canvasElement.width, canvasElement.height
     );
-    if (results.multiFaceLandmarks && (0 < results.multiFaceLandmarks.length)) {
-      const landmarks = results.multiFaceLandmarks[0];
-      const decodedLandmarks = decodeLandmarks(landmarks, {
-        height: videoHeight, width: videoWidth,
-      }); // { idx: { x, y}}
+
+    if (decodedLandmarks) {
       canvasCtx.strokeStyle = "red";
       canvasCtx.lineWidth = 2;
       // draw landmarks points
@@ -44,14 +37,6 @@ function App() {
           canvasCtx.closePath();
         }
       }
-
-      const SIZE = 32 * 4;
-      const sample = results2sample(results, intermediateCanvasRef.current, {
-        // mode: "rect", padding: 5,
-        mode: "circle", padding: 1.25,
-        visibilityThreshold: 0.5, presenceThreshold: 0.5,
-        SIZE,
-      });
       const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
       const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
       canvasCtx.putImageData(leftEyeImage, 0, 0);
@@ -60,41 +45,10 @@ function App() {
     canvasCtx.restore();
   }
 
-  useEffect(() => {
-    const faceMesh = new FaceMesh({
-      locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-      },
-    });
-
-    faceMesh.setOptions({
-      maxNumFaces: 1,
-      minDetectionConfidence: 0.2,
-      minTrackingConfidence: 0.2,
-    });
-
-    faceMesh.onResults(onResults);
-
-    if (
-      typeof webcamRef.current !== "undefined" &&
-      webcamRef.current !== null
-    ) {
-      camera = new cameraUtils.Camera(
-        webcamRef.current.video,
-        {
-          onFrame: async () => {
-            await faceMesh.send({ image: webcamRef.current.video });
-          },
-        });
-      camera.start();
-    }
-  }, []);
-
   return (
     <center>
       <div className="App">
-        <Webcam ref={webcamRef} style={{ display: "none" }} />
-        <canvas ref={intermediateCanvasRef} style={{ display: "none" }} />
+        <FaceDetector onFrame={onFrame} />
         <canvas
           ref={canvasRef}
           className="output_canvas"
