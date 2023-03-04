@@ -11,6 +11,9 @@ function App() {
     landmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
+    canvasElement.width = canvasElement.clientWidth;
+    canvasElement.height = canvasElement.clientHeight;
+
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     // clear canvas by filling it with white color
