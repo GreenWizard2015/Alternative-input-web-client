@@ -64,6 +64,19 @@ function App() {
           minmm.x, minmm.y, width, height,
           0, 0, SIZE, SIZE
         );
+
+        const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
+        const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
+        for (let i = 0; i < SIZE * SIZE; i += 4) {
+          const r = rgba[i];
+          const g = rgba[i + 1];
+          const b = rgba[i + 2];
+          const grayValue = Math.floor(0.2989 * r + 0.5870 * g + 0.1140 * b);
+          gray[i] = grayValue;
+          gray[i + 1] = grayValue;
+          gray[i + 2] = grayValue;
+          gray[i + 3] = 255;
+        }
         return ctx.getImageData(0, 0, SIZE, SIZE);
       }
 
@@ -74,11 +87,8 @@ function App() {
         MPParts.rightEye.map((idx) => decodedLandmarks[idx])
       );
 
-      canvasCtx.filter = "grayscale(1)";
       canvasCtx.putImageData(leftEye, 0, 0);
-      canvasCtx.filter = "grayscale(1)";
       canvasCtx.putImageData(rightEye, 32, 0);
-      canvasCtx.filter = "grayscale(1)";
       // get the image data as a Uint8ClampedArray of grayscale values
       const data = canvasCtx.getImageData(0, 0, 64, 32).data;
       console.log(data);
