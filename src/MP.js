@@ -59,9 +59,8 @@ export function rectFromPoints(pts, { height, width, }, padding = 0) {
       y: Math.max(acc.y, pt.y),
     };
   }, { x: 0, y: 0 });
-  if (((maxmm.x - minmm.x) < 5) || ((maxmm.y - minmm.y) < 5)) {
-    return null;
-  }
+
+  if (((maxmm.x - minmm.x) < 5) || ((maxmm.y - minmm.y) < 5)) return null;
 
   const A = {
     x: Math.max(0, minmm.x - padding),

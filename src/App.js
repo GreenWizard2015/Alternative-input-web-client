@@ -45,11 +45,14 @@ function App() {
       // }
 
       function extract(pts) {
+        const SIZE = 32;
         const ROI = rectFromPoints(pts, { height: videoHeight, width: videoWidth, }, 5);
         if (null === ROI) {
-          return null;
+          return new ImageData(
+            new Uint8ClampedArray(SIZE * SIZE * 4),
+            SIZE, SIZE
+          );
         }
-        const SIZE = 32;
         // cut out the part and resize to SIZE x SIZE
         const canvas = document.createElement("canvas");
         canvas.width = ROI.width;
@@ -85,7 +88,7 @@ function App() {
 
       canvasCtx.putImageData(leftEye, 0, 0);
       canvasCtx.putImageData(rightEye, 32, 0);
-      // // get the image data as a Uint8ClampedArray of grayscale values
+      // get the image data as a Uint8ClampedArray of grayscale values
       const data = canvasCtx.getImageData(0, 0, 64, 32).data;
       // draw text
       canvasCtx.fillStyle = "red";
