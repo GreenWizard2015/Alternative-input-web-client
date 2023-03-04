@@ -97,9 +97,9 @@ function _toGrayscale(rgba) {
 }
 
 function _points2crop(pts, canvas, {
-  videoHeight, videoWidth, padding, SIZE
+  padding, SIZE, image
 }) {
-  const ROI = rectFromPoints(pts, { height: videoHeight, width: videoWidth, }, padding);
+  const ROI = rectFromPoints(pts, { height: image.height, width: image.width, }, padding);
   if (null === ROI) return new Uint8ClampedArray(SIZE * SIZE);
 
   // cut out the part and resize to SIZE x SIZE
@@ -107,7 +107,7 @@ function _points2crop(pts, canvas, {
   canvas.height = SIZE;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(
-    results.image,
+    image,
     ROI.x, ROI.y, ROI.width, ROI.height,
     0, 0, SIZE, SIZE
   );
@@ -145,12 +145,12 @@ export function results2sample(results, tmpCanvas, {
   const leftEye = _points2crop(
     MPParts.leftEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { videoHeight: height, videoWidth: width, padding, SIZE }
+    { padding, SIZE, image: results.image }
   );
   const rightEye = _points2crop(
     MPParts.rightEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { videoHeight: height, videoWidth: width, padding, SIZE }
+    { padding, SIZE, image: results.image }
   );
 
   return {
