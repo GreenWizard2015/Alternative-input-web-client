@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { FaceMesh } from "@mediapipe/face_mesh";
+import { decodeLandmarks, results2sample } from "MP";
 
 const DEFAULT_SETTINGS = {
   mode: "circle", padding: 1.25,
@@ -41,7 +42,7 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
       sample,
       image: results.image,
       landmarks, decodedLandmarks, sample,
-      settings
+      settings: Settings,
     });
   }
 

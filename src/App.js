@@ -7,7 +7,7 @@ function App() {
 
   function onFrame({
     results, sample, image,
-    landmarks, decodedLandmarks,
+    landmarks, decodedLandmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
     // Set canvas width
@@ -37,6 +37,7 @@ function App() {
           canvasCtx.closePath();
         }
       }
+      const { SIZE } = settings;
       const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
       const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
       canvasCtx.putImageData(leftEyeImage, 0, 0);
