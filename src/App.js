@@ -2,7 +2,7 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import React, { useRef, useEffect } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
-import { decodeLandmarks, MPParts } from "MP";
+import { decodeLandmarks, MPParts, rectFromPoints } from "MP";
 
 function App() {
   const webcamRef = useRef(null);
@@ -61,7 +61,7 @@ function App() {
           0, 0, width, height
         );
 
-        const rgba = ctx.getImageData(0, 0, width, height).data;
+        const rgba = ctx.getImageData(0, 0, ROI.width, ROI.height).data;
         const gray = new Uint8ClampedArray(SIZE * SIZE * 4);
         for (let i = 0; i < SIZE * SIZE; i += 4) {
           const r = rgba[i];
