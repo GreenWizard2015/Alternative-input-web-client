@@ -76,7 +76,9 @@ function App() {
 
       canvasCtx.filter = "grayscale(1)";
       canvasCtx.putImageData(leftEye, 0, 0);
+      canvasCtx.filter = "grayscale(1)";
       canvasCtx.putImageData(rightEye, 32, 0);
+      canvasCtx.filter = "grayscale(1)";
       // get the image data as a Uint8ClampedArray of grayscale values
       const data = canvasCtx.getImageData(0, 0, 64, 32).data;
       console.log(data);
