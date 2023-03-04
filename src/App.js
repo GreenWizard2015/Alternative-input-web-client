@@ -77,7 +77,7 @@ function App() {
           gray[i + 2] = grayValue;
           gray[i + 3] = 255;
         }
-        return ctx.getImageData(0, 0, SIZE, SIZE);
+        return new ImageData(gray, SIZE, SIZE);
       }
 
       const leftEye = extract(
