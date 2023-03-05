@@ -61,7 +61,9 @@ function App() {
   return (
     <>
       <div id="UI">
-        <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
+        <div className="UI-wrapper">
+          <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
+        </div>
       </div>
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas

@@ -25,3 +25,13 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+.UI-wrapper {
+  /* center the UI */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+}

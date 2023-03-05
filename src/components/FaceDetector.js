@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2, minTrackingConfidence: 0.2,
 };
 
+// TODO: fix selection of webcam
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
   const Settings = React.useState({ ...DEFAULT_SETTINGS, ...settings })[0]; // never change
   const webcamRef = useRef(null);
