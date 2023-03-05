@@ -3,7 +3,7 @@ import { decodeLandmarks, grayscale2image } from "utils/MP";
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
-import WebcamSelector from "components/WebcamSelector";
+import UI from "components/UI";
 
 function App() {
   const canvasRef = useRef(null);
@@ -57,14 +57,9 @@ function App() {
   }
 
   const [webcamId, setWebcamId] = React.useState(null);
-
   return (
     <>
-      <div id="UI">
-        <div className="UI-wrapper">
-          <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
-        </div>
-      </div>
+      <UI onWebcamChange={setWebcamId} />
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas
         ref={canvasRef}
