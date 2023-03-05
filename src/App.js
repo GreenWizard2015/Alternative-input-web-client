@@ -8,18 +8,13 @@ import WebcamSelector from "components/WebcamSelector";
 function App() {
   const canvasRef = useRef(null);
 
-  function onResize() {
-    const canvasElement = canvasRef.current;
-    if (!canvasElement) return;
-    canvasElement.width = canvasElement.clientWidth;
-    canvasElement.height = canvasElement.clientHeight;
-  }
-
   function onFrame({
     results, sample, image,
     landmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
+    canvasElement.width = canvasElement.clientWidth;
+    canvasElement.height = canvasElement.clientHeight;
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     // clear canvas by filling it with white color
@@ -65,18 +60,18 @@ function App() {
 
   return (
     <>
-      <FaceDetector onFrame={onFrame} />
+      <div id="UI">
+        <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
+      </div>
+      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas
-        deviceId={webcamId}
         ref={canvasRef}
         id="canvas"
-        onResize={onResize}
         onClick={(e) => {
           e.preventDefault();
           toggleFullscreen(canvasRef.current);
         }}
       />
-      <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
     </>
   );
 }

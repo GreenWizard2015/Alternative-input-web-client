@@ -7,7 +7,8 @@ body {
 }
 
 #root,
-#canvas {
+#canvas,
+#UI {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -15,4 +16,12 @@ body {
   right: 0;
   top: 0;
   bottom: 0;
+}
+
+#UI {
+  z-index: 1;
+  /* center the UI */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

@@ -9,13 +9,6 @@ function WebcamSelector({ onWebcamChange }) {
     [selectedWebcam, onWebcamChange]
   );
 
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      setWebcams(videoDevices);
-    });
-  }, []);
-
   function handleWebcamChange(event) {
     const deviceId = event.target.value;
     setSelectedWebcam(deviceId);
@@ -29,6 +22,8 @@ function WebcamSelector({ onWebcamChange }) {
       setSelectedWebcam(null);
     });
   }
+
+  useEffect(handleRefresh, []); // call handleRefresh on mount
 
   return (
     <div className="webcam-selector">
