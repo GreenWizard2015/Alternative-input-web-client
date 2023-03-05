@@ -21,13 +21,12 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
   // store settings and dont relay on props
   const Settings = React.useMemo(
     () => ({ ...DEFAULT_SETTINGS, ...settings }),
-    (a, b) => true // never update
+    [] // never update..?
   );
 
   function onResults(results) {
     if (!callbackRef.current) return;
 
-    const { videoWidth, videoHeight } = webcamRef.current.video;
     const { SIZE, mode, padding, visibilityThreshold, presenceThreshold } = Settings;
     const sample = results2sample(results, intermediateCanvasRef.current, {
       mode, padding,
@@ -67,7 +66,7 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
       camera.stop();
       faceMesh.close();
     };
-  }, []);
+  }, [Settings, onResults]);
 
   return (
     <>

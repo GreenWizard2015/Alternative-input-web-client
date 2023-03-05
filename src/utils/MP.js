@@ -28,9 +28,9 @@ export const MPParts = {
 
 function _isValidPoint(point, { visibilityThreshold, presenceThreshold }) {
   return true; // consider all points valid
-  if (point.visibility && (point.visibility < visibilityThreshold)) return false;
-  if (point.presence && (point.presence < presenceThreshold)) return false;
-  return true;
+  // if (point.visibility && (point.visibility < visibilityThreshold)) return false;
+  // if (point.presence && (point.presence < presenceThreshold)) return false;
+  // return true;
 }
 
 export function decodeLandmarks(landmarks, {
