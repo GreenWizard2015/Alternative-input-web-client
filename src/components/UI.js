@@ -1,4 +1,4 @@
-// UI component
+import React from 'react';
 
 export default function UI({ onWebcamChange }) {
   const [helpActive, setHelpActive] = React.useState(false);
