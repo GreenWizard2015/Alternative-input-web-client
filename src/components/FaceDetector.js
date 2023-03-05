@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { FaceMesh } from "@mediapipe/face_mesh";
@@ -13,36 +13,35 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2, minTrackingConfidence: 0.2,
 };
 
-export default function FaceDetector({ children, onFrame, ...settings }) {
+export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
+  const Settings = React.useState({ ...DEFAULT_SETTINGS, ...settings })[0]; // never change
   const webcamRef = useRef(null);
   const intermediateCanvasRef = useRef(null);
   const callbackRef = useRef(null);
   useEffect(() => { callbackRef.current = onFrame; }, [onFrame]);
-  // store settings and dont relay on props
-  const Settings = React.useMemo(
-    () => ({ ...DEFAULT_SETTINGS, ...settings }),
-    [] // never update..?
+
+  const onResults = useCallback(
+    (results) => {
+      if (!callbackRef.current) return;
+
+      const { SIZE, mode, padding, visibilityThreshold, presenceThreshold } = Settings;
+      const sample = results2sample(results, intermediateCanvasRef.current, {
+        mode, padding,
+        visibilityThreshold, presenceThreshold,
+        SIZE,
+      });
+
+      const landmarks = sample ? results.multiFaceLandmarks[0] : null;
+      callbackRef.current({
+        results,
+        sample,
+        image: results.image,
+        landmarks,
+        settings: Settings,
+      });
+    },
+    [Settings, callbackRef, intermediateCanvasRef]
   );
-
-  function onResults(results) {
-    if (!callbackRef.current) return;
-
-    const { SIZE, mode, padding, visibilityThreshold, presenceThreshold } = Settings;
-    const sample = results2sample(results, intermediateCanvasRef.current, {
-      mode, padding,
-      visibilityThreshold, presenceThreshold,
-      SIZE,
-    });
-
-    const landmarks = sample ? results.multiFaceLandmarks[0] : null;
-    callbackRef.current({
-      results,
-      sample,
-      image: results.image,
-      landmarks,
-      settings: Settings,
-    });
-  }
 
   useEffect(() => {
     const faceMesh = new FaceMesh({
@@ -66,11 +65,15 @@ export default function FaceDetector({ children, onFrame, ...settings }) {
       camera.stop();
       faceMesh.close();
     };
-  }, [Settings, onResults]);
+  }, [Settings, onResults, deviceId]);
 
+  const videoConstraints = deviceId ? { deviceId: { exact: deviceId } } : undefined;
   return (
     <>
-      <Webcam ref={webcamRef} style={{ display: "none" }} />
+      <Webcam
+        ref={webcamRef} style={{ display: "none" }}
+        videoConstraints={videoConstraints}
+      />
       <canvas ref={intermediateCanvasRef} style={{ display: "none" }} />
     </>
   );

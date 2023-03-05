@@ -1,0 +1,47 @@
+import { useState, useEffect } from 'react';
+
+function WebcamSelector({ onWebcamChange }) {
+  const [webcams, setWebcams] = useState([]);
+  const [selectedWebcam, setSelectedWebcam] = useState(null);
+  // call onWebcamChange when the selected webcam changes
+  useEffect(
+    () => onWebcamChange(selectedWebcam),
+    [selectedWebcam, onWebcamChange]
+  );
+
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      setWebcams(videoDevices);
+    });
+  }, []);
+
+  function handleWebcamChange(event) {
+    const deviceId = event.target.value;
+    setSelectedWebcam(deviceId);
+  }
+
+  function handleRefresh() {
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log(videoDevices);
+      setWebcams(videoDevices);
+      setSelectedWebcam(null);
+    });
+  }
+
+  return (
+    <div className="webcam-selector">
+      <label htmlFor="webcam-select">Select Webcam:</label>
+      <select id="webcam-select" value={selectedWebcam} onChange={handleWebcamChange}>
+        <option value="">--Select--</option>
+        {webcams.map(webcam => (
+          <option key={webcam.deviceId} value={webcam.deviceId}>{webcam.label}</option>
+        ))}
+      </select>
+      <button onClick={handleRefresh}>Refresh</button>
+    </div>
+  );
+}
+
+export default WebcamSelector;

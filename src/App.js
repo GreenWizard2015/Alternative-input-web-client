@@ -3,18 +3,23 @@ import { decodeLandmarks, grayscale2image } from "utils/MP";
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
+import WebcamSelector from "components/WebcamSelector";
 
 function App() {
   const canvasRef = useRef(null);
+
+  function onResize() {
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
+    canvasElement.width = canvasElement.clientWidth;
+    canvasElement.height = canvasElement.clientHeight;
+  }
 
   function onFrame({
     results, sample, image,
     landmarks, settings,
   }) {
     const canvasElement = canvasRef.current;
-    canvasElement.width = canvasElement.clientWidth;
-    canvasElement.height = canvasElement.clientHeight;
-
     const canvasCtx = canvasElement.getContext("2d");
     canvasCtx.save();
     // clear canvas by filling it with white color
@@ -56,17 +61,22 @@ function App() {
     canvasCtx.restore();
   }
 
+  const [webcamId, setWebcamId] = React.useState(null);
+
   return (
     <>
       <FaceDetector onFrame={onFrame} />
       <canvas
+        deviceId={webcamId}
         ref={canvasRef}
         id="canvas"
+        onResize={onResize}
         onClick={(e) => {
           e.preventDefault();
           toggleFullscreen(canvasRef.current);
         }}
       />
+      <WebcamSelector onWebcamChange={(deviceId) => setWebcamId(deviceId)} />
     </>
   );
 }
