@@ -62,8 +62,7 @@ export default function FaceDetector({ children, onFrame, deviceId, ...settings 
 
     camera.start();
     return () => {
-      camera.stop();
-      faceMesh.close();
+      faceMesh.close().then(() => camera.stop());
     };
   }, [Settings, onResults, deviceId]);
 
