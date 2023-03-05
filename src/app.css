@@ -31,7 +31,18 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 
   padding: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 1px solid #222;
+  border-radius: 1rem;
+}
+
+.UI-wrapper button {
+  /* center horizontally */
+  margin: 0 auto;
+  padding: 10px;
+  border: 1px solid #222;
+  border-radius: 1rem;
 }

@@ -9,11 +9,8 @@ export default function UI({ onWebcamChange }) {
 
   const content = helpActive ? (
     <div className="help">
-      <h1>Help</h1>
-      <p>
-        This is a demo of the FaceDetector component. It uses the MediaPipe <br />
-        FaceMesh model to detect facial landmarks in real time.
-      </p>
+      <p>Help</p>
+      <button onClick={() => setHelpActive(false)}>Close</button>
     </div>
   ) : (
     <>
