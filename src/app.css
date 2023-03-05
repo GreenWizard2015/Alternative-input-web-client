@@ -37,6 +37,11 @@ body {
   background-color: rgba(255, 255, 255, 0.75);
   border: 1px solid #222;
   border-radius: 1rem;
+
+  min-width: 30dvw;
+  min-width: 30vw;
+  min-height: 30dvh;
+  min-height: 30vh;
 }
 
 .UI-wrapper button {
@@ -44,5 +49,5 @@ body {
   margin: 0 auto;
   padding: 10px;
   border: 1px solid #222;
-  border-radius: 1rem;
+  border-radius: 5px;
 }

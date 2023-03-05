@@ -59,16 +59,14 @@ function App() {
   const [webcamId, setWebcamId] = React.useState(null);
   return (
     <>
-      <UI onWebcamChange={setWebcamId} />
-      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-      <canvas
-        ref={canvasRef}
-        id="canvas"
-        onClick={(e) => {
-          e.preventDefault();
-          toggleFullscreen(canvasRef.current);
-        }}
+      <UI
+        onWebcamChange={setWebcamId}
+        goFullscreen={() => toggleFullscreen(
+          document.getElementById("root") // app root element
+        )}
       />
+      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
+      <canvas ref={canvasRef} id="canvas" />
     </>
   );
 }

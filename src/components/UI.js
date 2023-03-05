@@ -1,6 +1,7 @@
 import React from 'react';
+import UIHelp from './UIHelp';
 
-export default function UI({ onWebcamChange }) {
+export default function UI({ onWebcamChange, goFullscreen }) {
   const [helpActive, setHelpActive] = React.useState(false);
 
   function showHelp() {
@@ -8,15 +9,16 @@ export default function UI({ onWebcamChange }) {
   }
 
   const content = helpActive ? (
-    <div className="help">
-      <p>Help</p>
-      <button onClick={() => setHelpActive(false)}>Close</button>
-    </div>
+    <UIHelp onClose={() => setHelpActive(false)} />
   ) : (
     <>
       {/* <WebcamSelector onWebcamChange={onWebcamChange} /> */}
+      <p>User:</p>
+      <p>Webcamera:</p>
+      <p>Place:</p>
       <button onClick={showHelp}>Help</button>
       <button>Start</button>
+      <button onClick={goFullscreen}>Fullscreen</button>
     </>
   );
 
