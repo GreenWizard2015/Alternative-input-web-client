@@ -1,7 +1,7 @@
 import React from 'react';
 import UIHelp from './UIHelp';
 
-export default function UI({ onWebcamChange, goFullscreen }) {
+export default function UI({ onWebcamChange, goFullscreen, onStart }) {
   const [helpActive, setHelpActive] = React.useState(false);
 
   function showHelp() {
@@ -17,7 +17,7 @@ export default function UI({ onWebcamChange, goFullscreen }) {
       <p>Webcamera:</p>
       <p>Place:</p>
       <button onClick={showHelp}>Help</button>
-      <button>Start</button>
+      <button onClick={onStart}>Start</button>
       <button onClick={goFullscreen}>Fullscreen</button>
     </>
   );

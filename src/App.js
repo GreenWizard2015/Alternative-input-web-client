@@ -5,22 +5,10 @@ import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
 
-function App() {
-  const canvasRef = useRef(null);
-
-  function onFrame({
-    results, sample, image,
-    landmarks, settings,
-  }) {
-    const canvasElement = canvasRef.current;
-    canvasElement.width = canvasElement.clientWidth;
-    canvasElement.height = canvasElement.clientHeight;
-    const canvasCtx = canvasElement.getContext("2d");
-    canvasCtx.save();
-    // clear canvas by filling it with white color
-    canvasCtx.fillStyle = "white";
-    canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
-
+function onMenuTick() { // move to separate file. "AppModes" folder?
+  return ({ canvas, canvasCtx, frame, goal }) => {
+    /* 
+    fix old code
     // draw image from video stream
     // canvasCtx.drawImage(
     //   image,
@@ -53,18 +41,90 @@ function App() {
       canvasCtx.putImageData(leftEyeImage, 0, 0);
       canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
     }
-    canvasCtx.restore();
+     */
+    return null;
+  };
+}
+
+function App() {
+  const canvasRef = useRef(null);
+  const lastFrame = useRef(null);
+  const goalPosition = useRef(null);
+  const [mode, setMode] = React.useState("menu"); // replace with enum/constant
+
+  // { results, sample, image, landmarks, settings, }
+  function onFrame(frame) {
+    lastFrame.current = frame;
+    if (goalPosition.current !== null) {
+      onTick({
+        canvas: canvasRef.current,
+        canvasCtx: canvasRef.current.getContext("2d"),
+        frame,
+        goal: goalPosition.current,
+        mode,
+      });
+    }
   }
+
+  const onTick = useCallback(
+    () => {
+      // call on mode change? check it
+      switch (mode) {
+        case "menu":
+          return onMenuTick();
+        // case "game":
+        //   return onGameTick();
+        default:
+          throw new Error("Unknown mode: " + mode);
+      }
+    },
+    [mode]
+  );
+
+  const animationFrameId = useRef(null);
+  React.useEffect(() => {
+    animationFrameId.current = requestAnimationFrame(
+      () => {
+        const canvasElement = canvasRef.current;
+        canvasElement.width = canvasElement.clientWidth;
+        canvasElement.height = canvasElement.clientHeight;
+        const canvasCtx = canvasElement.getContext("2d"); // move to ref
+        canvasCtx.save();
+        // clear canvas by filling it with white color
+        canvasCtx.fillStyle = "white";
+        canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+        goalPosition.current = onTick({
+          canvas: canvasElement,
+          canvasCtx: canvasCtx,
+          viewport: {
+            // check if it's correct to use offsetLeft/Top
+            left: canvasElement.offsetLeft,
+            top: canvasElement.offsetTop,
+            width: canvasElement.width,
+            height: canvasElement.height,
+          },
+          frame: lastFrame.current,
+          goal: goalPosition.current,
+        });
+
+        canvasCtx.restore();
+      });
+    return () => { cancelAnimationFrame(animationFrameId.current); };
+  }, [onTick]);
 
   const [webcamId, setWebcamId] = React.useState(null);
   return (
     <>
-      <UI
-        onWebcamChange={setWebcamId}
-        goFullscreen={() => toggleFullscreen(
-          document.getElementById("root") // app root element
-        )}
-      />
+      {('menu' === mode) && (
+        <UI
+          onWebcamChange={setWebcamId}
+          onStart={() => setMode("game")}
+          goFullscreen={() => toggleFullscreen(
+            document.getElementById("root") // app root element
+          )}
+        />
+      )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas ref={canvasRef} id="canvas" />
     </>
