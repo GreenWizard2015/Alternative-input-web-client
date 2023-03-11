@@ -28,13 +28,13 @@ export class AppMode {
         }
     }
 
-    drawTarget({ position, viewport, canvasCtx }) {
+    drawTarget({ position, viewport, canvasCtx, style }) {
         const absolutePosition = makeAbsolute({ position, viewport })
         
         canvasCtx.save();
         canvasCtx.beginPath();
         canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, 10, 10, 0, 0, Math.PI * 2);
-        canvasCtx.fillStyle = "red";
+        canvasCtx.fillStyle = style || 'red';
         canvasCtx.fill();
         canvasCtx.restore();
     }

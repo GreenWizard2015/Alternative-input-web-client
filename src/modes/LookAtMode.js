@@ -36,7 +36,11 @@ export class LookAtMode extends AppMode {
             this._startT = Date.now() / 1000;
         }
 
-        this.drawTarget(this._pos, viewport);
+        this.drawTarget({
+            position: this._pos,
+            viewport,
+            style: this._active ? 'red' : 'gray'
+        });
     }
 
     accept() {
