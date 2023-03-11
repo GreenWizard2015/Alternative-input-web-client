@@ -10,7 +10,6 @@ function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
   gameMode.onRender({ viewport, canvasCtx, goal });
-  console.log(gameMode.accept());
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
