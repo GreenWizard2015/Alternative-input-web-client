@@ -4,6 +4,13 @@ import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
+import { LookAtMode } from "modes/LookAtMode";
+
+function onGameTick({
+  canvas, canvasCtx, viewport, frame, goal, gameMode
+}) {
+  gameMode.onRender(viewport);
+}
 
 function onMenuTick() { // move to separate file. "AppModes" folder?
   return ({ canvas, canvasCtx, frame, goal }) => {
@@ -51,6 +58,7 @@ function App() {
   const lastFrame = useRef(null);
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
+  let gameMode = null;
 
   // { results, sample, image, landmarks, settings, }
   function onFrame(frame) {
@@ -66,14 +74,20 @@ function App() {
     }
   }
 
+  function onKeyDown(event) {
+    if(gameMode) {
+      gameMode.onKeyDown(event);
+    }
+  }
+
   const onTick = useCallback(
-    () => {
+    (data) => {
       // call on mode change? check it
       switch (mode) {
         case "menu":
           return onMenuTick();
-        // case "game":
-        //   return onGameTick();
+        case "game":
+          return onGameTick(data);
         default:
           throw new Error("Unknown mode: " + mode);
       }
@@ -119,14 +133,17 @@ function App() {
       {('menu' === mode) && (
         <UI
           onWebcamChange={setWebcamId}
-          onStart={() => setMode("game")}
+          onStart={() => {
+            setMode("game")
+            gameMode = new LookAtMode({ canvasCtx });
+          }}
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") // app root element
           )}
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-      <canvas ref={canvasRef} id="canvas" />
+      <canvas ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
     </>
   );
 }
