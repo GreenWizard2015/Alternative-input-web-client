@@ -10,11 +10,11 @@ function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
   gameMode.onRender({ viewport, canvasCtx, goal });
+  console.log(gameMode.accept());
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
-function onMenuTick() { // move to separate file. "AppModes" folder?
-  return ({ canvas, canvasCtx, frame, goal }) => {
+function onMenuTick({ canvas, canvasCtx, frame, goal }) { // move to separate file. "AppModes" folder?
     /* 
     fix old code
     // draw image from video stream
@@ -51,7 +51,6 @@ function onMenuTick() { // move to separate file. "AppModes" folder?
     }
      */
     return null;
-  };
 }
 
 function App() {
@@ -65,7 +64,7 @@ function App() {
   function onFrame(frame) {
     lastFrame.current = frame;
     if (goalPosition.current !== null) {
-      // console.log(goalPosition); 
+      console.log(goalPosition.current); 
       // onTick({
       //   canvas: canvasRef.current,
       //   canvasCtx: canvasRef.current.getContext("2d"),
@@ -88,7 +87,7 @@ function App() {
       // call on mode change? check it
       switch (mode) {
         case "menu":
-          return onMenuTick();
+          return onMenuTick(data);
         case "game":
           return onGameTick(data);
         default:

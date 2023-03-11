@@ -46,8 +46,9 @@ export class LookAtMode extends AppMode {
 
     accept() {
         if (this._active) {
-            super.accept();
+            return super.accept();
         }
+        return false;
     }
 
     getGoal() {
