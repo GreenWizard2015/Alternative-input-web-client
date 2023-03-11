@@ -9,7 +9,9 @@ import { LookAtMode } from "modes/LookAtMode";
 function onGameTick({
   canvas, canvasCtx, viewport, frame, goal, gameMode
 }) {
-  gameMode.onRender(viewport);
+  if (gameMode) {
+    gameMode.onRender(viewport);
+  }
 }
 
 function onMenuTick() { // move to separate file. "AppModes" folder?
@@ -58,7 +60,7 @@ function App() {
   const lastFrame = useRef(null);
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
-  let gameMode = null;
+  const [gameMode, setGameMode] = React.useState(null);
 
   // { results, sample, image, landmarks, settings, }
   function onFrame(frame) {
@@ -70,12 +72,13 @@ function App() {
         frame,
         goal: goalPosition.current,
         mode,
+        gameMode
       });
     }
   }
 
   function onKeyDown(event) {
-    if(gameMode) {
+    if (gameMode) {
       gameMode.onKeyDown(event);
     }
   }
@@ -120,6 +123,7 @@ function App() {
           },
           frame: lastFrame.current,
           goal: goalPosition.current,
+          gameMode,
         });
 
         canvasCtx.restore();
@@ -127,16 +131,19 @@ function App() {
     return () => { cancelAnimationFrame(animationFrameId.current); };
   }, [onTick]);
 
+  function startGame() {
+    setMode("game");
+    const canvasCtx = canvasRef.current.getContext('2d');
+    setGameMode(new LookAtMode({ canvasCtx }));
+  }
+
   const [webcamId, setWebcamId] = React.useState(null);
   return (
     <>
       {('menu' === mode) && (
         <UI
           onWebcamChange={setWebcamId}
-          onStart={() => {
-            setMode("game")
-            gameMode = new LookAtMode({ canvasCtx });
-          }}
+          onStart={() => startGame()}
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") // app root element
           )}
