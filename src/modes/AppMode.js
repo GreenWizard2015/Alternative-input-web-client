@@ -1,6 +1,5 @@
 export class AppMode {
-    constructor({ canvasCtx }) {
-        this._canvasCtx = canvasCtx;
+    constructor() {
         this._paused = true;
     }
 
@@ -22,20 +21,21 @@ export class AppMode {
         }
     }
 
-    accept() {
-        // TODO
+    static makeAbsolute({ position, viewport }) {
+        return {
+            x: position.x * viewport.width,
+            y: position.y * viewport.height
+        }
     }
 
-    drawTarget(pos, viewport) {
-        const ctx = this._canvasCtx;
-        const x = pos[0] * viewport.width;
-        const y = pos[1] * viewport.height;
+    drawTarget({ position, viewport, canvasCtx }) {
+        const absolutePosition = makeAbsolute({ position, viewport })
         
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(x, y, 10, 10, 0, 0, Math.PI * 2);
-        ctx.fillStyle = "red";
-        ctx.fill();
-        ctx.restore();
+        canvasCtx.save();
+        canvasCtx.beginPath();
+        canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, 10, 10, 0, 0, Math.PI * 2);
+        canvasCtx.fillStyle = "red";
+        canvasCtx.fill();
+        canvasCtx.restore();
     }
 }
