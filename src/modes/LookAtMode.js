@@ -5,6 +5,7 @@ export class LookAtMode extends AppMode {
         super({ canvasCtx });
         // Maybe constant is better?
         this._visibleT = 5.0;
+        this._pos = [0.5, 0.5];
     }
 
     _next() {

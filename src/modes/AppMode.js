@@ -11,8 +11,15 @@ export class AppMode {
     }
 
     onRender(viewport) {
+        const ctx = this._canvasCtx;
+        
         // Drawing properly centered text is hard T-T
-        this._canvasCtx.drawText('Paused', 100, 100);
+        if(this._paused) {
+            ctx.save();
+            ctx.fillStyle = "red";
+            this._canvasCtx.fillText('Paused', 100, 100);
+            ctx.restore();
+        }
     }
 
     accept() {

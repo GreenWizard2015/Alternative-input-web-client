@@ -66,14 +66,14 @@ function App() {
   function onFrame(frame) {
     lastFrame.current = frame;
     if (goalPosition.current !== null) {
-      onTick({
-        canvas: canvasRef.current,
-        canvasCtx: canvasRef.current.getContext("2d"),
-        frame,
-        goal: goalPosition.current,
-        mode,
-        gameMode
-      });
+      // onTick({
+      //   canvas: canvasRef.current,
+      //   canvasCtx: canvasRef.current.getContext("2d"),
+      //   frame,
+      //   goal: goalPosition.current,
+      //   mode,
+      //   gameMode
+      // });
     }
   }
 
@@ -100,59 +100,60 @@ function App() {
 
   const animationFrameId = useRef(null);
   React.useEffect(() => {
-    animationFrameId.current = requestAnimationFrame(
-      () => {
-        const canvasElement = canvasRef.current;
-        canvasElement.width = canvasElement.clientWidth;
-        canvasElement.height = canvasElement.clientHeight;
-        const canvasCtx = canvasElement.getContext("2d"); // move to ref
-        canvasCtx.save();
-        // clear canvas by filling it with white color
-        canvasCtx.fillStyle = "white";
-        canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+    const f = () => {
+      const canvasElement = canvasRef.current;
+      canvasElement.width = canvasElement.clientWidth;
+      canvasElement.height = canvasElement.clientHeight;
+      const canvasCtx = canvasElement.getContext("2d"); // move to ref
+      canvasCtx.save();
+      // clear canvas by filling it with white color
+      canvasCtx.fillStyle = "white";
+      canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
-        goalPosition.current = onTick({
-          canvas: canvasElement,
-          canvasCtx: canvasCtx,
-          viewport: {
-            // check if it's correct to use offsetLeft/Top
-            left: canvasElement.offsetLeft,
-            top: canvasElement.offsetTop,
-            width: canvasElement.width,
-            height: canvasElement.height,
-          },
-          frame: lastFrame.current,
-          goal: goalPosition.current,
-          gameMode,
-        });
-
-        canvasCtx.restore();
+      goalPosition.current = onTick({
+        canvas: canvasElement,
+        canvasCtx: canvasCtx,
+        viewport: {
+          // check if it's correct to use offsetLeft/Top
+          left: canvasElement.offsetLeft,
+          top: canvasElement.offsetTop,
+          width: canvasElement.width,
+          height: canvasElement.height,
+        },
+        frame: lastFrame.current,
+        goal: goalPosition.current,
+        gameMode,
       });
-    return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick]);
+      canvasCtx.restore();
+      animationFrameId.current = requestAnimationFrame(f);
+    };
+  animationFrameId.current = requestAnimationFrame(f);
 
-  function startGame() {
-    setMode("game");
-    const canvasCtx = canvasRef.current.getContext('2d');
-    setGameMode(new LookAtMode({ canvasCtx }));
-  }
+  return () => { cancelAnimationFrame(animationFrameId.current); };
+}, [onTick]);
 
-  const [webcamId, setWebcamId] = React.useState(null);
-  return (
-    <>
-      {('menu' === mode) && (
-        <UI
-          onWebcamChange={setWebcamId}
-          onStart={() => startGame()}
-          goFullscreen={() => toggleFullscreen(
-            document.getElementById("root") // app root element
-          )}
-        />
-      )}
-      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-      <canvas ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
-    </>
-  );
+function startGame() {
+  setMode("game");
+  const canvasCtx = canvasRef.current.getContext('2d');
+  setGameMode(new LookAtMode({ canvasCtx }));
+}
+
+const [webcamId, setWebcamId] = React.useState(null);
+return (
+  <>
+    {('menu' === mode) && (
+      <UI
+        onWebcamChange={setWebcamId}
+        onStart={() => startGame()}
+        goFullscreen={() => toggleFullscreen(
+          document.getElementById("root") // app root element
+        )}
+      />
+    )}
+    <FaceDetector deviceId={webcamId} onFrame={onFrame} />
+    <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
+  </>
+);
 }
 
 export default App;
