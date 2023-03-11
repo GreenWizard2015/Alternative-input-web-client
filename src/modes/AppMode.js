@@ -29,7 +29,7 @@ export class AppMode {
     }
 
     drawTarget({ position, viewport, canvasCtx, style }) {
-        const absolutePosition = makeAbsolute({ position, viewport })
+        const absolutePosition = AppMode.makeAbsolute({ position, viewport });
         
         canvasCtx.save();
         canvasCtx.beginPath();
