@@ -10,7 +10,7 @@ function onGameTick({
   canvas, canvasCtx, viewport, frame, goal, gameMode
 }) {
   if (gameMode) {
-    gameMode.onRender(viewport);
+    gameMode.onRender({ viewport, canvasCtx });
   }
 }
 
@@ -127,33 +127,33 @@ function App() {
       canvasCtx.restore();
       animationFrameId.current = requestAnimationFrame(f);
     };
-  animationFrameId.current = requestAnimationFrame(f);
+    animationFrameId.current = requestAnimationFrame(f);
 
-  return () => { cancelAnimationFrame(animationFrameId.current); };
-}, [onTick]);
+    return () => { cancelAnimationFrame(animationFrameId.current); };
+  }, [onTick, gameMode]);
 
-function startGame() {
-  setMode("game");
-  const canvasCtx = canvasRef.current.getContext('2d');
-  setGameMode(new LookAtMode({ canvasCtx }));
-}
+  function startGame() {
+    setMode("game");
+    const canvasCtx = canvasRef.current.getContext('2d');
+    setGameMode(new LookAtMode({ canvasCtx }));
+  }
 
-const [webcamId, setWebcamId] = React.useState(null);
-return (
-  <>
-    {('menu' === mode) && (
-      <UI
-        onWebcamChange={setWebcamId}
-        onStart={() => startGame()}
-        goFullscreen={() => toggleFullscreen(
-          document.getElementById("root") // app root element
-        )}
-      />
-    )}
-    <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-    <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
-  </>
-);
+  const [webcamId, setWebcamId] = React.useState(null);
+  return (
+    <>
+      {('menu' === mode) && (
+        <UI
+          onWebcamChange={setWebcamId}
+          onStart={() => startGame()}
+          goFullscreen={() => toggleFullscreen(
+            document.getElementById("root") // app root element
+          )}
+        />
+      )}
+      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
+      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
+    </>
+  );
 }
 
 export default App;

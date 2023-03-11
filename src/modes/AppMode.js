@@ -9,16 +9,18 @@ export class AppMode {
         }
     }
 
-    onRender(viewport) {
-        const ctx = this._canvasCtx;
-        
+    onRender({ canvasCtx }) {
         // Drawing properly centered text is hard T-T
         if(this._paused) {
-            ctx.save();
-            ctx.fillStyle = "red";
-            this._canvasCtx.fillText('Paused', 100, 100);
-            ctx.restore();
+            canvasCtx.save();
+            canvasCtx.fillStyle = "red";
+            canvasCtx.fillText('Paused', 100, 100);
+            canvasCtx.restore();
         }
+    }
+
+    accept() {
+        return !this._paused;
     }
 
     static makeAbsolute({ position, viewport }) {
@@ -27,6 +29,7 @@ export class AppMode {
             y: position.y * viewport.height
         }
     }
+
 
     drawTarget({ position, viewport, canvasCtx, style }) {
         const absolutePosition = AppMode.makeAbsolute({ position, viewport });

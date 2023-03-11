@@ -1,15 +1,15 @@
 import { AppMode } from "./AppMode"
 
 export class LookAtMode extends AppMode {
-    constructor({ canvasCtx }) {
-        super({ canvasCtx });
+    constructor() {
+        super();
         // Maybe constant is better?
         this._visibleT = 5.0;
-        this._pos = [0.5, 0.5];
+        this._pos = { x: 0.5, y: 0.5 };
     }
 
     _next() {
-        this._pos = [Math.random(), Math.random()];
+        this._pos = { x: Math.random(), y: Math.random() };
         this._active = false;
         this._startT = null;
     }
@@ -18,18 +18,18 @@ export class LookAtMode extends AppMode {
         super.onKeyDown(event);
         // Notice: Numpad keys won't work. If this's unwanted behaviour
         // use event.key instead.
-        if(event.code = 'ArrowRight') {
+        if (event.code == 'ArrowRight') {
             this._active = true;
         }
     }
 
-    onRender(viewport) {
-        super.onRender(viewport);
+    onRender({ viewport, canvasCtx }) {
+        super.onRender({ viewport, canvasCtx });
 
         // onRender = on_tick + on_render
-        if(this._active) {
+        if (this._active) {
             const dT = Date.now() / 1000 - this._startT;
-            if(this._visibleT < dT) {
+            if (this._visibleT < dT) {
                 this._next();
             }
         } else {
@@ -39,12 +39,13 @@ export class LookAtMode extends AppMode {
         this.drawTarget({
             position: this._pos,
             viewport,
+            canvasCtx,
             style: this._active ? 'red' : 'gray'
         });
     }
 
     accept() {
-        if(this._active) {
+        if (this._active) {
             super.accept();
         }
     }
