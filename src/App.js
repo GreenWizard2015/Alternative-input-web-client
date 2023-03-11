@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { decodeLandmarks, grayscale2image } from "utils/MP";
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
