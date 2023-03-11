@@ -28,12 +28,12 @@ export class LookAtMode extends AppMode {
 
         // onRender = on_tick + on_render
         if(this._active) {
-            const dT = Date.now() - this._startT;
+            const dT = Date.now() / 1000 - this._startT;
             if(this._visibleT < dT) {
                 this._next();
             }
         } else {
-            this._startT = Date.now();
+            this._startT = Date.now() / 1000;
         }
 
         this.drawTarget(this._pos, viewport);

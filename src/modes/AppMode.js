@@ -32,7 +32,8 @@ export class AppMode {
         const y = pos[1] * viewport.height;
         
         ctx.save();
-        ctx.beginPath(x, y, 100, 100, 0, Math.PI * 2);
+        ctx.beginPath();
+        ctx.ellipse(x, y, 10, 10, 0, 0, Math.PI * 2);
         ctx.fillStyle = "red";
         ctx.fill();
         ctx.restore();
