@@ -65,6 +65,7 @@ function App() {
   function onFrame(frame) {
     lastFrame.current = frame;
     if (goalPosition.current !== null) {
+      // console.log(goalPosition); 
       // onTick({
       //   canvas: canvasRef.current,
       //   canvasCtx: canvasRef.current.getContext("2d"),
