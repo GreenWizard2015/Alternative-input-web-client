@@ -7,11 +7,10 @@ import UI from "components/UI";
 import { LookAtMode } from "modes/LookAtMode";
 
 function onGameTick({
-  canvas, canvasCtx, viewport, frame, goal, gameMode
+  canvasCtx, viewport, goal, gameMode
 }) {
-  if (gameMode) {
-    gameMode.onRender({ viewport, canvasCtx });
-  }
+  gameMode.onRender({ viewport, canvasCtx, goal });
+  return gameMode.getGoal();
 }
 
 function onMenuTick() { // move to separate file. "AppModes" folder?

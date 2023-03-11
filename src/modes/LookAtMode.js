@@ -49,4 +49,8 @@ export class LookAtMode extends AppMode {
             super.accept();
         }
     }
+
+    getGoal() {
+        return this._pos;
+    }
 }
