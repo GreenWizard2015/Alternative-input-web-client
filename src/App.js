@@ -10,7 +10,7 @@ function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
   gameMode.onRender({ viewport, canvasCtx, goal });
-  return gameMode.getGoal();
+  return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
 function onMenuTick() { // move to separate file. "AppModes" folder?
