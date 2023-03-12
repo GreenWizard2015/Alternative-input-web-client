@@ -17,6 +17,7 @@ export class MoveToGoal extends AppMode {
 
         const vec = normalize(subtract(goal, pos));
         const deltaT = (Date.now() - this._startT) / 1000;
+        this._startT = Date.now();
         const res = add(pos, multipleScalar(vec, this._speed * deltaT))
         this._pos = AppMode.makeRelative({
             position: res,
@@ -29,7 +30,7 @@ export class MoveToGoal extends AppMode {
         }
 
         this.drawTarget({
-            position: pos,
+            position: this._pos,
             viewport, canvasCtx
         });
     }

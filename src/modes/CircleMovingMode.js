@@ -7,7 +7,7 @@ export class CircleMovingMode extends MoveToGoal {
 
         this._transitionT = 2;
         this._maxLevel = 25;
-        this._level = 0;
+        this._level = 5;
         this._reset();
     }
 
@@ -21,7 +21,7 @@ export class CircleMovingMode extends MoveToGoal {
         }
 
         this._transitionStart = null;
-        if (self._path.length <= 0) {
+        if (this._path.length <= 0) {
             this._reset();
             return this._goal;
         }
@@ -63,7 +63,7 @@ export class CircleMovingMode extends MoveToGoal {
             { x: -1, y: 1 }
         ];
         const lvl = (this._maxLevel - this._level) / (2 * this._maxLevel);
-        [this._pos, this._goal, ..._path] = path.map(point => addScalar(multipleScalar(point, lvl), 0.5));
+        [this._pos, this._goal, ...this._path] = path.map(point => addScalar(multipleScalar(point, lvl), 0.5));
         this._active = false;
         this._transitionStart = null;
     }

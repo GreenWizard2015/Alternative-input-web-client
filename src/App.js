@@ -7,6 +7,7 @@ import UI from "components/UI";
 import { LookAtMode } from "modes/LookAtMode";
 import { CornerMode } from "modes/CornerMode";
 import { SplineMode } from "modes/SplineMode";
+import { CircleMovingMode } from "modes/CircleMovingMode";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -134,7 +135,7 @@ function App() {
 
   function startGame() {
     setMode("game");
-    setGameMode(new SplineMode());
+    setGameMode(new CircleMovingMode());
   }
 
   const [webcamId, setWebcamId] = React.useState(null);
