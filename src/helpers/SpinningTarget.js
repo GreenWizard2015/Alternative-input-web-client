@@ -67,7 +67,7 @@ export class SpinningTarget {
 
         const pos = add(mainPos, rotate(vec, this._angle));
         const R = N + 4;
-        canvasCtx.fillStyle = 'gray';
+        canvasCtx.fillStyle = 'red';
         canvasCtx.beginPath();
         canvasCtx.ellipse(pos.x, pos.y, R, R, 0, 0, 2 * Math.PI);
         canvasCtx.fill();
