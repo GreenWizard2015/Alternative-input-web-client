@@ -89,7 +89,7 @@ export class SplineMode extends AppMode {
         let pos = this._getPoint(this._T / this._maxT);
         pos = {
             x: clip(pos.x, 0.0, 1.0),
-            x: clip(pos.x, 0.0, 1.0)
+            y: clip(pos.y, 0.0, 1.0)
         };
         this._target.onRender({ viewport, canvasCtx, goal: pos });
         this._pos = this._target.getGoal();
