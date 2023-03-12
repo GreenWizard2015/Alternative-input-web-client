@@ -44,7 +44,7 @@ export class SpinningTarget {
         this._radius = 0.001 + Math.cos(T) * 0.015;
         this._angle = (this._angle + .1) % (2 * Math.PI);
         const mainPos = AppMode.makeAbsolute({ position: goal, viewport });
-        const vec = { x: viewport * this._radius, y: 0 };
+        const vec = { x: viewport.width * this._radius, y: 0 };
         const rotatedVec = rotate(vec, this._angle);
         this._pos = {
             x: (mainPos.x + rotatedVec.x) / viewport.width,
