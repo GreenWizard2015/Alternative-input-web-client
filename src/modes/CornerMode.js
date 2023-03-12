@@ -4,6 +4,12 @@ function mod(x, y) {
     return ((x % y) + y) % y;
 }
 
+function clip(value, min, max) {
+    if(value < min) return min;
+    if(value > max) return max;
+    return value;
+}
+
 export class CornerMode extends AppMode {
     constructor() {
         super();
@@ -26,8 +32,8 @@ export class CornerMode extends AppMode {
         const R = Math.abs(Math.sin(dT * 4)) * this._radius;
         const currentCorner = this._CORNERS[this._cornerId];
         const goal = {
-            x: currentCorner[0] + Math.cos(dT) * R,
-            y: currentCorner[1] + Math.sin(dT) * R
+            x: clip(currentCorner[0] + Math.cos(dT) * R, 0.0, 1.0),
+            y: clip(currentCorner[1] + Math.sin(dT) * R, 0.0, 1.0)
         }
         this._target.onRender({ viewport, canvasCtx, goal })
         this._pos = this._target.getGoal();
