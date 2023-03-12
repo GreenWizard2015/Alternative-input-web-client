@@ -39,7 +39,7 @@ function calcDistance(points) {
     // I don't care about performance
     return points.slice(1).reduce(({ acc, lp }, point) => {
         return {
-            acc: acc.concat([distance(lp, point)]),
+            acc: acc.concat([distance(lp, point) + acc[acc.length - 1]]),
             lp: point
         }
     }, { acc: [0], lp: points[0] }).acc;
@@ -69,7 +69,7 @@ export class SplineMode extends AppMode {
         const T = fullDistance / speed;
         this._maxT = clip(T, 20, 40);
         distance = distance.map(dist => dist / fullDistance);
-        
+
         const shift = extend ? distance[N - 1] : 0.0;
         const splines = {
             x: new Spline(distance, points.map(point => point.x)),
@@ -84,10 +84,13 @@ export class SplineMode extends AppMode {
     onRender({ viewport, canvasCtx }) {
         super.onRender({ viewport, canvasCtx });
         this._T = (Date.now() - this._startT) / 1000;
-        if(this._maxT < this._T) this._newSpline();
+        if (this._maxT < this._T) this._newSpline();
 
         let pos = this._getPoint(this._T / this._maxT);
-        pos = clip(pos, 0.0, 1.0);
+        pos = {
+            x: clip(pos.x, 0.0, 1.0),
+            x: clip(pos.x, 0.0, 1.0)
+        };
         this._target.onRender({ viewport, canvasCtx, goal: pos });
         this._pos = this._target.getGoal();
     }
