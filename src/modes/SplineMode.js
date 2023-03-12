@@ -1,3 +1,4 @@
+import Spline from "cubic-spline";
 import { SpinningTarget } from "helpers/SpinningTarget";
 import { AppMode } from "./AppMode";
 
@@ -64,14 +65,16 @@ export class SplineMode extends AppMode {
         const fullDistance = distance[distance.length - 1];
         const T = fullDistance / speed;
         this._maxT = clip(T, 20, 40);
-        distance = distance.map(({ x, y }) => ({ x: x / fullDistance, y: y / fullDistance }));
+        distance = distance.map(dist => dist / fullDistance);
         
         const shift = extend ? distance[N - 1] : 0.0;
-        // const splines = ... TODO
-        const splines = [];
+        const splines = {
+            x: new Spline(distance, points.map(point => point.x)),
+            y: new Spline(distance, points.map(point => point.y))
+        }
         this._getPoint = t => ({
-            x: splines[0](t * (1 - shift) + shift),
-            y: splines[1](t * (1 - shift) + shift)
+            x: splines.x.at(t * (1 - shift) + shift),
+            y: splines.y.at(t * (1 - shift) + shift)
         })
     }
 
