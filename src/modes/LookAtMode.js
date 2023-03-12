@@ -18,7 +18,7 @@ export class LookAtMode extends AppMode {
         super.onKeyDown(event);
         // Notice: Numpad keys won't work. If this's unwanted behaviour
         // use event.key instead.
-        if (event.code == 'ArrowRight') {
+        if (event.code === 'ArrowRight') {
             this._active = true;
         }
     }
