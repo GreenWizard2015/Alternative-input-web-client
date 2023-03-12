@@ -38,7 +38,7 @@ export class SpinningTarget {
     }
 
     onRender({ viewport, canvasCtx, goal }) {
-        this._T = Date.now() - this._startT;
+        this._T = (Date.now() - this._startT) / 1000;
         // this._pos = goal;
         const T = (this._T / this._TScale) % (2 * Math.PI);
         this._radius = 0.001 + Math.cos(T) * 0.015;
