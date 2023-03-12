@@ -27,6 +27,13 @@ export function multipleScalar({ x, y }, z) {
     }
 }
 
+export function addScalar({ x, y }, z) {
+    return {
+        x: x + z,
+        y: y + z
+    }
+}
+
 export function distance({ x, y }) {
     return Math.sqrt(x ** 2 + y ** 2);
 }

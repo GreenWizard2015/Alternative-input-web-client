@@ -25,7 +25,7 @@ export class MoveToGoal extends AppMode {
 
         const dist = distance(subtract(pos, goal));
         if(dist < 3.0) {
-            this._goal = this._nextGoal();
+            this._goal = this._nextGoal(this._goal);
         }
 
         this.drawTarget({
