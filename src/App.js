@@ -5,6 +5,7 @@ import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
 import { LookAtMode } from "modes/LookAtMode";
+import { CornerMode } from "modes/CornerMode";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -132,8 +133,7 @@ function App() {
 
   function startGame() {
     setMode("game");
-    const canvasCtx = canvasRef.current.getContext('2d');
-    setGameMode(new LookAtMode({ canvasCtx }));
+    setGameMode(new CornerMode());
   }
 
   const [webcamId, setWebcamId] = React.useState(null);

@@ -1,3 +1,4 @@
+import { SpinningTarget } from "helpers/SpinningTarget";
 import { AppMode } from "./AppMode";
 
 function mod(x, y) {
@@ -14,7 +15,7 @@ export class CornerMode extends AppMode {
     constructor() {
         super();
         this._pos = { x: 0.5, y: 0.5 };
-        // this._target = ... TODO
+        this._target = new SpinningTarget();
         this._startT = Date.now();
         this._radius = 0.05;
         this._CORNERS = [
@@ -42,12 +43,12 @@ export class CornerMode extends AppMode {
     onKeyDown(event) {
         super.onKeyDown(event);
 
-        if (event.code == 'ArrowLeft') {
+        if (event.code === 'ArrowLeft') {
             this._paused = true;
             this._cornerId = mod(this._cornerId - 1, this._CORNERS.length);
         }
 
-        if (event.code == 'ArrowRight') {
+        if (event.code === 'ArrowRight') {
             this._paused = true;
             this._cornerId = mod(this._cornerId + 1, this._CORNERS.length);
         }

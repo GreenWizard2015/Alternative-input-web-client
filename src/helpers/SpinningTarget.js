@@ -77,7 +77,7 @@ export class SpinningTarget {
             y: clip(pos.y, 0, viewport.height)
         }
         if (!allclose(clp.x, pos.x) && allclose(clp.y, pos.y)) {
-            asCtx.beginPath();
+            canvasCtx.beginPath();
             canvasCtx.ellipse(clp.x, clp.y, R, R, 0, 0, 2 * Math.PI);
             canvasCtx.fill();
         }
