@@ -14,6 +14,7 @@ export function subtract({ x: x1, y: y1 }, { x: x2, y: y2 }) {
 
 export function normalize({ x, y }) {
     const dist = Math.sqrt(x ** 2 + y ** 2);
+    if(dist === 0) return { x, y };
     return {
         x: x / dist,
         y: y / dist
