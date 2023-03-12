@@ -4,11 +4,6 @@ import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
-import { LookAtMode } from "modes/LookAtMode";
-import { CornerMode } from "modes/CornerMode";
-import { SplineMode } from "modes/SplineMode";
-import { CircleMovingMode } from "modes/CircleMovingMode";
-import { SpinningTarget } from "helpers/SpinningTarget";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
