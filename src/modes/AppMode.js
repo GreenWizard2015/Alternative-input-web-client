@@ -30,6 +30,13 @@ export class AppMode {
         }
     }
 
+    static makeRelative({ position, viewport }) {
+        return {
+            x: position.x / viewport.width,
+            y: position.y / viewport.height
+        }
+    }
+
 
     drawTarget({ position, viewport, canvasCtx, style }) {
         const absolutePosition = AppMode.makeAbsolute({ position, viewport });
