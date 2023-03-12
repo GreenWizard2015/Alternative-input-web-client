@@ -74,9 +74,15 @@ function App() {
     }
   }
 
-  function onKeyDown(event) {
-    if (gameMode) {
-      gameMode.onKeyDown(event);
+  function onKeyDown(exit) {
+    return (event) => {
+      if (event.code === 'Escape') {
+        exit();
+        return;
+      }
+      if (gameMode) {
+        gameMode.onKeyDown(event);
+      }
     }
   }
 
@@ -147,7 +153,7 @@ function App() {
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown} />
+      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => setMode('menu'))} />
     </>
   );
 }
