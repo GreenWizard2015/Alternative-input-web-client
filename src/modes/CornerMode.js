@@ -29,7 +29,7 @@ export class CornerMode extends AppMode {
 
     onRender({ viewport, canvasCtx }) {
         super.onRender({ viewport, canvasCtx });
-        const dT = Date.now() - this._startT;
+        const dT = (Date.now() - this._startT) / 1000;
         const R = Math.abs(Math.sin(dT * 4)) * this._radius;
         const currentCorner = this._CORNERS[this._cornerId];
         const goal = {
