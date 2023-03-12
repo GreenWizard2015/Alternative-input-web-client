@@ -17,7 +17,10 @@ function uniform(min, max) {
 function generatePoints(count) {
     const res = new Array(count);
     for (let i = 0; i < count; i++) {
-        res[i] = gaussian(0.5, 0.5);
+        res[i] = {
+            x: gaussian(0.5, 0.5),
+            y: gaussian(0.5, 0.5)
+        };
     }
     return res;
 }

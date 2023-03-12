@@ -6,6 +6,7 @@ import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
 import { LookAtMode } from "modes/LookAtMode";
 import { CornerMode } from "modes/CornerMode";
+import { SplineMode } from "modes/SplineMode";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -133,7 +134,7 @@ function App() {
 
   function startGame() {
     setMode("game");
-    setGameMode(new CornerMode());
+    setGameMode(new SplineMode());
   }
 
   const [webcamId, setWebcamId] = React.useState(null);
