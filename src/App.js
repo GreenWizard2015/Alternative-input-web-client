@@ -134,9 +134,9 @@ function App() {
     return () => { cancelAnimationFrame(animationFrameId.current); };
   }, [onTick, gameMode]);
 
-  function startGame() {
+  function startGame(mode) {
     setMode("game");
-    setGameMode(new SplineMode());
+    setGameMode(mode);
   }
 
   const [webcamId, setWebcamId] = React.useState(null);
@@ -145,7 +145,7 @@ function App() {
       {('menu' === mode) && (
         <UI
           onWebcamChange={setWebcamId}
-          onStart={() => startGame()}
+          onStart={startGame}
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") // app root element
           )}
