@@ -1,5 +1,4 @@
 import React, { useCallback, useRef } from "react";
-import { decodeLandmarks, grayscale2image } from "utils/MP"; // TODO: fix all build warnings
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
@@ -58,23 +57,30 @@ function App() {
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
   const [gameMode, setGameMode] = React.useState(null);
-  const [userId, setUserId] = React.useState(null);
-  const [placeId, setPlaceId] = React.useState(null);
+  const [userId, setUserId] = React.useState(null); // TODO: replace with useRef! Due to onFrame
+  const [placeId, setPlaceId] = React.useState(null); // TODO: replace with useRef! Due to onFrame
 
-  function onFrame(frame) {
-    lastFrame.current = frame;
-    if (goalPosition.current !== null) {
-      console.log(goalPosition.current);
-      // onTick({
-      //   canvas: canvasRef.current,
-      //   canvasCtx: canvasRef.current.getContext("2d"),
-      //   frame,
-      //   goal: goalPosition.current,
-      //   mode,
-      //   gameMode
-      // });
-    }
-  }
+  const onFrame = useCallback(
+    function (frame) {
+      lastFrame.current = frame;
+      if (goalPosition.current !== null) {
+        const canvasElement = canvasRef.current;
+        const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
+        const screenId = 1; // TODO: hash of canvasRect. Sha128?
+        const sample = {
+          time: frame.time,
+          leftEye: frame.leftEye,
+          rightEye: frame.rightEye,
+          points: frame.points,
+          goal: goalPosition.current,
+          userId: userId.current,
+          placeId: placeId.current,
+          screenId
+        };
+        // TODO: store sample and send to server if needed or when returning to menu
+      }
+    }, [canvasRef, lastFrame, goalPosition, userId, placeId]
+  );
 
   function onKeyDown(exit) {
     return (event) => {
