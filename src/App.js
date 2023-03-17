@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { decodeLandmarks, grayscale2image } from "utils/MP";
+import { decodeLandmarks, grayscale2image } from "utils/MP"; // TODO: fix all build warnings
 import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
@@ -12,43 +12,44 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
+// TODO: move to separate file AND make it work
 function onMenuTick({ canvas, canvasCtx, frame, goal }) { // move to separate file. "AppModes" folder?
-    /* 
-    fix old code
-    // draw image from video stream
-    // canvasCtx.drawImage(
-    //   image,
-    //   0, 0,
-    //   canvasElement.width, canvasElement.height
-    // );
+  /* 
+  fix old code
+  // draw image from video stream
+  // canvasCtx.drawImage(
+  //   image,
+  //   0, 0,
+  //   canvasElement.width, canvasElement.height
+  // );
 
-    if (landmarks) {
-      const { visibilityThreshold, presenceThreshold } = settings;
-      const decodedLandmarks = decodeLandmarks(landmarks, {
-        height: canvasElement.height, width: canvasElement.width,
-        visibilityThreshold, presenceThreshold,
-      });
-      canvasCtx.strokeStyle = "red";
-      canvasCtx.lineWidth = 2;
-      // draw landmarks points
-      for (const key in decodedLandmarks) {
-        if (decodedLandmarks.hasOwnProperty(key)) {
-          const element = decodedLandmarks[key];
-          const { x, y } = element;
-          canvasCtx.beginPath();
-          canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-          canvasCtx.stroke();
-          canvasCtx.closePath();
-        }
+  if (landmarks) {
+    const { visibilityThreshold, presenceThreshold } = settings;
+    const decodedLandmarks = decodeLandmarks(landmarks, {
+      height: canvasElement.height, width: canvasElement.width,
+      visibilityThreshold, presenceThreshold,
+    });
+    canvasCtx.strokeStyle = "red";
+    canvasCtx.lineWidth = 2;
+    // draw landmarks points
+    for (const key in decodedLandmarks) {
+      if (decodedLandmarks.hasOwnProperty(key)) {
+        const element = decodedLandmarks[key];
+        const { x, y } = element;
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+        canvasCtx.stroke();
+        canvasCtx.closePath();
       }
-      const { SIZE } = settings;
-      const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
-      const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
-      canvasCtx.putImageData(leftEyeImage, 0, 0);
-      canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
     }
-     */
-    return null;
+    const { SIZE } = settings;
+    const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
+    const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
+    canvasCtx.putImageData(leftEyeImage, 0, 0);
+    canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
+  }
+   */
+  return null;
 }
 
 function App() {
@@ -57,12 +58,13 @@ function App() {
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
   const [gameMode, setGameMode] = React.useState(null);
+  const [userId, setUserId] = React.useState(null);
+  const [placeId, setPlaceId] = React.useState(null);
 
-  // { results, sample, image, landmarks, settings, }
   function onFrame(frame) {
     lastFrame.current = frame;
     if (goalPosition.current !== null) {
-      console.log(goalPosition.current); 
+      console.log(goalPosition.current);
       // onTick({
       //   canvas: canvasRef.current,
       //   canvasCtx: canvasRef.current.getContext("2d"),
@@ -150,6 +152,9 @@ function App() {
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") // app root element
           )}
+
+          userId={userId} onUserChange={setUserId}
+          placeId={placeId} onPlaceChange={setPlaceId}
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />

@@ -4,6 +4,8 @@ import { LookAtMode } from 'modes/LookAtMode';
 import { SplineMode } from 'modes/SplineMode';
 import React from 'react';
 
+// TODO: Implement help before start
+// TODO: Write help for each mode (what to do, how to do it, keyboard shortcuts, etc.)
 export default function UIStart({ onStart }) {
     return (
         <div className="ui-help">
