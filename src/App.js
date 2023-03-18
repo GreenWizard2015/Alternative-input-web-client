@@ -57,8 +57,16 @@ function App() {
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
   const [gameMode, setGameMode] = React.useState(null);
-  const [userId, setUserId] = React.useState(null); // TODO: replace with useRef! Due to onFrame
-  const [placeId, setPlaceId] = React.useState(null); // TODO: replace with useRef! Due to onFrame
+  const userRef = useRef(null);
+  const placeIdRef = useRef(null);
+
+  function setUserRef(user) {
+    userRef.current = user;
+  }
+
+  function setPlaceIdRef(placeId) {
+    placeIdRef.current = placeId
+  }
 
   const onFrame = useCallback(
     function (frame) {
@@ -73,13 +81,13 @@ function App() {
           rightEye: frame.rightEye,
           points: frame.points,
           goal: goalPosition.current,
-          userId: userId.current,
-          placeId: placeId.current,
+          userId: userRef.current,
+          placeId: placeIdRef.current,
           screenId
         };
         // TODO: store sample and send to server if needed or when returning to menu
       }
-    }, [canvasRef, lastFrame, goalPosition, userId, placeId]
+    }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef]
   );
 
   function onKeyDown(exit) {
@@ -159,8 +167,8 @@ function App() {
             document.getElementById("root") // app root element
           )}
 
-          userId={userId} onUserChange={setUserId}
-          placeId={placeId} onPlaceChange={setPlaceId}
+          userId={userRef} onUserChange={setUserRef}
+          placeId={placeIdRef} onPlaceChange={setPlaceIdRef}
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
