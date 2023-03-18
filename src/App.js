@@ -4,6 +4,18 @@ import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
 
+const MAX_SAMPLES = 100;
+let samples = [];
+
+async function storeSample(sample) {
+  samples.push(sample)
+  if (sample >= MAX_SAMPLES) {
+    const oldSamples = samples;
+    samples = [];
+    // await send to server
+  }
+}
+
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
@@ -85,7 +97,7 @@ function App() {
           placeId: placeIdRef.current,
           screenId
         };
-        // TODO: store sample and send to server if needed or when returning to menu
+        storeSample(sample);
       }
     }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef]
   );
