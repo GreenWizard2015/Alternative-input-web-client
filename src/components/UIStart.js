@@ -2,17 +2,54 @@ import { CircleMovingMode } from 'modes/CircleMovingMode';
 import { CornerMode } from 'modes/CornerMode';
 import { LookAtMode } from 'modes/LookAtMode';
 import { SplineMode } from 'modes/SplineMode';
-import React from 'react';
+import React, { useState } from 'react';
 
 // TODO: Implement help before start
 // TODO: Write help for each mode (what to do, how to do it, keyboard shortcuts, etc.)
 export default function UIStart({ onStart }) {
-    return (
-        <div className="ui-help">
-            <button onClick={() => onStart(new LookAtMode())}>Look At Mode</button>
-            <button onClick={() => onStart(new CornerMode())}>Corner Mode</button>
-            <button onClick={() => onStart(new SplineMode())}>Spline Mode</button>
-            <button onClick={() => onStart(new CircleMovingMode())}>Circle Moving Mode</button>
-        </div>
-    );
+    const [helpMode, setHelpMode] = useState('');
+    switch (helpMode) {
+        case 'lookAt':
+            return (
+                <div className="ui-help">
+                    LookAt mode help
+                    <button onClick={() => onStart(new LookAtMode())}>Start</button>
+                </div>
+            )
+
+        case 'corner':
+            return (
+                <div className="ui-help">
+                    Corner mode help
+                    <button onClick={() => onStart(new CornerMode())}>Start</button>
+                </div>
+            )
+
+        case 'spline':
+            return (
+                <div className="ui-help">
+                    Spline mode help
+                    <button onClick={() => onStart(new SplineMode())}>Start</button>
+                </div>
+            )
+
+        case 'circleMoving':
+            return (
+                <div className="ui-help">
+                    CircleMoving mode help
+                    <button onClick={() => onStart(new CircleMovingMode())}>Start</button>
+                </div>
+            )
+
+        default:
+            return (
+                <div className="ui-help">
+                    <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
+                    <button onClick={() => setHelpMode('corner')}>Corner Mode</button>
+                    <button onClick={() => setHelpMode('spline')}>Spline Mode</button>
+                    <button onClick={() => setHelpMode('circleMoving')}>Circle Moving Mode</button>
+                </div>
+            );
+    }
+
 }
