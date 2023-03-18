@@ -3,6 +3,7 @@ import FaceDetector from "components/FaceDetector";
 import "./app.css";
 import { toggleFullscreen } from "utils/canvas";
 import UI from "components/UI";
+import { cyrb53 } from "utils/cyrb53";
 
 const MAX_SAMPLES = 100;
 let samples = [];
@@ -86,7 +87,7 @@ function App() {
       if (goalPosition.current !== null) {
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
-        const screenId = 1; // TODO: hash of canvasRect. Sha128?
+        const screenId = cyrb53(JSON.stringify(canvasRect));
         const sample = {
           time: frame.time,
           leftEye: frame.leftEye,
