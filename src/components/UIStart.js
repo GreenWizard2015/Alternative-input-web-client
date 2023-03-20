@@ -40,7 +40,12 @@ export default function UIStart({ onStart }) {
         case 'spline':
             return (
                 <div className="ui-help">
-                    Spline mode help
+                    <h1>Spline mode</h1>
+                    <p>In this mode you should concentrate on the red circle and ignore others.</p>
+                    <ul>
+                        <li>Esc - return to main menu</li>
+                        <li>P / Enter - toggle pause</li>
+                    </ul>
                     <button onClick={() => onStart(new SplineMode())}>Start</button>
                 </div>
             )
