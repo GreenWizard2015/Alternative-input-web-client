@@ -4,7 +4,6 @@ import { LookAtMode } from 'modes/LookAtMode';
 import { SplineMode } from 'modes/SplineMode';
 import React, { useState } from 'react';
 
-// TODO: Write help for each mode (what to do, how to do it, keyboard shortcuts, etc.)
 export default function UIStart({ onStart }) {
     const [helpMode, setHelpMode] = useState('');
     switch (helpMode) {
