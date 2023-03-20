@@ -12,7 +12,12 @@ export default function UIStart({ onStart }) {
             return (
                 <div className="ui-help">
                     <h1>LookAt mode</h1>
-                    <p>In this mode you should press right arrow on keyboard and then concentrate on the red circle. When it turn gray, you can press right arrow and start it again. Esc - return to the main menu.</p>
+                    <p>In this mode you should concentrate on the red circle. Grey circle means inactive mode.</p>
+                    <ul>
+                        <li>Right Arrow - start next challenge</li>
+                        <li>Esc - return to main menu</li>
+                        <li>P / Enter - toggle pause</li>
+                    </ul>
                     <button onClick={() => onStart(new LookAtMode())}>Start</button>
                 </div>
             )
