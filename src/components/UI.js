@@ -38,7 +38,7 @@ export default function UI({
             <p>User: {user.name}<button>{validateUser(user) ? 'Edit' : 'Create'}</button></p>
             <p>Place: {place.name}<button>{validatePlace(user) ? 'Edit' : 'Create'}</button></p>
             <button onClick={showHelp}>Help</button>
-            <button onClick={() => setSubMenu('start')} disabled={!validateUser(user)}>Start</button>
+            <button onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
             <button onClick={goFullscreen}>Fullscreen</button>
           </>
         );
