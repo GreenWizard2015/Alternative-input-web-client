@@ -58,7 +58,7 @@ export default function UIStart({ onStart }) {
                     <ul>
                         <li>Arrow Right - start new challenge</li>
                         <li>Arrow Up - increase level of difficulty</li>
-                        <li>Arrow Right - decrease level of difficulty</li>
+                        <li>Arrow Down - decrease level of difficulty</li>
                         <li>Esc - return to main menu</li>
                         <li>P / Enter - toggle pause</li>
                     </ul>
