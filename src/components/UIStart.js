@@ -26,7 +26,13 @@ export default function UIStart({ onStart }) {
             return (
                 <div className="ui-help">
                     <h1>Corner mode</h1>
-                    <p></p>
+                    <p>In this mode you should concentrate on the red circle and ignore others.</p>
+                    <ul>
+                        <li>Right Arrow - go to next corner</li>
+                        <li>Right Arrow - go to previous corner</li>
+                        <li>Esc - return to main menu</li>
+                        <li>P / Enter - toggle pause</li>
+                    </ul>
                     <button onClick={() => onStart(new CornerMode())}>Start</button>
                 </div>
             )
