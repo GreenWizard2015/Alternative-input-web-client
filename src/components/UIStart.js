@@ -53,7 +53,15 @@ export default function UIStart({ onStart }) {
         case 'circleMoving':
             return (
                 <div className="ui-help">
-                    CircleMoving mode help
+                    <h1>CircleMoving mode</h1>
+                    <p>In this mode you should concentrate on the red circle while it moving.</p>
+                    <ul>
+                        <li>Arrow Right - start new challenge</li>
+                        <li>Arrow Up - increase level of difficulty</li>
+                        <li>Arrow Right - decrease level of difficulty</li>
+                        <li>Esc - return to main menu</li>
+                        <li>P / Enter - toggle pause</li>
+                    </ul>
                     <button onClick={() => onStart(new CircleMovingMode())}>Start</button>
                 </div>
             )
