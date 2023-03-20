@@ -1,4 +1,4 @@
-// TODO: move to separate file AND make it work
+// TODO: make it work
 export function onMenuTick({ canvas, canvasCtx, frame, goal }) {
   /*
   fix old code
