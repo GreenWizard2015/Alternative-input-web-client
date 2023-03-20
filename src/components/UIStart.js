@@ -11,7 +11,8 @@ export default function UIStart({ onStart }) {
         case 'lookAt':
             return (
                 <div className="ui-help">
-                    LookAt mode help
+                    <h1>LookAt mode</h1>
+                    <p>In this mode you should press right arrow on keyboard and then concentrate on the red circle. When it turn gray, you can press right arrow and start it again. Esc - return to the main menu.</p>
                     <button onClick={() => onStart(new LookAtMode())}>Start</button>
                 </div>
             )
@@ -19,7 +20,8 @@ export default function UIStart({ onStart }) {
         case 'corner':
             return (
                 <div className="ui-help">
-                    Corner mode help
+                    <h1>Corner mode</h1>
+                    <p></p>
                     <button onClick={() => onStart(new CornerMode())}>Start</button>
                 </div>
             )
