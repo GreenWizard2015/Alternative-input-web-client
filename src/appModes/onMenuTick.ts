@@ -11,15 +11,11 @@ export function onMenuTick({ canvas, canvasCtx, frame, goal, canvasElement, sett
     canvasCtx.strokeStyle = "red";
     canvasCtx.lineWidth = 2;
     // draw landmarks points
-    for (const key in decodedLandmarks) {
-      if (decodedLandmarks.hasOwnProperty(key)) {
-        const element = decodedLandmarks[key];
-        const { x, y } = element;
-        canvasCtx.beginPath();
-        canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
-        canvasCtx.stroke();
-        canvasCtx.closePath();
-      }
+    for (const { x, y } of decodedLandmarks) {
+      canvasCtx.beginPath();
+      canvasCtx.arc(x, y, 2, 0, 3 * Math.PI);
+      canvasCtx.stroke();
+      canvasCtx.closePath();
     }
     const { SIZE } = settings;
     const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
