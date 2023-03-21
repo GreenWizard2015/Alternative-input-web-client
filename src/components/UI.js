@@ -20,63 +20,58 @@ export default function UI({
     setSubMenu('help')
   }
 
-  const content = (() => {
-    // TODO: use if statements instead of switch
-    switch (subMenu) {
-      case 'help':
-        return <UIHelp onClose={() => setSubMenu('')} />
-      case 'start':
-        return <UIStart onStart={onStart} />
-      case 'user':
-        return <>
-          <div>
-            <span>Enter user name </span>
-            <input value={tempName} onInput={e => setTempName(e.target.value)} />
-          </div>
-          <div>
-            <button onClick={() => {
-              setUser({ name: tempName, uuid: crypto.randomUUID() })
-              setSubMenu('')
-            }}>Ok</button>
-            <button onClick={() => {
-              setTempName('')
-              setSubMenu('')
-            }}>Cancel</button>
-          </div>
-        </>
-      case 'place':
-        return <>
-          <div>
-            <span>Enter place name </span>
-            <input value={tempName} onInput={e => setTempName(e.target.value)} />
-          </div>
-          <div>
-            <button onClick={() => {
-              setPlace({ name: tempName, uuid: crypto.randomUUID() })
-              setSubMenu('')
-            }}>Ok</button>
-            <button onClick={() => {
-              setTempName('')
-              setSubMenu('')
-            }}>Cancel</button>
-          </div>
-        </>
-      default:
-        return (
-          <>
-            {/*
-            <p>Webcamera:</p>
-            <WebcamSelector onWebcamChange={onWebcamChange} /> 
-          */}
-            <p>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></p>
-            <p>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></p>
-            <button onClick={showHelp}>Help</button>
-            <button onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
-            <button onClick={goFullscreen}>Fullscreen</button>
-          </>
-        );
-    }
-  })();
+  let content = null;
+  if ('help' == subMenu) {
+    content = <UIHelp onClose={() => setSubMenu('')} />
+  } else if ('start' == subMenu) {
+    content = <UIStart onStart={onStart} />
+  } else if ('user' == subMenu) {
+    content = <>
+      <div>
+        <span>Enter user name </span>
+        <input value={tempName} onInput={e => setTempName(e.target.value)} />
+      </div>
+      <div>
+        <button onClick={() => {
+          setUser({ name: tempName, uuid: crypto.randomUUID() })
+          setSubMenu('')
+        }}>Ok</button>
+        <button onClick={() => {
+          setTempName('')
+          setSubMenu('')
+        }}>Cancel</button>
+      </div>
+    </>
+  } else if ('place' == subMenu) {
+    content = <>
+      <div>
+        <span>Enter place name </span>
+        <input value={tempName} onInput={e => setTempName(e.target.value)} />
+      </div>
+      <div>
+        <button onClick={() => {
+          setPlace({ name: tempName, uuid: crypto.randomUUID() })
+          setSubMenu('')
+        }}>Ok</button>
+        <button onClick={() => {
+          setTempName('')
+          setSubMenu('')
+        }}>Cancel</button>
+      </div>
+    </>
+  } else {
+    content = <>
+      {/*
+      <p>Webcamera:</p>
+      <WebcamSelector onWebcamChange={onWebcamChange} /> 
+    */}
+      <p>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></p>
+      <p>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></p>
+      <button onClick={showHelp}>Help</button>
+      <button onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
+      <button onClick={goFullscreen}>Fullscreen</button>
+    </>
+  }
 
   return (
     <div id="UI">
