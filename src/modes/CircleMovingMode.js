@@ -1,4 +1,4 @@
-import { addScalar, multipleScalar } from "helpers/pointOperations";
+import { addScalar, multipleScalar } from "../helpers/pointOperations";
 import { MoveToGoal } from "./MoveToGoal";
 
 export class CircleMovingMode extends MoveToGoal {

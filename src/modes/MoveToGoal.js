@@ -1,4 +1,4 @@
-import { add, distance, multipleScalar, normalize, subtract } from "helpers/pointOperations";
+import { add, distance, multipleScalar, normalize, subtract } from "../helpers/pointOperations";
 import { AppMode } from "./AppMode";
 
 export class MoveToGoal extends AppMode {

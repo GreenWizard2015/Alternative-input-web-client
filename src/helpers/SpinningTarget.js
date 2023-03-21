@@ -1,4 +1,4 @@
-import { AppMode } from "modes/AppMode";
+import { AppMode } from "../modes/AppMode";
 
 function uniformRandom(min, max) {
     return min + Math.random() * max;

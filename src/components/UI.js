@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocalStorageState } from 'utils/hooks';
+import { useLocalStorageState } from '../utils/hooks';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
 

@@ -1,9 +1,9 @@
 import React, { useCallback, useRef } from "react";
-import FaceDetector from "components/FaceDetector";
+import FaceDetector from "./components/FaceDetector";
 import "./app.css";
-import { toggleFullscreen } from "utils/canvas";
-import UI from "components/UI";
-import { cyrb53 } from "utils/cyrb53";
+import { toggleFullscreen } from "./utils/canvas";
+import UI from "./components/UI";
+import { cyrb53 } from "./utils/cyrb53";
 import { onMenuTick } from "./appModes/onMenuTick";
 
 const MAX_SAMPLES = 100;

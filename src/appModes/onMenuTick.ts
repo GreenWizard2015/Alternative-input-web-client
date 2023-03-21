@@ -1,11 +1,11 @@
-import { decodeLandmarks, grayscale2image } from "utils/MP";
+import { decodeLandmarks, grayscale2image } from "../utils/MP";
 
 // TODO: make it work
-export function onMenuTick({ canvas, canvasCtx, frame, goal, canvasElement, settings, sample }) {
+export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }) {
   if (frame.landmarks) {
-    const { visibilityThreshold, presenceThreshold } = settings;
+    const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
-      height: canvasElement.height, width: canvasElement.width,
+      height, width,
       visibilityThreshold, presenceThreshold,
     });
     canvasCtx.strokeStyle = "red";
@@ -17,9 +17,9 @@ export function onMenuTick({ canvas, canvasCtx, frame, goal, canvasElement, sett
       canvasCtx.stroke();
       canvasCtx.closePath();
     }
-    const { SIZE } = settings;
-    const leftEyeImage = grayscale2image(sample.leftEye, SIZE);
-    const rightEyeImage = grayscale2image(sample.rightEye, SIZE);
+    const { SIZE } = frame.settings;
+    const leftEyeImage = grayscale2image(frame.leftEye, SIZE);
+    const rightEyeImage = grayscale2image(frame.rightEye, SIZE);
     canvasCtx.putImageData(leftEyeImage, 0, 0);
     canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
   }

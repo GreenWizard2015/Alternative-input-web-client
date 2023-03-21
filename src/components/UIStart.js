@@ -1,7 +1,7 @@
-import { CircleMovingMode } from 'modes/CircleMovingMode';
-import { CornerMode } from 'modes/CornerMode';
-import { LookAtMode } from 'modes/LookAtMode';
-import { SplineMode } from 'modes/SplineMode';
+import { CircleMovingMode } from '../modes/CircleMovingMode';
+import { CornerMode } from '../modes/CornerMode';
+import { LookAtMode } from '../modes/LookAtMode';
+import { SplineMode } from '../modes/SplineMode';
 import React, { useState } from 'react';
 
 export default function UIStart({ onStart }) {
