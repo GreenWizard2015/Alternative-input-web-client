@@ -1,7 +1,7 @@
 import { decodeLandmarks, grayscale2image } from "../utils/MP";
 
 // TODO: make it work
-export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }) {
+export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }: any) {
   if (frame.landmarks) {
     const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
