@@ -14,6 +14,16 @@ const DEFAULT_SETTINGS = {
 };
 
 // TODO: fix selection of webcam
+// "BindingError: Cannot pass deleted object as a pointer of type SolutionWasm*
+// at BindingError.<anonymous> (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:136500)
+// at new BindingError (eval at createNamedFunction (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:135394), <anonymous>:4:34)
+// at throwBindingError (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:138077)
+// at RegisteredPointer.nonConstNoSmartPtrRawPointerToWireType [as toWireType] (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:152806)
+// at SolutionWasm.SolutionWasm$send [as send] (eval at new_ (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:161510), <anonymous>:7:28)
+// at pa.h (http://localhost:3000/static/js/bundle.js:5402:17)
+// at sa (http://localhost:3000/static/js/bundle.js:3751:17)
+// at ta.next (http://localhost:3000/static/js/bundle.js:3777:64)
+// at g (http://localhost:3000/static/js/bundle.js:4642:15)"
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [ settings ]); // never change
   const webcamRef = useRef(null);

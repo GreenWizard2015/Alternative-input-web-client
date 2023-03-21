@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 function WebcamSelector({ onWebcamChange }) {
   const [webcams, setWebcams] = useState([]);
-  const [selectedWebcam, setSelectedWebcam] = useState(null);
+  const [selectedWebcam, setSelectedWebcam] = useState('');
   // call onWebcamChange when the selected webcam changes
   useEffect(
     () => onWebcamChange(selectedWebcam),
@@ -19,7 +19,7 @@ function WebcamSelector({ onWebcamChange }) {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       console.log(videoDevices);
       setWebcams(videoDevices);
-      setSelectedWebcam(null);
+      setSelectedWebcam('');
     });
   }
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocalStorageState } from '../utils/hooks';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
+import WebcamSelector from './WebcamSelector';
 
 const validateUser = ({ name, uuid }) => name.length > 0 && uuid.length > 0
 const validatePlace = validateUser
@@ -21,11 +22,11 @@ export default function UI({
   }
 
   let content = null;
-  if ('help' == subMenu) {
+  if ('help' === subMenu) {
     content = <UIHelp onClose={() => setSubMenu('')} />
-  } else if ('start' == subMenu) {
+  } else if ('start' === subMenu) {
     content = <UIStart onStart={onStart} />
-  } else if ('user' == subMenu) {
+  } else if ('user' === subMenu) {
     content = <>
       <div>
         <span>Enter user name </span>
@@ -42,7 +43,7 @@ export default function UI({
         }}>Cancel</button>
       </div>
     </>
-  } else if ('place' == subMenu) {
+  } else if ('place' === subMenu) {
     content = <>
       <div>
         <span>Enter place name </span>
@@ -61,10 +62,8 @@ export default function UI({
     </>
   } else {
     content = <>
-      {/*
       <p>Webcamera:</p>
-      <WebcamSelector onWebcamChange={onWebcamChange} /> 
-    */}
+      <WebcamSelector onWebcamChange={onWebcamChange} />
       <p>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></p>
       <p>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></p>
       <button onClick={showHelp}>Help</button>
