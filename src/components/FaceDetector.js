@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS = {
 
 // TODO: fix selection of webcam
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
-  const Settings = React.useState({ ...DEFAULT_SETTINGS, ...settings })[0]; // never change
+  const Settings = { ...DEFAULT_SETTINGS, ...settings }; // never change
   const webcamRef = useRef(null);
   const intermediateCanvasRef = useRef(null);
   const callbackRef = useRef(null);
