@@ -1,7 +1,10 @@
 import { decodeLandmarks, grayscale2image } from "../utils/MP";
 
-// TODO: make it work
 export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }) {
+  if(frame == null) {
+    // TODO: Smth strange. Probably cam is not working
+    return null;
+  }
   if (frame.landmarks) {
     const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
@@ -18,8 +21,8 @@ export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }) {
       canvasCtx.closePath();
     }
     const { SIZE } = frame.settings;
-    const leftEyeImage = grayscale2image(frame.leftEye, SIZE);
-    const rightEyeImage = grayscale2image(frame.rightEye, SIZE);
+    const leftEyeImage = grayscale2image(frame.sample.leftEye, SIZE);
+    const rightEyeImage = grayscale2image(frame.sample.rightEye, SIZE);
     canvasCtx.putImageData(leftEyeImage, 0, 0);
     canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
   }
