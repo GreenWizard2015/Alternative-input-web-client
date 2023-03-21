@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
 import { FaceMesh } from "@mediapipe/face_mesh";
@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS = {
 
 // TODO: fix selection of webcam
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
-  const Settings = { ...DEFAULT_SETTINGS, ...settings }; // never change
+  const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [ settings ]); // never change
   const webcamRef = useRef(null);
   const intermediateCanvasRef = useRef(null);
   const callbackRef = useRef(null);
