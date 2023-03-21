@@ -2,7 +2,7 @@ import { decodeLandmarks, grayscale2image } from "../utils/MP";
 
 export function onMenuTick({ viewport: { width, height }, canvasCtx, frame }) {
   if(frame == null) {
-    // TODO: Smth strange. Probably cam is not working
+    // Cam not working probably
     return null;
   }
   if (frame.landmarks) {
