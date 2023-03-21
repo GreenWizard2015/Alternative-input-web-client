@@ -26,25 +26,26 @@ export const MPParts = {
   ],
 };
 
-function _isValidPoint(point, { visibilityThreshold, presenceThreshold }) {
+type Point = { x: number, y: number }
+
+function _isValidPoint(point: Point, { visibilityThreshold, presenceThreshold }) {
   return true; // consider all points valid
   // if (point.visibility && (point.visibility < visibilityThreshold)) return false;
   // if (point.presence && (point.presence < presenceThreshold)) return false;
   // return true;
 }
 
-export function decodeLandmarks(landmarks, {
+type decodedLandmarksArgs = { width: number, height: number, visibilityThreshold?: number, presenceThreshold?: number }
+export function decodeLandmarks(landmarks: Point[], {
   height, width, visibilityThreshold = 0.5, presenceThreshold = 0.5,
-}) {
-  const points = {};
-  for (let idx = 0; idx < landmarks.length; idx++) {
-    const mark = landmarks[idx];
-    if (!_isValidPoint(mark, { visibilityThreshold, presenceThreshold })) continue;
+}: decodedLandmarksArgs) {
+  const points = landmarks
+    .filter(mark => _isValidPoint(mark, { visibilityThreshold, presenceThreshold }))
+    .map(mark => ({
+      x: Math.floor(mark.x * width),
+      y: Math.floor(mark.y * height)
+    }))
 
-    const x_px = Math.floor(mark.x * width);
-    const y_px = Math.floor(mark.y * height);
-    points[idx] = { x: x_px, y: y_px, };
-  }
   return points;
 }
 
