@@ -67,19 +67,11 @@ export default function UIStart({ onStart }) {
 
         default:
             return (
-                <div className="ui-help">
-                    <div>
-                        <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
-                    </div>
-                    <div>
-                        <button onClick={() => setHelpMode('corner')}>Corner Mode</button>
-                    </div>
-                    <div>
-                        <button onClick={() => setHelpMode('spline')}>Spline Mode</button>
-                    </div>
-                    <div>
-                        <button onClick={() => setHelpMode('circleMoving')}>Circle Moving Mode</button>
-                    </div>
+                <div className="ui-start">
+                    <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
+                    <button onClick={() => setHelpMode('corner')}>Corner Mode</button>
+                    <button onClick={() => setHelpMode('spline')}>Spline Mode</button>
+                    <button onClick={() => setHelpMode('circleMoving')}>Circle Moving Mode</button>
                 </div>
             );
     }

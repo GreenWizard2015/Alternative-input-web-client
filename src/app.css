@@ -51,3 +51,39 @@ body {
   border: 1px solid #222;
   border-radius: 5px;
 }
+
+.ui-start {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  align-items: stretch;
+}
+
+.ui-start > button {
+  margin: inherit;
+  background: none;
+  border: none;
+  border-left: .5rem solid #000;
+  border-radius: 0;
+  text-align: left;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+.ui-start > button::after {
+  content: "";
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-out;
+  width: 0%;
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+
+.ui-start > button:hover::after {
+  background: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
