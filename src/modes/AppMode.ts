@@ -1,15 +1,20 @@
+type Viewport = { width: number, height: number }
+type Position = { x: number, y: number }
+
 export class AppMode {
+    _paused: boolean;
+
     constructor() {
         this._paused = true;
     }
 
-    onKeyDown(event) {
+    onKeyDown(event: KeyboardEvent) {
         if (['KeyP', 'Enter'].includes(event.code)) {
             this._paused = !this._paused;
         }
     }
 
-    onRender({ canvasCtx, viewport }) {
+    onRender({ canvasCtx, viewport }: { canvasCtx: CanvasRenderingContext2D, viewport: Viewport }) {
         // Drawing properly centered text is hard T-T
         if (this._paused) {
             this.drawText({ text: 'Paused', viewport, canvasCtx });
@@ -20,14 +25,14 @@ export class AppMode {
         return !this._paused;
     }
 
-    static makeAbsolute({ position, viewport }) {
+    static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {
         return {
             x: position.x * viewport.width,
             y: position.y * viewport.height
         }
     }
 
-    static makeRelative({ position, viewport }) {
+    static makeRelative({ position, viewport }: { position: Position, viewport: Viewport }) {
         return {
             x: position.x / viewport.width,
             y: position.y / viewport.height
@@ -35,7 +40,7 @@ export class AppMode {
     }
 
 
-    drawTarget({ position, viewport, canvasCtx, style }) {
+    drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style: string }) {
         const absolutePosition = AppMode.makeAbsolute({ position, viewport });
 
         canvasCtx.save();
@@ -46,15 +51,16 @@ export class AppMode {
         canvasCtx.restore();
     }
 
-    drawText({ text, viewport, canvasCtx }) {
+    drawText({ text, viewport, canvasCtx }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D }) {
         canvasCtx.save();
-        canvasCtx.font = '48px serif';
+        canvasCtx.font = '48px Roboto';
         canvasCtx.fillStyle = 'red';
+        canvasCtx.textBaseline = 'middle';
         const size = canvasCtx.measureText(text);
         canvasCtx.fillText(
             text,
             (viewport.width - size.width) / 2,
-            (viewport.height - 48) / 2
+            (viewport.height) / 2
         );
         canvasCtx.restore();
     }
