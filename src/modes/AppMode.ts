@@ -1,8 +1,17 @@
 type Viewport = { width: number, height: number }
 type Position = { x: number, y: number }
 
+const TRANSITION_TIME = 100;
+
+function clamp(val: number, min: number, max: number) {
+    if(val < min) return min
+    if(val > max) return max
+    return val
+}
+
 export class AppMode {
     _paused: boolean;
+    _timeToggledPaused: number = 0;
 
     constructor() {
         this._paused = true;
@@ -11,13 +20,29 @@ export class AppMode {
     onKeyDown(event: KeyboardEvent) {
         if (['KeyP', 'Enter'].includes(event.code)) {
             this._paused = !this._paused;
+            this._timeToggledPaused = Date.now()
         }
     }
 
-    onRender({ canvasCtx, viewport }: { canvasCtx: CanvasRenderingContext2D, viewport: Viewport }) {
-        // Drawing properly centered text is hard T-T
-        if (this._paused) {
-            this.drawText({ text: 'Paused', viewport, canvasCtx });
+    onRender() {
+        // Does nothing
+    }
+
+    onOverlay({ canvasCtx, viewport }: { canvasCtx: CanvasRenderingContext2D, viewport: Viewport }) {
+        // Transition
+        const transition = clamp((Date.now() - this._timeToggledPaused) / TRANSITION_TIME, 0, 1)
+        const realTransition = this._paused ? transition : 1 - transition
+        const easedTransition = realTransition // Maybe add some easing
+
+        if (easedTransition > 0) {
+            canvasCtx.save()
+            canvasCtx.fillStyle = `rgba(0, 0, 0, ${0.5 * easedTransition})`
+            canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
+            this.drawText({
+                text: 'Paused', viewport, canvasCtx, color: 'white',
+                style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
+            });
+            canvasCtx.restore()
         }
     }
 
@@ -40,7 +65,7 @@ export class AppMode {
     }
 
 
-    drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style: string }) {
+    drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style?: string }) {
         const absolutePosition = AppMode.makeAbsolute({ position, viewport });
 
         canvasCtx.save();
@@ -51,10 +76,10 @@ export class AppMode {
         canvasCtx.restore();
     }
 
-    drawText({ text, viewport, canvasCtx }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D }) {
+    drawText({ text, viewport, canvasCtx, color, style }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, color?: string, style?:string }) {
         canvasCtx.save();
-        canvasCtx.font = '48px Roboto';
-        canvasCtx.fillStyle = 'red';
+        canvasCtx.font = style || '48px Roboto';
+        canvasCtx.fillStyle = color || 'red';
         canvasCtx.textBaseline = 'middle';
         const size = canvasCtx.measureText(text);
         canvasCtx.fillText(

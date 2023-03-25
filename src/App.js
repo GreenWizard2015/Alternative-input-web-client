@@ -22,6 +22,7 @@ function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
   gameMode.onRender({ viewport, canvasCtx, goal });
+  gameMode.onOverlay({ viewport, canvasCtx, goal });
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
