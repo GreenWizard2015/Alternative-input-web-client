@@ -62,10 +62,10 @@ export default function UI({
     </>
   } else {
     content = <>
-      <p>Webcamera:</p>
+      <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />
-      <p>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></p>
-      <p>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></p>
+      <div>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></div>
+      <div>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></div>
       <button onClick={showHelp}>Help</button>
       <button onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
       <button onClick={goFullscreen}>Fullscreen</button>
