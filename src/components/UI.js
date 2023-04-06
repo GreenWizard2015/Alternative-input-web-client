@@ -35,6 +35,7 @@ export default function UI({
       <div>
         <button onClick={() => {
           setUser({ name: tempName, uuid: crypto.randomUUID() })
+          setTempName('')
           setSubMenu('')
         }}>Ok</button>
         <button onClick={() => {
@@ -52,6 +53,7 @@ export default function UI({
       <div>
         <button onClick={() => {
           setPlace({ name: tempName, uuid: crypto.randomUUID() })
+          setTempName('')
           setSubMenu('')
         }}>Ok</button>
         <button onClick={() => {
@@ -64,11 +66,11 @@ export default function UI({
     content = <>
       <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />
-      <div>User: {user.name}<button onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></div>
-      <div>Place: {place.name}<button onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></div>
-      <button onClick={showHelp}>Help</button>
-      <button onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
-      <button onClick={goFullscreen}>Fullscreen</button>
+      <div className='flex w100'>User: {user.name}<button className='flex-grow m5' onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></div>
+      <div className='flex w100'>Place: {place.name}<button className='flex-grow m5' onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></div>
+      <button className='w100' onClick={showHelp}>Help</button>
+      <button className='w100' onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
+      <button className='w100' onClick={goFullscreen}>Fullscreen</button>
     </>
   }
 

@@ -103,3 +103,26 @@ body {
 .webcam-selector > select {
   flex-grow: 1;
 }
+
+.w100 {
+  width: 100%;
+}
+
+.m5 {
+  margin: 5px !important;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.flew-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
