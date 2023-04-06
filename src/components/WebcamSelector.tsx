@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 function WebcamSelector({ onWebcamChange }) {
-  const [webcams, setWebcams] = useState([]);
+  const [webcams, setWebcams] = useState<MediaDeviceInfo[]>([]);
   const [selectedWebcam, setSelectedWebcam] = useState('');
   // call onWebcamChange when the selected webcam changes
   useEffect(
