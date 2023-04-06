@@ -48,11 +48,10 @@ body {
 }
 
 .UI-wrapper button {
-  /* center horizontally */
-  margin: 0 auto;
-  padding: 10px;
   border: 1px solid #222;
   border-radius: 5px;
+  margin: 5px auto;
+  padding: 5px;
 }
 
 .ui-start {
