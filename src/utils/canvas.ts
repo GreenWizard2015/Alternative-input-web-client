@@ -25,7 +25,7 @@ export function disableFullscreen() {
 export function toggleFullscreen(canvas: HTMLCanvasElement, isFullscreen?: boolean) {
   const trueIsFullscreen = isFullscreen ?? document.fullscreenElement !== canvas;
 
-  if (isFullscreen) {
+  if (trueIsFullscreen) {
     enableFullscreen(canvas);
   } else {
     disableFullscreen();
