@@ -11,10 +11,15 @@ let samples = [];
 
 async function storeSample(sample) {
   samples.push(sample)
-  if (sample >= MAX_SAMPLES) {
+  if (samples.length >= MAX_SAMPLES) {
     const oldSamples = samples;
     samples = [];
-    // await send to server
+    await fetch('http://host1768516.hostland.pro/AI/upload.php', {
+      body: new URLSearchParams([
+        ['chunk', JSON.stringify(oldSamples)]
+      ]),
+      method: 'POST'
+    })
   }
 }
 
