@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocalStorageState } from '../utils/hooks';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
@@ -16,6 +16,14 @@ export default function UI({
   const [user, setUser] = useLocalStorageState('user', { name: '', uuid: '' })
   const [place, setPlace] = useLocalStorageState('place', { name: '', uuid: '' })
   const [tempName, setTempName] = useState('')
+
+  useEffect(() => {
+    onUserChange(user)
+  }, [ user, onUserChange ])
+
+  useEffect(() => {
+    onPlaceChange(place)
+  }, [ place, onPlaceChange ])
 
   function showHelp() {
     setSubMenu('help')

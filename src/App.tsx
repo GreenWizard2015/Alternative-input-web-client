@@ -5,11 +5,33 @@ import { toggleFullscreen } from "./utils/canvas";
 import UI from "./components/UI";
 import { cyrb53 } from "./utils/cyrb53";
 import { onMenuTick } from "./appModes/onMenuTick";
+import { AppMode } from "modes/AppMode";
+
+type UUIDed = {
+  name: string,
+  uuid: string
+}
+
+type Position = {
+  x: number,
+  y: number
+}
+
+type Sample = {
+  time: number,
+  leftEye: Uint8ClampedArray,
+  rightEye: Uint8ClampedArray,
+  points: Float32Array,
+  goal: Position,
+  userId: string,
+  placeId: string,
+  screenId: number
+}
 
 const MAX_SAMPLES = 100;
-let samples = [];
+let samples: Sample[] = [];
 
-async function storeSample(sample) {
+async function storeSample(sample: Sample) {
   samples.push(sample)
   if (samples.length >= MAX_SAMPLES) {
     const oldSamples = samples;
@@ -32,37 +54,37 @@ function onGameTick({
 }
 
 function App() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef(null);
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
-  const [gameMode, setGameMode] = React.useState(null);
-  const userRef = useRef(null);
-  const placeIdRef = useRef(null);
+  const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
+  const userRef = useRef<UUIDed | null>(null);
+  const placeIdRef = useRef<UUIDed | null>(null);
 
-  function setUserRef(user) {
+  function setUserRef(user: UUIDed) {
     userRef.current = user;
   }
 
-  function setPlaceIdRef(placeId) {
+  function setPlaceIdRef(placeId: UUIDed) {
     placeIdRef.current = placeId
   }
 
   const onFrame = useCallback(
     function (frame) {
       lastFrame.current = frame;
-      if (goalPosition.current !== null) {
+      if (goalPosition.current != null && canvasRef.current != null) {
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
         const screenId = cyrb53(JSON.stringify(canvasRect));
-        const sample = {
+        const sample: Sample = {
           time: frame.time,
           leftEye: frame.leftEye,
           rightEye: frame.rightEye,
           points: frame.points,
           goal: goalPosition.current,
-          userId: userRef.current,
-          placeId: placeIdRef.current,
+          userId: userRef.current?.uuid ?? '',
+          placeId: placeIdRef.current?.uuid ?? '',
           screenId
         };
         storeSample(sample);
@@ -97,13 +119,15 @@ function App() {
     [mode]
   );
 
-  const animationFrameId = useRef(null);
+  const animationFrameId = useRef<number>(0);
   React.useEffect(() => {
     const f = () => {
       const canvasElement = canvasRef.current;
+      if(!canvasElement) return; // TODO: Make smth more appropriate
       canvasElement.width = canvasElement.clientWidth;
       canvasElement.height = canvasElement.clientHeight;
       const canvasCtx = canvasElement.getContext("2d"); // move to ref
+      if(!canvasCtx) return;
       canvasCtx.save();
       // clear canvas by filling it with white color
       canvasCtx.fillStyle = "white";
@@ -131,7 +155,7 @@ function App() {
     return () => { cancelAnimationFrame(animationFrameId.current); };
   }, [onTick, gameMode]);
 
-  function startGame(mode) {
+  function startGame(mode: AppMode) {
     setMode("game");
     setGameMode(mode);
   }
@@ -144,7 +168,7 @@ function App() {
           onWebcamChange={setWebcamId}
           onStart={startGame}
           goFullscreen={() => toggleFullscreen(
-            document.getElementById("root") // app root element
+            document.getElementById("root") ?? document.body // app root element
           )}
 
           userId={userRef} onUserChange={setUserRef}
