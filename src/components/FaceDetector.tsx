@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2, minTrackingConfidence: 0.2,
 };
 
+type Frame = {}
+
 // TODO: fix selection of webcam
 // "BindingError: Cannot pass deleted object as a pointer of type SolutionWasm*
 // at BindingError.<anonymous> (https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh_solution_simd_wasm_bin.js:9:136500)
@@ -26,9 +28,9 @@ const DEFAULT_SETTINGS = {
 // at g (http://localhost:3000/static/js/bundle.js:4642:15)"
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [ settings ]); // never change
-  const webcamRef = useRef(null);
+  const webcamRef = useRef<Webcam>(null);
   const intermediateCanvasRef = useRef(null);
-  const callbackRef = useRef(null);
+  const callbackRef = useRef<((f: Frame) => void) | null>(null);
   useEffect(() => { callbackRef.current = onFrame; }, [onFrame]);
 
   const onResults = useCallback(
@@ -63,11 +65,13 @@ export default function FaceDetector({ children, onFrame, deviceId, ...settings 
     faceMesh.setOptions({ maxNumFaces, minDetectionConfidence, minTrackingConfidence });
     faceMesh.onResults(onResults);
 
+    const video = webcamRef.current?.video
+    if(!video) return;
     const camera = new cameraUtils.Camera(
-      webcamRef.current.video,
+      video,
       {
         onFrame: async () => {
-          await faceMesh.send({ image: webcamRef.current.video });
+          await faceMesh.send({ image: video });
         },
       });
 
