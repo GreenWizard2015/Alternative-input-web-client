@@ -166,11 +166,18 @@ export function grayscale2image(gray, size) {
   return imgData;
 }
 
+export type Sample = {
+  time: number,
+  leftEye: Uint8ClampedArray,
+  rightEye: Uint8ClampedArray,
+  points: Float32Array
+}
+
 export function results2sample(results, tmpCanvas, {
   mode = "circle", padding = 1.25,
   visibilityThreshold = 0.5, presenceThreshold = 0.5,
   SIZE = 32,
-}) {
+}): Sample | null {
   if (!results) return null;
   if (!results.multiFaceLandmarks) return null;
   if (results.multiFaceLandmarks.length < 1) return null;

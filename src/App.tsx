@@ -6,6 +6,7 @@ import UI from "./components/UI";
 import { cyrb53 } from "./utils/cyrb53";
 import { onMenuTick } from "./appModes/onMenuTick";
 import { AppMode } from "modes/AppMode";
+import { Frame } from "components/FaceDetector";
 
 type UUIDed = {
   name: string,
@@ -55,7 +56,7 @@ function onGameTick({
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastFrame = useRef(null);
+  const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
   const [mode, setMode] = React.useState("menu"); // replace with enum/constant
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
@@ -71,17 +72,17 @@ function App() {
   }
 
   const onFrame = useCallback(
-    function (frame) {
+    function (frame: Frame) {
       lastFrame.current = frame;
-      if (goalPosition.current != null && canvasRef.current != null) {
+      if (goalPosition.current != null && canvasRef.current != null && frame.sample != null) {
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
         const screenId = cyrb53(JSON.stringify(canvasRect));
         const sample: Sample = {
-          time: frame.time,
-          leftEye: frame.leftEye,
-          rightEye: frame.rightEye,
-          points: frame.points,
+          time: frame.sample.time,
+          leftEye: frame.sample.leftEye,
+          rightEye: frame.sample.rightEye,
+          points: frame.sample.points,
           goal: goalPosition.current,
           userId: userRef.current?.uuid ?? '',
           placeId: placeIdRef.current?.uuid ?? '',

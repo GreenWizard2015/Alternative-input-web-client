@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import * as cameraUtils from "@mediapipe/camera_utils";
 import Webcam from "react-webcam";
-import { FaceMesh } from "@mediapipe/face_mesh";
-import { results2sample } from "../utils/MP";
+import { FaceMesh, GpuBuffer, NormalizedLandmarkList, Results, ResultsListener } from "@mediapipe/face_mesh";
+import { results2sample, Sample } from "../utils/MP";
 
 const DEFAULT_SETTINGS = {
   mode: "circle", padding: 1.25,
@@ -13,7 +13,13 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2, minTrackingConfidence: 0.2,
 };
 
-type Frame = {}
+export type Frame = {
+  results: Results,
+  sample: Sample | null,
+  image: GpuBuffer,
+  landmarks: NormalizedLandmarkList | null,
+  settings: typeof DEFAULT_SETTINGS
+}
 
 // TODO: fix selection of webcam
 // "BindingError: Cannot pass deleted object as a pointer of type SolutionWasm*
@@ -27,13 +33,13 @@ type Frame = {}
 // at ta.next (http://localhost:3000/static/js/bundle.js:3777:64)
 // at g (http://localhost:3000/static/js/bundle.js:4642:15)"
 export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
-  const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [ settings ]); // never change
+  const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [settings]); // never change
   const webcamRef = useRef<Webcam>(null);
   const intermediateCanvasRef = useRef(null);
   const callbackRef = useRef<((f: Frame) => void) | null>(null);
   useEffect(() => { callbackRef.current = onFrame; }, [onFrame]);
 
-  const onResults = useCallback(
+  const onResults = useCallback<ResultsListener>(
     (results) => {
       if (!callbackRef.current) return;
 
@@ -66,7 +72,7 @@ export default function FaceDetector({ children, onFrame, deviceId, ...settings 
     faceMesh.onResults(onResults);
 
     const video = webcamRef.current?.video
-    if(!video) return;
+    if (!video) return;
     const camera = new cameraUtils.Camera(
       video,
       {
