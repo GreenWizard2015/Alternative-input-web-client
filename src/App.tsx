@@ -39,7 +39,12 @@ async function storeSample(sample: Sample) {
     samples = [];
     await fetch('http://host1768516.hostland.pro/AI/upload.php', {
       body: new URLSearchParams([
-        ['chunk', JSON.stringify(oldSamples)]
+        ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
+          if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
+            return Array.from(value)
+          }
+          return value
+        })]
       ]),
       method: 'POST'
     })
@@ -124,11 +129,11 @@ function App() {
   React.useEffect(() => {
     const f = () => {
       const canvasElement = canvasRef.current;
-      if(!canvasElement) return; // TODO: Make smth more appropriate
+      if (!canvasElement) return; // TODO: Make smth more appropriate
       canvasElement.width = canvasElement.clientWidth;
       canvasElement.height = canvasElement.clientHeight;
       const canvasCtx = canvasElement.getContext("2d"); // move to ref
-      if(!canvasCtx) return;
+      if (!canvasCtx) return;
       canvasCtx.save();
       // clear canvas by filling it with white color
       canvasCtx.fillStyle = "white";
