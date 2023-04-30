@@ -32,7 +32,7 @@ export type Frame = {
 // at sa (http://localhost:3000/static/js/bundle.js:3751:17)
 // at ta.next (http://localhost:3000/static/js/bundle.js:3777:64)
 // at g (http://localhost:3000/static/js/bundle.js:4642:15)"
-export default function FaceDetector({ children, onFrame, deviceId, ...settings }) {
+export default function FaceDetector({ onFrame, deviceId, ...settings }) {
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [settings]); // never change
   const webcamRef = useRef<Webcam>(null);
   const intermediateCanvasRef = useRef(null);
