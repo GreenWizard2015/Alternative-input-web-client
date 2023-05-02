@@ -32,12 +32,13 @@ type Sample = {
 const MAX_SAMPLES = 100;
 let samples: Sample[] = [];
 
-async function storeSample(sample: Sample) {
+function storeSample(sample: Sample) {
   samples.push(sample)
   if (samples.length >= MAX_SAMPLES) {
     const oldSamples = samples;
     samples = [];
-    await fetch('http://host1768516.hostland.pro/AI/upload.php', {
+    // Async request
+    fetch('http://host1768516.hostland.pro/AI/upload.php', {
       body: new URLSearchParams([
         ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
           if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
