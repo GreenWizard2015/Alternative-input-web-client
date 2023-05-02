@@ -4,7 +4,7 @@ import "./app.css";
 import { toggleFullscreen } from "./utils/canvas";
 import UI from "./components/UI";
 import { cyrb53 } from "./utils/cyrb53";
-import { onMenuTick } from "./appModes/onMenuTick";
+import { onMenuTick } from "./modes/onMenuTick";
 import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
 

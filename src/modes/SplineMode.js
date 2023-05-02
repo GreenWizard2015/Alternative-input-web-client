@@ -1,5 +1,5 @@
 import Spline from "cubic-spline";
-import { SpinningTarget } from "../helpers/SpinningTarget";
+import { SpinningTarget } from "../utils/SpinningTarget";
 import { AppMode } from "./AppMode";
 
 function gaussian(mean = 0, stdev = 1) {

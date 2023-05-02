@@ -1,4 +1,4 @@
-import { SpinningTarget } from "helpers/SpinningTarget";
+import { SpinningTarget } from "utils/SpinningTarget";
 import { AppMode } from "./AppMode";
 
 function mod(x, y) {
