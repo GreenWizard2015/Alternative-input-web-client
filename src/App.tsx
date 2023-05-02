@@ -32,23 +32,27 @@ type Sample = {
 const MAX_SAMPLES = 100;
 let samples: Sample[] = [];
 
+function sendSamples() {
+  const oldSamples = samples;
+  samples = [];
+  // Async request
+  fetch('http://host1768516.hostland.pro/AI/upload.php', {
+    body: new URLSearchParams([
+      ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
+        if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
+          return Array.from(value)
+        }
+        return value
+      })]
+    ]),
+    method: 'POST'
+  })
+}
+
 function storeSample(sample: Sample) {
   samples.push(sample)
   if (samples.length >= MAX_SAMPLES) {
-    const oldSamples = samples;
-    samples = [];
-    // Async request
-    fetch('http://host1768516.hostland.pro/AI/upload.php', {
-      body: new URLSearchParams([
-        ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
-          if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
-            return Array.from(value)
-          }
-          return value
-        })]
-      ]),
-      method: 'POST'
-    })
+    sendSamples()
   }
 }
 
@@ -183,7 +187,10 @@ function App() {
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
-      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => setMode('menu'))} />
+      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
+        setMode('menu')
+        sendSamples()
+      })} />
     </>
   );
 }
