@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+}
+
+#root,
+#canvas,
+#UI {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+#UI {
+  z-index: 1;
+  /* center the UI */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.UI-wrapper {
+  /* center the UI */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 1px solid #222;
+  border-radius: 1rem;
+
+  min-width: 30dvw;
+  min-width: 30vw;
+  min-height: 30dvh;
+  min-height: 30vh;
+}
+
+.UI-wrapper button {
+  border: 1px solid #222;
+  border-radius: 5px;
+  margin: 5px auto;
+  padding: 5px;
+}
+
+.ui-start {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  align-items: stretch;
+}
+
+.ui-start > button {
+  margin: inherit;
+  background: none;
+  border: none;
+  border-left: .5rem solid #000;
+  border-radius: 0;
+  text-align: left;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+.ui-start > button::after {
+  content: "";
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-out;
+  width: 0%;
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+
+.ui-start > button:hover::after {
+  background: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+
+.webcam-selector {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.webcam-selector > * {
+  margin: 5px;
+}
+
+.webcam-selector > select {
+  flex-grow: 1;
+}
+
+.w100 {
+  width: 100%;
+}
+
+.m5 {
+  margin: 5px !important;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.flew-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
