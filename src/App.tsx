@@ -29,7 +29,7 @@ type Sample = {
   screenId: number
 }
 
-const MAX_SAMPLES = 100;
+const MAX_SAMPLES = 1000;
 let samples: Sample[] = [];
 
 function sendSamples() {
@@ -106,6 +106,7 @@ function App() {
   function onKeyDown(exit) {
     return (event) => {
       if (event.code === 'Escape') {
+        sendSamples(); // send collected samples before exit
         exit();
         return;
       }
