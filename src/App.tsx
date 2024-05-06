@@ -36,7 +36,12 @@ function sendSamples() {
   const oldSamples = samples;
   samples = [];
   // Async request
-  fetch('http://host1768516.hostland.pro/AI/upload.php', {
+  const saveEndpoint = process.env.SAVE_ENDPOINT || '';
+  if (!saveEndpoint) {
+    console.error('No SAVE_ENDPOINT provided');
+    return;
+  }
+  fetch(saveEndpoint, {
     body: new URLSearchParams([
       ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
         if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
