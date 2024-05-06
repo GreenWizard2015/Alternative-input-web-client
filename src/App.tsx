@@ -29,14 +29,23 @@ type Sample = {
   screenId: number
 }
 
-const MAX_SAMPLES = 100;
+const MAX_SAMPLES = 1000;
 let samples: Sample[] = [];
 
-function sendSamples() {
-  const oldSamples = samples;
+function sendSamples({ limit = -1 } = {}) {
+  let oldSamples = samples;
   samples = [];
   // Async request
-  fetch('http://host1768516.hostland.pro/AI/upload.php', {
+  const saveEndpoint = process.env.SAVE_ENDPOINT || '';
+  if (!saveEndpoint) {
+    console.error('No SAVE_ENDPOINT provided');
+    return;
+  }
+  if (-1 < limit) {
+    oldSamples = oldSamples.filter(sample => sample.time < limit)
+  }
+
+  fetch(saveEndpoint, {
     body: new URLSearchParams([
       ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
         if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
@@ -84,6 +93,9 @@ function App() {
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
+      if (gameMode == null) return;
+      if (gameMode.isPaused()) return;
+
       if (goalPosition.current != null && canvasRef.current != null && frame.sample != null) {
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
@@ -98,9 +110,11 @@ function App() {
           placeId: placeIdRef.current?.uuid ?? '',
           screenId
         };
-        storeSample(sample);
+        if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
+          storeSample(sample);
+        }
       }
-    }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef]
+    }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef, gameMode]
   );
 
   function onKeyDown(exit) {
@@ -188,8 +202,9 @@ function App() {
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
-        setMode('menu')
-        sendSamples()
+        setMode('menu');
+        const now = Date.now();
+        sendSamples({limit: now - 3000}); // send collected samples before exit
       })} />
     </>
   );
