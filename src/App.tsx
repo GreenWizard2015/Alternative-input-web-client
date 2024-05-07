@@ -9,6 +9,10 @@ import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
 import { Sample, storeSample, sendSamples, UUIDed } from "./Samples";
 import { Intro } from "./components/Intro";
+// redux related imports
+import { connect } from "react-redux";
+import { setMode } from "./store/slices/UI";
+import { RootState } from "store";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -18,14 +22,10 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
-// make enum with modes: intro, menu, game
-type EAppMode = "menu" | "game" | "intro";
-
-function App() {
+function AppComponent({ mode, setMode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
-  const [mode, setMode] = React.useState<EAppMode>("intro");
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
   const userRef = useRef<UUIDed | null>(null);
   const placeIdRef = useRef<UUIDed | null>(null);
@@ -163,4 +163,7 @@ function App() {
   );
 }
 
-export default App;
+export default connect(
+  (state: RootState) => ({ mode: state.UI.mode }),
+  { setMode }
+)(AppComponent);
