@@ -71,4 +71,5 @@ const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export type Store = ReturnType<typeof buildAppStore>['state'];
 export type AppDispatch = Store['dispatch'];
-export { AppStore, RootState };
+export { AppStore };
+export type { RootState };

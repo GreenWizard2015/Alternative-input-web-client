@@ -4,7 +4,7 @@ import UIStart from './UIStart';
 import WebcamSelector from './WebcamSelector';
 import { setUser, setPlace } from '../store/slices/UI';
 import { connect } from 'react-redux';
-import { validate } from '../Samples';
+import { validate } from './Samples';
 
 function UI({
   onWebcamChange, goFullscreen, onStart,

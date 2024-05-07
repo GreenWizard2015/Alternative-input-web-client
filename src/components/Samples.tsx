@@ -1,4 +1,4 @@
-import { worker } from './components/DataWorker';
+import { worker } from './DataWorker';
 
 type UUIDed = {
   name: string,
@@ -54,10 +54,11 @@ function storeSample(sample: Sample) {
   }
 }
 
-export { storeSample, sendSamples, UUIDed, Position, Sample };
+export { storeSample, sendSamples };
 export function validate(obj: UUIDed | null) {
   if (obj == null) {
     return false;
   }
   return obj.name.length > 0 && obj.uuid.length > 0;
 }
+export type { UUIDed, Position, Sample };

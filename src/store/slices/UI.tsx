@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UUIDed, validate } from "Samples";
+import { UUIDed, validate } from "../../components/Samples";
 
 interface UIState {
   webcamId: string | null;

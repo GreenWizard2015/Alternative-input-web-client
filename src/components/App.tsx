@@ -1,18 +1,20 @@
 import React, { useCallback, useRef } from "react";
-import FaceDetector from "./components/FaceDetector";
-import "./app.css";
-import { toggleFullscreen } from "./utils/canvas";
-import UI from "./components/UI";
-import { cyrb53 } from "./utils/cyrb53";
-import { onMenuTick } from "./modes/onMenuTick";
+import { toggleFullscreen } from "../utils/canvas";
+import UI from "./UI";
+import { cyrb53 } from "../utils/cyrb53";
+import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
 import { Sample, storeSample, sendSamples } from "./Samples";
-import { Intro } from "./components/Intro";
+import { Intro } from "./Intro";
 // redux related imports
 import { connect } from "react-redux";
-import { setMode } from "./store/slices/App";
+import { setMode } from "../store/slices/App";
 import { RootState } from "store";
+import dynamic from "next/dynamic";
+
+// DYNAMIC IMPORT of FaceDetector
+const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
