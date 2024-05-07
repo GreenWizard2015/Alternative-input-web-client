@@ -1,34 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { useLocalStorageState } from '../utils/hooks';
+import React, { useState } from 'react';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
 import WebcamSelector from './WebcamSelector';
+import { setUser, setPlace } from '../store/slices/UI';
+import { connect } from 'react-redux';
+import { validate } from '../Samples';
 
-const validateUser = ({ name, uuid }) => name.length > 0 && uuid.length > 0
-const validatePlace = validateUser
-
-export default function UI({
+function UI({
   onWebcamChange, goFullscreen, onStart,
-  userId, onUserChange,
-  placeId, onPlaceChange,
+  userId, setUser,
+  placeId, setPlace,
+  users, places
 }) {
   const [subMenu, setSubMenu] = React.useState('');
-  const [user, setUser] = useLocalStorageState('user', { name: '', uuid: '' })
-  const [place, setPlace] = useLocalStorageState('place', { name: '', uuid: '' })
-  const [tempName, setTempName] = useState('')
-
-  useEffect(() => {
-    onUserChange(user)
-  }, [ user, onUserChange ])
-
-  useEffect(() => {
-    onPlaceChange(place)
-  }, [ place, onPlaceChange ])
+  const [tempName, setTempName] = useState('');
+  users = users.filter(validate);
+  places = places.filter(validate);
 
   function showHelp() {
     setSubMenu('help')
   }
-
+  
   let content = null;
   if ('help' === subMenu) {
     content = <UIHelp onClose={() => setSubMenu('')} />
@@ -71,13 +63,29 @@ export default function UI({
       </div>
     </>
   } else {
+    console.log({userId, placeId});
     content = <>
       <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />
-      <div className='flex w100'>User: {user.name}<button className='flex-grow m5' onClick={() => setSubMenu('user')}>{validateUser(user) ? 'Edit' : 'Create'}</button></div>
-      <div className='flex w100'>Place: {place.name}<button className='flex-grow m5' onClick={() => setSubMenu('place')}>{validatePlace(user) ? 'Edit' : 'Create'}</button></div>
+      <div className='flex w100'>
+        User: 
+        {/* dropdown */}
+        <select value={userId?.uuid} onChange={e => setUser(users.find(u => u.uuid === e.target.value))}>
+          {users.map(u => <option key={u.uuid} value={u.uuid}>{u.name}</option>)}
+        </select>
+        <button className='flex-grow m5' onClick={() => setSubMenu('user')}>{validate(userId) ? 'Edit' : 'Create'}</button>
+      </div>
+      <div className='flex w100'>
+        Place: 
+        {/* dropdown */}
+        <select value={placeId?.uuid} onChange={e => setPlace(places.find(p => p.uuid === e.target.value))}>
+          {places.map(p => <option key={p.uuid} value={p.uuid}>{p.name}</option>)}
+        </select>
+        <button className='flex-grow m5' onClick={() => setSubMenu('place')}>{validate(placeId) ? 'Edit' : 'Create'}</button>
+      </div>
+
       <button className='w100' onClick={showHelp}>Help</button>
-      <button className='w100' onClick={() => setSubMenu('start')} disabled={!validateUser(user) || !validatePlace(place)}>Start</button>
+      <button className='w100' onClick={() => setSubMenu('start')} disabled={!validate(userId) || !validate(placeId)}>Start</button>
       <button className='w100' onClick={goFullscreen}>Fullscreen</button>
     </>
   }
@@ -90,3 +98,13 @@ export default function UI({
     </div>
   );
 }
+
+export default connect(
+  state => ({
+    userId: state.UI.userId,
+    placeId: state.UI.placeId,
+    users: state.UI.users || [],
+    places: state.UI.places || []
+  }),
+  { setUser, setPlace }
+)(UI)

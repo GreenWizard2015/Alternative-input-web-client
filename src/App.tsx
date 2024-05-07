@@ -7,7 +7,7 @@ import { cyrb53 } from "./utils/cyrb53";
 import { onMenuTick } from "./modes/onMenuTick";
 import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
-import { Sample, storeSample, sendSamples, UUIDed } from "./Samples";
+import { Sample, storeSample, sendSamples } from "./Samples";
 import { Intro } from "./components/Intro";
 // redux related imports
 import { connect } from "react-redux";
@@ -22,21 +22,11 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
-function AppComponent({ mode, setMode }) {
+function AppComponent({ mode, setMode, userId, placeId}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
-  const userRef = useRef<UUIDed | null>(null);
-  const placeIdRef = useRef<UUIDed | null>(null);
-
-  function setUserRef(user: UUIDed) {
-    userRef.current = user;
-  }
-
-  function setPlaceIdRef(placeId: UUIDed) {
-    placeIdRef.current = placeId
-  }
 
   const onFrame = useCallback(
     function (frame: Frame) {
@@ -54,15 +44,15 @@ function AppComponent({ mode, setMode }) {
           rightEye: frame.sample.rightEye,
           points: frame.sample.points,
           goal: goalPosition.current,
-          userId: userRef.current?.uuid ?? '',
-          placeId: placeIdRef.current?.uuid ?? '',
+          userId: userId.uuid ?? '',
+          placeId: placeId.uuid ?? '',
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
           storeSample(sample);
         }
       }
-    }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef, gameMode]
+    }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode]
   );
 
   function onKeyDown(exit) {
@@ -108,18 +98,23 @@ function AppComponent({ mode, setMode }) {
       canvasCtx.fillStyle = "white";
       canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
+      const viewport = {
+        left: canvasElement.offsetLeft,
+        top: canvasElement.offsetTop,
+        width: canvasElement.width,
+        height: canvasElement.height,
+      };
+      const screenStr = JSON.stringify(viewport);
+
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
-        viewport: {
-          // check if it's correct to use offsetLeft/Top
-          left: canvasElement.offsetLeft,
-          top: canvasElement.offsetTop,
-          width: canvasElement.width,
-          height: canvasElement.height,
-        },
+        viewport,
         frame: lastFrame.current,
         goal: goalPosition.current,
+        user: userId?.uuid,
+        place: placeId?.uuid,
+        screenId: cyrb53(screenStr),
         gameMode,
       });
       canvasCtx.restore();
@@ -128,7 +123,7 @@ function AppComponent({ mode, setMode }) {
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode]);
+  }, [onTick, gameMode, userId, placeId]);
 
   function startGame(mode: AppMode) {
     setMode("game");
@@ -148,9 +143,6 @@ function AppComponent({ mode, setMode }) {
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") ?? document.body // app root element
           )}
-
-          userId={userRef} onUserChange={setUserRef}
-          placeId={placeIdRef} onPlaceChange={setPlaceIdRef}
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
@@ -164,6 +156,10 @@ function AppComponent({ mode, setMode }) {
 }
 
 export default connect(
-  (state: RootState) => ({ mode: state.UI.mode }),
+  (state: RootState) => ({
+    mode: state.UI.mode,
+    userId: state.UI.userId,
+    placeId: state.UI.placeId
+  }),
   { setMode }
 )(AppComponent);

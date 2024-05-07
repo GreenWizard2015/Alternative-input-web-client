@@ -130,3 +130,7 @@ body {
 .ms-2 {
   margin-left: 1rem !important;
 }
+
+select {
+  min-width: 15rem;
+}
