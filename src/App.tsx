@@ -7,63 +7,8 @@ import { cyrb53 } from "./utils/cyrb53";
 import { onMenuTick } from "./modes/onMenuTick";
 import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
-
-type UUIDed = {
-  name: string,
-  uuid: string
-}
-
-type Position = {
-  x: number,
-  y: number
-}
-
-type Sample = {
-  time: number,
-  leftEye: Uint8ClampedArray,
-  rightEye: Uint8ClampedArray,
-  points: Float32Array,
-  goal: Position,
-  userId: string,
-  placeId: string,
-  screenId: number
-}
-
-const MAX_SAMPLES = 1000;
-let samples: Sample[] = [];
-
-function sendSamples({ limit = -1 } = {}) {
-  let oldSamples = samples;
-  samples = [];
-  // Async request
-  const saveEndpoint = process.env.SAVE_ENDPOINT || '';
-  if (!saveEndpoint) {
-    console.error('No SAVE_ENDPOINT provided');
-    return;
-  }
-  if (-1 < limit) {
-    oldSamples = oldSamples.filter(sample => sample.time < limit)
-  }
-
-  fetch(saveEndpoint, {
-    body: new URLSearchParams([
-      ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
-        if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
-          return Array.from(value)
-        }
-        return value
-      })]
-    ]),
-    method: 'POST'
-  })
-}
-
-function storeSample(sample: Sample) {
-  samples.push(sample)
-  if (samples.length >= MAX_SAMPLES) {
-    sendSamples()
-  }
-}
+import { Sample, storeSample, sendSamples, UUIDed } from "./Samples";
+import { Intro } from "./components/Intro";
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -73,11 +18,14 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
+// make enum with modes: intro, menu, game
+type EAppMode = "menu" | "game" | "intro";
+
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
-  const [mode, setMode] = React.useState("menu"); // replace with enum/constant
+  const [mode, setMode] = React.useState<EAppMode>("intro");
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
   const userRef = useRef<UUIDed | null>(null);
   const placeIdRef = useRef<UUIDed | null>(null);
@@ -137,6 +85,8 @@ function App() {
           return onMenuTick(data);
         case "game":
           return onGameTick(data);
+        case "intro":
+          return null; // ignore
         default:
           throw new Error("Unknown mode: " + mode);
       }
@@ -188,6 +138,9 @@ function App() {
   const [webcamId, setWebcamId] = React.useState(null);
   return (
     <>
+      {('intro' === mode) && (
+        <Intro onConfirm={() => setMode('menu')} />
+      )}
       {('menu' === mode) && (
         <UI
           onWebcamChange={setWebcamId}

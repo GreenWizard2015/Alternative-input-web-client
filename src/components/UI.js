@@ -46,7 +46,7 @@ export default function UI({
           setTempName('')
           setSubMenu('')
         }}>Ok</button>
-        <button onClick={() => {
+        <button className='ms-2' onClick={() => {
           setTempName('')
           setSubMenu('')
         }}>Cancel</button>
@@ -64,7 +64,7 @@ export default function UI({
           setTempName('')
           setSubMenu('')
         }}>Ok</button>
-        <button onClick={() => {
+        <button  className='ms-2' onClick={() => {
           setTempName('')
           setSubMenu('')
         }}>Cancel</button>

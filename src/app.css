@@ -126,3 +126,7 @@ body {
 .flex-grow {
   flex-grow: 1;
 }
+
+.ms-2 {
+  margin-left: 1rem !important;
+}
