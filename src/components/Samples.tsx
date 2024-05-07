@@ -28,11 +28,7 @@ function sendSamples({ limit = -1 } = {}) {
   let oldSamples = samples;
   samples = [];
   // Async request
-  const saveEndpoint = process.env.REACT_APP_SAVE_ENDPOINT || '';
-  if (!saveEndpoint) {
-    console.error('No SAVE_ENDPOINT provided');
-    return;
-  }
+  const saveEndpoint = '/api/upload';
   if (-1 < limit) {
     oldSamples = oldSamples.filter(sample => sample.time < limit)
   }

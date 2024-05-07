@@ -27,9 +27,10 @@
     "typescript": "^4.0.0"
   },
   "scripts": {
-    "start": "next start",
+    "dev": "next dev",
     "build": "next build",
-    "test": "next test"
+    "start": "next start",
+    "lint": "next lint"
   },
   "eslintConfig": {
     "extends": [
