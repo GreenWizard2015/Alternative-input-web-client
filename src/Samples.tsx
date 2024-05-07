@@ -19,14 +19,14 @@ type Sample = {
   screenId: number
 }
 
-const MAX_SAMPLES = 1000;
+const MAX_SAMPLES: number = parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
 let samples: Sample[] = [];
 
 function sendSamples({ limit = -1 } = {}) {
   let oldSamples = samples;
   samples = [];
   // Async request
-  const saveEndpoint = process.env.SAVE_ENDPOINT || '';
+  const saveEndpoint = process.env.REACT_APP_SAVE_ENDPOINT || '';
   if (!saveEndpoint) {
     console.error('No SAVE_ENDPOINT provided');
     return;

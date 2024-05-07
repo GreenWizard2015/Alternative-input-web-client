@@ -3,14 +3,16 @@ import { Provider } from "react-redux";
 import {  persistReducer, persistStore, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { PersistGate } from "redux-persist/integration/react";
+import { PersistPartial } from "redux-persist/lib/persistReducer";
 
 // Import slices with their respective types
 import UISlice from "./slices/UI";
-import { PersistPartial } from "redux-persist/lib/persistReducer";
+import AppSlice from "./slices/App";
 
 interface RootState extends PersistPartial {
   [key: string]: any;  // Allow any property with string type keys
   UI: ReturnType<typeof UISlice.reducer>;
+  App: ReturnType<typeof AppSlice.reducer>;
 }
 
 export type RootStateType = StateFromReducersMapObject<RootState>;
@@ -18,6 +20,7 @@ export type RootStateType = StateFromReducersMapObject<RootState>;
 function buildAppStore(): { reducers: any; state: RootStateType } {
   const slices = {
     UI: UISlice,
+    App: AppSlice,
   };
 
   const reducers = {} as any;
@@ -38,7 +41,7 @@ const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     {
       key: 'nextjs',
       storage,
-      blacklist: [],
+      blacklist: ['App'],
       transforms: [],
     },
     rootReducers

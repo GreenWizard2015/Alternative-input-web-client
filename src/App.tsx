@@ -11,7 +11,7 @@ import { Sample, storeSample, sendSamples } from "./Samples";
 import { Intro } from "./components/Intro";
 // redux related imports
 import { connect } from "react-redux";
-import { setMode } from "./store/slices/UI";
+import { setMode } from "./store/slices/App";
 import { RootState } from "store";
 
 function onGameTick({
@@ -157,7 +157,7 @@ function AppComponent({ mode, setMode, userId, placeId}) {
 
 export default connect(
   (state: RootState) => ({
-    mode: state.UI.mode,
+    mode: state.App.mode,
     userId: state.UI.userId,
     placeId: state.UI.placeId
   }),

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { connect } from 'react-redux';
-import { updateScreen } from 'store/slices/UI';
+import { updateScreen } from 'store/slices/App';
 
 const WindowDimensions = ({ updateScreen }) => {
   useEffect(() => {
@@ -22,7 +22,7 @@ const WindowDimensions = ({ updateScreen }) => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize);
     };
-  }, []);
+  }, [updateScreen]);
 
   return null;
 };

@@ -1,43 +1,27 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { UUIDed, validate } from "Samples";
 
-type EAppMode = "menu" | "game" | "intro";
-
-interface IScreen {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
 interface UIState {
-  mode: EAppMode;
   webcamId: string | null;
   userId: UUIDed | null;
   placeId: UUIDed | null;
 
   users: UUIDed[];
   places: UUIDed[];
-  screen: IScreen | null;
 };
 
 const initialState: UIState = {
-  mode: "intro",
   webcamId: null,
   userId: null,
   placeId: null,
   users: [],
   places: [],
-  screen: null,
 };
 
 export const UISlice = createSlice({
   name: "UI",
   initialState,
   reducers: {
-    setMode: (state, action: PayloadAction<EAppMode>) => {
-      state.mode = action.payload;
-    },
     setWebcamId: (state, action: PayloadAction<string | null>) => {
       state.webcamId = action.payload;
     },
@@ -57,11 +41,8 @@ export const UISlice = createSlice({
       }
       state.places = state.places.filter(validate);
     },
-    updateScreen: (state, action: PayloadAction<IScreen>) => {
-      state.screen = action.payload;
-    }
   },
 });
 
-export const { setMode, setWebcamId, setUser, setPlace, updateScreen } = UISlice.actions;
+export const { setWebcamId, setUser, setPlace } = UISlice.actions;
 export default UISlice;
