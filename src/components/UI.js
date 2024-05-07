@@ -63,7 +63,6 @@ function UI({
       </div>
     </>
   } else {
-    console.log({userId, placeId});
     content = <>
       <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />

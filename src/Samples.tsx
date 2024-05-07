@@ -1,3 +1,5 @@
+import { worker } from './components/DataWorker';
+
 type UUIDed = {
   name: string,
   uuid: string
@@ -34,18 +36,15 @@ function sendSamples({ limit = -1 } = {}) {
   if (-1 < limit) {
     oldSamples = oldSamples.filter(sample => sample.time < limit)
   }
-
-  fetch(saveEndpoint, {
-    body: new URLSearchParams([
-      ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
-        if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
-          return Array.from(value)
-        }
-        return value
-      })]
-    ]),
-    method: 'POST'
-  })
+  worker.postMessage({ 
+    samples: JSON.stringify(oldSamples, (key, value) => {
+      if ((value instanceof Uint8ClampedArray || value instanceof Float32Array)) {
+        return Array.from(value);
+      }
+      return value;
+    }),
+    endpoint: saveEndpoint 
+  });
 }
 
 function storeSample(sample: Sample) {
