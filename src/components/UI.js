@@ -73,7 +73,7 @@ function UI({
         <select value={userId?.uuid} onChange={e => setUser(users.find(u => u.uuid === e.target.value))}>
           {users.map(u => <option key={u.uuid} value={u.uuid}>{u.name}</option>)}
         </select>
-        <button className='flex-grow m5' onClick={() => setSubMenu('user')}>{validate(userId) ? 'Edit' : 'Create'}</button>
+        <button className='flex-grow m5' onClick={() => setSubMenu('user')}>Add</button>
       </div>
       <div className='flex w100'>
         Place: 
@@ -81,7 +81,7 @@ function UI({
         <select value={placeId?.uuid} onChange={e => setPlace(places.find(p => p.uuid === e.target.value))}>
           {places.map(p => <option key={p.uuid} value={p.uuid}>{p.name}</option>)}
         </select>
-        <button className='flex-grow m5' onClick={() => setSubMenu('place')}>{validate(placeId) ? 'Edit' : 'Create'}</button>
+        <button className='flex-grow m5' onClick={() => setSubMenu('place')}>Add</button>
       </div>
 
       <button className='w100' onClick={showHelp}>Help</button>
