@@ -3,12 +3,12 @@ import { worker } from './DataWorker';
 type UUIDed = {
   name: string,
   uuid: string
-}
+};
 
 type Position = {
   x: number,
   y: number
-}
+};
 
 type Sample = {
   time: number,
@@ -19,9 +19,71 @@ type Sample = {
   userId: string,
   placeId: string,
   screenId: number
+};
+
+function sampleSize() {
+  return 4 // time
+    + 32 * 32 * 1 // sample.leftEye is 32x32 pixels
+    + 32 * 32 * 1 // sample.rightEye is 32x32 pixels
+    + 4 * 2 * 468 // sample.points is 468 points
+    + 4 // goal.x
+    + 4 // goal.y
+    + 36 // userId
+    + 36 // placeId
+    + 4; // screenId
 }
 
-const MAX_SAMPLES: number = parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
+export function serialize(samples: Sample[]) {
+  const totalSize = samples.length * sampleSize();
+  const buffer = new ArrayBuffer(totalSize);
+  const view = new DataView(buffer);
+  let offset = 0;
+  samples.forEach((sample, index) => {
+    view.setInt32(offset, sample.time);
+    offset += 4;
+    if (sample.leftEye.length !== 32 * 32) {
+      throw new Error('Invalid leftEye size. Expected 32x32, got ' + sample.leftEye.length);
+    }
+    sample.leftEye.forEach(value => {
+      view.setUint8(offset, value);
+      offset += 1;
+    });
+
+    if (sample.rightEye.length !== 32 * 32) {
+      throw new Error('Invalid rightEye size. Expected 32x32, got ' + sample.rightEye.length);
+    }
+    sample.rightEye.forEach(value => {
+      view.setUint8(offset, value);
+      offset += 1;
+    });
+
+    if (sample.points.length !== 2 * 468) {
+      throw new Error('Invalid points size. Expected 2x468, got ' + sample.points.length);
+    }
+    sample.points.forEach(value => {
+      view.setFloat32(offset, value);
+      offset += 4;
+    });
+    view.setFloat32(offset, sample.goal.x);
+    offset += 4;
+    view.setFloat32(offset, sample.goal.y);
+    offset += 4;
+    for (let i = 0; i < 36; i++) {
+      view.setUint8(offset, sample.userId.charCodeAt(i));
+      offset += 1;
+    }
+    for (let i = 0; i < 36; i++) {
+      view.setUint8(offset, sample.placeId.charCodeAt(i));
+      offset += 1;
+    }
+    view.setInt32(offset, sample.screenId);
+    offset += 4;
+  });
+
+  return buffer;
+};
+
+const MAX_SAMPLES: number = 111;// parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
 let samples: Sample[] = [];
 
 function sendSamples({ limit = -1 } = {}) {
@@ -32,13 +94,11 @@ function sendSamples({ limit = -1 } = {}) {
   if (-1 < limit) {
     oldSamples = oldSamples.filter(sample => sample.time < limit)
   }
+  const serializedSamples = serialize([oldSamples[0]]);
+  console.log('Sending', serializedSamples.byteLength, 'bytes');
+  
   worker.postMessage({ 
-    samples: JSON.stringify(oldSamples, (key, value) => {
-      if ((value instanceof Uint8ClampedArray || value instanceof Float32Array)) {
-        return Array.from(value);
-      }
-      return value;
-    }),
+    samples: serializedSamples,
     endpoint: saveEndpoint 
   });
 }

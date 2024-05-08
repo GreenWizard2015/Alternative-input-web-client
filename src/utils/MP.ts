@@ -150,7 +150,7 @@ function _points2crop(pts, canvas, {
     ROI.x, ROI.y, ROI.width, ROI.height,
     0, 0, SIZE, SIZE
   );
-
+  
   const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data;
   return _toGrayscale(rgba);
 }

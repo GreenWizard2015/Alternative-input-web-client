@@ -1,9 +1,12 @@
 /* eslint-env worker */
 /* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
 self.onmessage = function({ data: { samples, endpoint } }) {
+  const fd = new FormData();
+  fd.append('chunk', new Blob([samples], {type: 'application/octet-stream'}));
+  
   fetch(endpoint, {
     method: 'POST',
-    body: new URLSearchParams([['chunk', samples]]),
+    body: fd
   }).then(response => {
     if (response.ok) {
       return response.text();  // or response.json() if response is JSON

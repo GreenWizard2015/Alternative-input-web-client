@@ -7,7 +7,7 @@ import { results2sample, Sample } from '../utils/MP';
 const DEFAULT_SETTINGS = {
   mode: 'circle', padding: 1.25,
   visibilityThreshold: 0.2, presenceThreshold: 0.2,
-  SIZE: 40,
+  SIZE: 32,
   maxNumFaces: 1,
   minDetectionConfidence: 0.2,
   minTrackingConfidence: 0.2,
