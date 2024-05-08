@@ -94,7 +94,7 @@ function sendSamples({ limit = -1 } = {}) {
   if (-1 < limit) {
     oldSamples = oldSamples.filter(sample => sample.time < limit)
   }
-  const serializedSamples = serialize([oldSamples[0]]);
+  const serializedSamples = serialize(oldSamples);
   console.log('Sending', serializedSamples.byteLength, 'bytes');
   
   worker.postMessage({ 

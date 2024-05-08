@@ -28,15 +28,14 @@ class MultipartParser {
   }
 
   body() {
-    const res = Buffer.concat(this.buffers).toString();
+    const res = Buffer.concat(this.buffers).toString('binary');
     const start = res.indexOf('\r\n\r\n') + 4;
-    const end = res.lastIndexOf(this.boundary);
+    const end = res.lastIndexOf('\r\n' + this.boundary);
     return res.slice(start, end);
   }
 
   getBuffer() {
     const res = this.body();
-    console.log("Received data: ", res.length);
     if (res.includes(this.boundary)) {
       throw new Error('Invalid boundary found in the data');
     }
