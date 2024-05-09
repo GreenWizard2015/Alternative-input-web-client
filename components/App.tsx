@@ -1,69 +1,20 @@
 import React, { useCallback, useRef } from "react";
-import FaceDetector from "./components/FaceDetector";
-import "./app.css";
-import { toggleFullscreen } from "./utils/canvas";
-import UI from "./components/UI";
-import { cyrb53 } from "./utils/cyrb53";
-import { onMenuTick } from "./modes/onMenuTick";
-import { AppMode } from "modes/AppMode";
-import { Frame } from "components/FaceDetector";
+import { toggleFullscreen } from "../utils/canvas";
+import UI from "./UI";
+import { cyrb53 } from "../utils/cyrb53";
+import { onMenuTick } from "../modes/onMenuTick";
+import { AppMode } from "../modes/AppMode";
+import { Frame } from "./FaceDetector";
+import { Sample, storeSample, sendSamples } from "./Samples";
+import { Intro } from "./Intro";
+// redux related imports
+import { connect } from "react-redux";
+import { setMode } from "../store/slices/App";
+import { RootState } from "../store";
+import dynamic from "next/dynamic";
 
-type UUIDed = {
-  name: string,
-  uuid: string
-}
-
-type Position = {
-  x: number,
-  y: number
-}
-
-type Sample = {
-  time: number,
-  leftEye: Uint8ClampedArray,
-  rightEye: Uint8ClampedArray,
-  points: Float32Array,
-  goal: Position,
-  userId: string,
-  placeId: string,
-  screenId: number
-}
-
-const MAX_SAMPLES = 1000;
-let samples: Sample[] = [];
-
-function sendSamples({ limit = -1 } = {}) {
-  let oldSamples = samples;
-  samples = [];
-  // Async request
-  const saveEndpoint = process.env.SAVE_ENDPOINT || '';
-  if (!saveEndpoint) {
-    console.error('No SAVE_ENDPOINT provided');
-    return;
-  }
-  if (-1 < limit) {
-    oldSamples = oldSamples.filter(sample => sample.time < limit)
-  }
-
-  fetch(saveEndpoint, {
-    body: new URLSearchParams([
-      ['chunk', JSON.stringify(oldSamples, function (key, value: unknown) {
-        if (value instanceof Uint8ClampedArray || value instanceof Float32Array) {
-          return Array.from(value)
-        }
-        return value
-      })]
-    ]),
-    method: 'POST'
-  })
-}
-
-function storeSample(sample: Sample) {
-  samples.push(sample)
-  if (samples.length >= MAX_SAMPLES) {
-    sendSamples()
-  }
-}
+// DYNAMIC IMPORT of FaceDetector
+const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
@@ -73,22 +24,11 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
-function App() {
+function AppComponent({ mode, setMode, userId, placeId}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
-  const [mode, setMode] = React.useState("menu"); // replace with enum/constant
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
-  const userRef = useRef<UUIDed | null>(null);
-  const placeIdRef = useRef<UUIDed | null>(null);
-
-  function setUserRef(user: UUIDed) {
-    userRef.current = user;
-  }
-
-  function setPlaceIdRef(placeId: UUIDed) {
-    placeIdRef.current = placeId
-  }
 
   const onFrame = useCallback(
     function (frame: Frame) {
@@ -106,15 +46,15 @@ function App() {
           rightEye: frame.sample.rightEye,
           points: frame.sample.points,
           goal: goalPosition.current,
-          userId: userRef.current?.uuid ?? '',
-          placeId: placeIdRef.current?.uuid ?? '',
+          userId: userId.uuid ?? '',
+          placeId: placeId.uuid ?? '',
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
           storeSample(sample);
         }
       }
-    }, [canvasRef, lastFrame, goalPosition, userRef, placeIdRef, gameMode]
+    }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode]
   );
 
   function onKeyDown(exit) {
@@ -137,6 +77,8 @@ function App() {
           return onMenuTick(data);
         case "game":
           return onGameTick(data);
+        case "intro":
+          return null; // ignore
         default:
           throw new Error("Unknown mode: " + mode);
       }
@@ -158,18 +100,23 @@ function App() {
       canvasCtx.fillStyle = "white";
       canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
 
+      const viewport = {
+        left: canvasElement.offsetLeft,
+        top: canvasElement.offsetTop,
+        width: canvasElement.width,
+        height: canvasElement.height,
+      };
+      const screenStr = JSON.stringify(viewport);
+
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
-        viewport: {
-          // check if it's correct to use offsetLeft/Top
-          left: canvasElement.offsetLeft,
-          top: canvasElement.offsetTop,
-          width: canvasElement.width,
-          height: canvasElement.height,
-        },
+        viewport,
         frame: lastFrame.current,
         goal: goalPosition.current,
+        user: userId?.uuid,
+        place: placeId?.uuid,
+        screenId: cyrb53(screenStr),
         gameMode,
       });
       canvasCtx.restore();
@@ -178,7 +125,7 @@ function App() {
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode]);
+  }, [onTick, gameMode, userId, placeId]);
 
   function startGame(mode: AppMode) {
     setMode("game");
@@ -188,6 +135,9 @@ function App() {
   const [webcamId, setWebcamId] = React.useState(null);
   return (
     <>
+      {('intro' === mode) && (
+        <Intro onConfirm={() => setMode('menu')} />
+      )}
       {('menu' === mode) && (
         <UI
           onWebcamChange={setWebcamId}
@@ -195,9 +145,6 @@ function App() {
           goFullscreen={() => toggleFullscreen(
             document.getElementById("root") ?? document.body // app root element
           )}
-
-          userId={userRef} onUserChange={setUserRef}
-          placeId={placeIdRef} onPlaceChange={setPlaceIdRef}
         />
       )}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
@@ -210,4 +157,11 @@ function App() {
   );
 }
 
-export default App;
+export default connect(
+  (state: RootState) => ({
+    mode: state.App.mode,
+    userId: state.UI.userId,
+    placeId: state.UI.placeId
+  }),
+  { setMode }
+)(AppComponent);

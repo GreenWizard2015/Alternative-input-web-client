@@ -126,3 +126,11 @@ body {
 .flex-grow {
   flex-grow: 1;
 }
+
+.ms-2 {
+  margin-left: 1rem !important;
+}
+
+select {
+  min-width: 15rem;
+}
