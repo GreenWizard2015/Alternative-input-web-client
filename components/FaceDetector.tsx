@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
-import { results2sample } from 'utils/MP';
+import { results2sample } from '../utils/MP';
 
 const DEFAULT_SETTINGS = {
   mode: 'circle', padding: 1.25,

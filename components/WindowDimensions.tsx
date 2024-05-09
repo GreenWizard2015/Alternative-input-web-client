@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { connect } from 'react-redux';
-import { updateScreen } from 'store/slices/App';
+import { updateScreen } from '../store/slices/App';
 
 const WindowDimensions = ({ updateScreen }) => {
   useEffect(() => {
