@@ -59,12 +59,19 @@ function AppComponent({ mode, setMode, userId, placeId}) {
 
   function onKeyDown(exit) {
     return (event) => {
-      if (event.code === 'Escape') {
+      const isExit = event.code === 'Escape';
+      if (gameMode) {
+        if (isExit) {
+          gameMode.onPause();
+          exit();
+          return;
+        }
+
+        gameMode.onKeyDown(event);
+      }
+      if (isExit) {
         exit();
         return;
-      }
-      if (gameMode) {
-        gameMode.onKeyDown(event);
       }
     }
   }
@@ -127,9 +134,15 @@ function AppComponent({ mode, setMode, userId, placeId}) {
     return () => { cancelAnimationFrame(animationFrameId.current); };
   }, [onTick, gameMode, userId, placeId]);
 
+  function onPause() {
+    const now = Date.now();
+    sendSamples({limit: now - 3000}); // send collected samples before exit
+  }
+
   function startGame(mode: AppMode) {
     setMode("game");
     setGameMode(mode);
+    mode.onPause = onPause;
   }
 
   const [webcamId, setWebcamId] = React.useState(null);
@@ -150,8 +163,6 @@ function AppComponent({ mode, setMode, userId, placeId}) {
       <FaceDetector deviceId={webcamId} onFrame={onFrame} />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
-        const now = Date.now();
-        sendSamples({limit: now - 3000}); // send collected samples before exit
       })} />
     </>
   );

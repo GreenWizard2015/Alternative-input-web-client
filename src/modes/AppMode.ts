@@ -12,15 +12,19 @@ function clamp(val: number, min: number, max: number) {
 export class AppMode {
   _paused: boolean;
   _timeToggledPaused: number = 0;
+  onPause: () => void = () => {};
 
   constructor() {
     this._paused = true;
   }
 
   onKeyDown(event: KeyboardEvent) {
-    if (['KeyP', 'Enter'].includes(event.code)) {
+    if (['KeyP', 'Enter', 'Space'].includes(event.code)) {
       this._paused = !this._paused;
-      this._timeToggledPaused = Date.now()
+      this._timeToggledPaused = Date.now();
+      if (this._paused) {
+        this.onPause();
+      }
     }
   }
 
