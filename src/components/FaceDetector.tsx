@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';

@@ -83,7 +83,7 @@ export function serialize(samples: Sample[]) {
   return buffer;
 };
 
-const MAX_SAMPLES: number = 111;// parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
+const MAX_SAMPLES: number = parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
 let samples: Sample[] = [];
 
 function sendSamples({ limit = -1 } = {}) {

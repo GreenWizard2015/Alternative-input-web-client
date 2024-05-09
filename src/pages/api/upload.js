@@ -1,5 +1,3 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-
 // Basic implementation of a multipart form data parser
 class MultipartParser {
   constructor(boundary) {

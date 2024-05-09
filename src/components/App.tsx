@@ -5,7 +5,7 @@ import { cyrb53 } from "../utils/cyrb53";
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "modes/AppMode";
 import { Frame } from "components/FaceDetector";
-import { Sample, storeSample, sendSamples, serialize } from "./Samples";
+import { Sample, storeSample, sendSamples } from "./Samples";
 import { Intro } from "./Intro";
 // redux related imports
 import { connect } from "react-redux";
@@ -99,12 +99,6 @@ function AppComponent({ mode, setMode, userId, placeId}) {
       // clear canvas by filling it with white color
       canvasCtx.fillStyle = "white";
       canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
-      // draW Image from webcam
-      if (lastFrame.current?.image) {
-        const { image } = lastFrame.current;
-        const { width, height } = image;
-        // canvasCtx.drawImage(lastFrame.current.image, 0, 0, canvasElement.width, canvasElement.height);
-      }
 
       const viewport = {
         left: canvasElement.offsetLeft,
