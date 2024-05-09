@@ -83,7 +83,9 @@ export function serialize(samples: Sample[]) {
   return buffer;
 };
 
-const MAX_SAMPLES: number = parseInt(process.env.REACT_APP_SAMPLES_PER_CHUNK || '1000');
+// max chunk size 4mb
+const MAX_CHUNK_SIZE: number = 4 * 1024 * 1024;
+const MAX_SAMPLES: number = Math.floor(MAX_CHUNK_SIZE / sampleSize());
 let samples: Sample[] = [];
 
 function sendSamples({ limit = -1 } = {}) {
