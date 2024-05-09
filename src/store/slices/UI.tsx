@@ -3,8 +3,8 @@ import { UUIDed, validate } from "../../components/Samples";
 
 interface UIState {
   webcamId: string | null;
-  userId: UUIDed | null;
-  placeId: UUIDed | null;
+  userId: string,
+  placeId: string,
 
   users: UUIDed[];
   places: UUIDed[];
@@ -12,8 +12,8 @@ interface UIState {
 
 const initialState: UIState = {
   webcamId: null,
-  userId: null,
-  placeId: null,
+  userId: '',
+  placeId: '',
   users: [],
   places: [],
 };
@@ -26,7 +26,7 @@ export const UISlice = createSlice({
       state.webcamId = action.payload;
     },
     setUser: (state, action: PayloadAction<UUIDed>) => {
-      state.userId = action.payload;
+      state.userId = action.payload.uuid;
       // add user to list if not already there
       if (!state.users.find(u => u.name === action.payload.name)) {
         state.users.push(action.payload);
@@ -34,15 +34,40 @@ export const UISlice = createSlice({
       state.users = state.users.filter(validate);
     },
     setPlace: (state, action: PayloadAction<UUIDed>) => {
-      state.placeId = action.payload;
+      state.placeId = action.payload.uuid;
       // add place to list if not already there
       if (action.payload && !state.places.find(p => p.name === action.payload.name)) {
         state.places.push(action.payload);
       }
       state.places = state.places.filter(validate);
     },
+    incrementStats: (state, action) => {
+      const { userId, placeId, count } = action.payload;      
+      const places = state.places.map(p => {
+        if (p.uuid === placeId) {
+          if(typeof p.samples !== 'number') {
+            p.samples = 0;
+          }
+          return { ...p, samples: p.samples + count };
+        }
+        return p;
+      });
+      const users = state.users.map(u => {
+        if (u.uuid === userId) {
+          if(typeof u.samples !== 'number') {
+            u.samples = 0;
+          }
+          return { ...u, samples: u.samples + count };
+        }
+        return u;
+      });
+
+      state.places = places;
+      state.users = users;
+    },
   },
 });
 
 export const { setWebcamId, setUser, setPlace } = UISlice.actions;
+export const { incrementStats } = UISlice.actions;
 export default UISlice;

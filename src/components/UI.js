@@ -34,7 +34,7 @@ function UI({
       </div>
       <div>
         <button onClick={() => {
-          setUser({ name: tempName, uuid: crypto.randomUUID() })
+          setUser({ name: tempName, uuid: crypto.randomUUID(), samples: 0 })
           setTempName('')
           setSubMenu('')
         }}>Ok</button>
@@ -52,7 +52,7 @@ function UI({
       </div>
       <div>
         <button onClick={() => {
-          setPlace({ name: tempName, uuid: crypto.randomUUID() })
+          setPlace({ name: tempName, uuid: crypto.randomUUID(), samples: 0 })
           setTempName('')
           setSubMenu('')
         }}>Ok</button>
@@ -69,22 +69,29 @@ function UI({
       <div className='flex w100'>
         User: 
         {/* dropdown */}
-        <select value={userId?.uuid} onChange={e => setUser(users.find(u => u.uuid === e.target.value))}>
-          {users.map(u => <option key={u.uuid} value={u.uuid}>{u.name}</option>)}
+        <select value={userId} onChange={e => setUser(users.find(u => u.uuid === e.target.value))}>
+          {users.map(u => <option key={u.uuid} value={u.uuid}>
+            {u.name} ({u.samples} samples)
+            </option>)}
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('user')}>Add</button>
       </div>
       <div className='flex w100'>
         Place: 
         {/* dropdown */}
-        <select value={placeId?.uuid} onChange={e => setPlace(places.find(p => p.uuid === e.target.value))}>
-          {places.map(p => <option key={p.uuid} value={p.uuid}>{p.name}</option>)}
+        <select value={placeId} onChange={e => setPlace(places.find(p => p.uuid === e.target.value))}>
+          {places.map(p => <option key={p.uuid} value={p.uuid}>
+            {p.name} ({p.samples} samples)
+            </option>)}
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('place')}>Add</button>
       </div>
 
       <button className='w100' onClick={showHelp}>Help</button>
-      <button className='w100' onClick={() => setSubMenu('start')} disabled={!validate(userId) || !validate(placeId)}>Start</button>
+      <button className='w100' 
+        onClick={() => setSubMenu('start')} 
+        disabled={(userId === '') || (placeId === '')}
+      >Start</button>
       <button className='w100' onClick={goFullscreen}>Fullscreen</button>
     </>
   }

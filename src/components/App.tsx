@@ -46,8 +46,8 @@ function AppComponent({ mode, setMode, userId, placeId}) {
           rightEye: frame.sample.rightEye,
           points: frame.sample.points,
           goal: goalPosition.current,
-          userId: userId.uuid ?? '',
-          placeId: placeId.uuid ?? '',
+          userId: userId,
+          placeId: placeId,
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
@@ -121,8 +121,8 @@ function AppComponent({ mode, setMode, userId, placeId}) {
         viewport,
         frame: lastFrame.current,
         goal: goalPosition.current,
-        user: userId?.uuid,
-        place: placeId?.uuid,
+        user: userId,
+        place: placeId,
         screenId: cyrb53(screenStr),
         gameMode,
       });

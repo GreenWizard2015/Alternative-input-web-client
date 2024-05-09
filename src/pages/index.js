@@ -1,16 +1,18 @@
 import React from 'react';
 import App from '../components/App';
-import WindowDimensions from '../components/WindowDimensions';
 import DataWorker from '../components/DataWorker';
+import WindowDimensions from '../components/WindowDimensions';
+import { incrementStats } from '../store/slices/UI';
+import { connect } from 'react-redux';
 
-const HomePage = () => {
+const HomePage = ({ incrementStats }) => {
   return (
       <>
         <WindowDimensions />
-        <DataWorker />
+        <DataWorker incrementStats={incrementStats} />
         <App />
       </>
   );
 };
 
-export default HomePage;
+export default connect(null, { incrementStats })(HomePage);

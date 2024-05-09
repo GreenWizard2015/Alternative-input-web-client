@@ -2,7 +2,8 @@ import { worker } from './DataWorker';
 
 type UUIDed = {
   name: string,
-  uuid: string
+  uuid: string,
+  samples: number,
 };
 
 type Position = {
@@ -99,10 +100,17 @@ function sendSamples({ limit = -1 } = {}) {
   const serializedSamples = serialize(oldSamples);
   console.log('Sending', serializedSamples.byteLength, 'bytes');
   
-  worker.postMessage({ 
-    samples: serializedSamples,
-    endpoint: saveEndpoint 
-  });
+  const count = oldSamples.length;
+  if(0 < count) {
+    const userId = oldSamples[0].userId;
+    const placeId = oldSamples[0].placeId;
+
+    worker.postMessage({ 
+      samples: serializedSamples,
+      endpoint: saveEndpoint,
+      userId, placeId, count
+    });
+  }
 }
 
 function storeSample(sample: Sample) {
