@@ -1,5 +1,4 @@
 import Spline from "cubic-spline";
-import { SpinningTarget } from "../utils/SpinningTarget";
 import { AppMode } from "./AppMode";
 
 function gaussian(mean = 0, stdev = 1) {
@@ -49,7 +48,6 @@ export class SplineMode extends AppMode {
     constructor() {
         super();
         this._pos = { x: 0.5, y: 0.5 }
-        this._target = new SpinningTarget();
         this._points = null;
         this._newSpline({ extend: false })
     }
@@ -87,12 +85,11 @@ export class SplineMode extends AppMode {
         if (this._maxT < this._T) this._newSpline();
 
         let pos = this._getPoint(this._T / this._maxT);
-        pos = {
+        this._pos = {
             x: clip(pos.x, 0.0, 1.0),
             y: clip(pos.y, 0.0, 1.0)
         };
-        this._target.onRender({ viewport, canvasCtx, goal: pos });
-        this._pos = this._target.getGoal();
+        this.drawTarget({ position: this._pos, canvasCtx, viewport });
     }
 
     getGoal() {
