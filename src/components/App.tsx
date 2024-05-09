@@ -99,6 +99,12 @@ function AppComponent({ mode, setMode, userId, placeId}) {
       // clear canvas by filling it with white color
       canvasCtx.fillStyle = "white";
       canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      // draW Image from webcam
+      if (lastFrame.current?.image) {
+        const { image } = lastFrame.current;
+        const { width, height } = image;
+        // canvasCtx.drawImage(lastFrame.current.image, 0, 0, canvasElement.width, canvasElement.height);
+      }
 
       const viewport = {
         left: canvasElement.offsetLeft,

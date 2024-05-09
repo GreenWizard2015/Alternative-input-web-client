@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { FaceMesh, GpuBuffer, NormalizedLandmarkList, Results } from '@mediapipe/face_mesh';
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
-import { results2sample, Sample } from '../utils/MP';
+import { results2sample } from 'utils/MP';
 
 const DEFAULT_SETTINGS = {
   mode: 'circle', padding: 1.25,
@@ -12,71 +12,71 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2,
   minTrackingConfidence: 0.2,
 };
-export type Frame = {
-  results: Results,
-  sample: Sample | null,
-  image: GpuBuffer,
-  landmarks: NormalizedLandmarkList | null,
-  settings: typeof DEFAULT_SETTINGS
-}
 
-export default function FaceDetector({ onFrame, deviceId, ...settings }) {
+export default function FaceDetectorComponent({ onFrame, deviceId, ...settings }) {
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [settings]);
   const webcamRef = useRef<Webcam | null>(null);
-  const intermediateCanvasRef = useRef(null);
-  const callbackRef = useRef<((frame: Frame) => void) | null>(null);
+  const intermediateCanvasRef = useRef<HTMLCanvasElement>(null);
+  const frameCanvasRef = useRef<HTMLCanvasElement>(null);
+  const callbackRef = useRef<((frame) => void) | null>(null);
 
   useEffect(() => {
     callbackRef.current = onFrame;
   }, [onFrame]);
 
-  const onResults = useCallback((results) => {
-    if (!callbackRef.current) return;
-
-    const { SIZE, mode, padding, visibilityThreshold, presenceThreshold } = Settings;
-    const sample = results2sample(results, intermediateCanvasRef.current, {
-      mode, padding,
-      visibilityThreshold, presenceThreshold,
-      SIZE,
-    });
-
-    const landmarks = sample ? results.multiFaceLandmarks[0] : null;
-    callbackRef.current({
-      results,
-      sample,
-      image: results.image,
-      landmarks,
-      settings: Settings,
-    });
-  }, [Settings]);
-
   useEffect(() => {
-    const faceMesh = new FaceMesh({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
+    async function setupFaceLandmarker() {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+      );
+      const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+          delegate: "GPU"
+        },
+        outputFaceBlendshapes: true,
+        runningMode: "VIDEO",
+        numFaces: 1
+      });
+      
+      const video = webcamRef.current?.video;
+      if (!video) {
+        console.error('Webcam not available');
+        return;
+      }
 
-    const { maxNumFaces, minDetectionConfidence, minTrackingConfidence } = Settings;
-    faceMesh.setOptions({ maxNumFaces, minDetectionConfidence, minTrackingConfidence });
-    faceMesh.onResults(onResults);
+      const camera = new cameraUtils.Camera(video, {
+        onFrame: async () => {
+          const results = await faceLandmarker.detectForVideo(video, Date.now());
+          const frame = frameCanvasRef.current;
+          if (frame) {
+            frame.width = video.videoWidth;
+            frame.height = video.videoHeight;
+            const ctx = frame.getContext('2d');
+            ctx?.drawImage(video, 0, 0, frame.width, frame.height);
+            
+            if (callbackRef.current) {
+              callbackRef.current({
+                results,
+                sample: results2sample(results, frame, intermediateCanvasRef.current, Settings),
+                image: frame,
+                landmarks: results.faceLandmarks[0],
+                settings: Settings,
+              });
+            }
+          }
+        },
+      });
+      camera.start();
 
-    const video = webcamRef.current?.video;
-    if (!video) {
-      console.error('Webcam not available');
-      return;
+      return () => {
+        faceLandmarker.close();
+        camera.stop();
+      };
     }
 
-    const camera = new cameraUtils.Camera(video, {
-      onFrame: async () => {
-        await faceMesh.send({ image: video });
-      },
-    });
-
-    camera.start();
-
-    return () => {
-      faceMesh.close().then(() => camera.stop()).catch(console.error);
-    };
-  }, [Settings, onResults, deviceId]);
+    setupFaceLandmarker();
+  }, [Settings, deviceId]);
 
   const videoConstraints = deviceId ? { deviceId: { exact: deviceId } } : undefined;
 
@@ -88,6 +88,15 @@ export default function FaceDetector({ onFrame, deviceId, ...settings }) {
         videoConstraints={videoConstraints}
       />
       <canvas ref={intermediateCanvasRef} style={{ display: 'none' }} />
+      <canvas ref={frameCanvasRef} style={{ display: 'none' }} />
     </>
   );
 }
+
+export type Frame = {
+  results: any,
+  sample: any,
+  image: HTMLCanvasElement | null,
+  landmarks: any,
+  settings: typeof DEFAULT_SETTINGS,
+};

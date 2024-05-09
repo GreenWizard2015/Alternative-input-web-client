@@ -173,17 +173,17 @@ export type Sample = {
   points: Float32Array
 }
 
-export function results2sample(results, tmpCanvas, {
+export function results2sample(results, frame, tmpCanvas, {
   mode = "circle", padding = 1.25,
   visibilityThreshold = 0.5, presenceThreshold = 0.5,
   SIZE = 32,
 }): Sample | null {
   if (!results) return null;
-  if (!results.multiFaceLandmarks) return null;
-  if (results.multiFaceLandmarks.length < 1) return null;
+  if (!results.faceLandmarks) return null;
+  if (results.faceLandmarks.length === 0) return null;
 
-  const { height, width, } = results.image;
-  const landmarks = results.multiFaceLandmarks[0];
+  const { height, width, } = frame;
+  const landmarks = results.faceLandmarks[0];
   const decoded = decodeLandmarks(landmarks, {
     height, width, visibilityThreshold, presenceThreshold,
   });
@@ -191,12 +191,12 @@ export function results2sample(results, tmpCanvas, {
   const leftEye = _points2crop(
     MPParts.leftEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { mode, padding, SIZE, image: results.image }
+    { mode, padding, SIZE, image: frame }
   );
   const rightEye = _points2crop(
     MPParts.rightEye.map(idx => decoded[idx]),
     tmpCanvas,
-    { mode, padding, SIZE, image: results.image }
+    { mode, padding, SIZE, image: frame }
   );
 
   const pointsArray = new Float32Array(468 * 2);

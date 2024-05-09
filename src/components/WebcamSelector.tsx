@@ -17,7 +17,6 @@ function WebcamSelector({ onWebcamChange }) {
   function handleRefresh() {
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log(videoDevices);
       setWebcams(videoDevices);
       setSelectedWebcam('');
     });
