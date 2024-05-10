@@ -199,8 +199,11 @@ export function results2sample(results, frame, tmpCanvas, {
     { mode, padding, SIZE, image: frame }
   );
 
-  const pointsArray = new Float32Array(468 * 2);
-  for (let i = 0; i < 468; i++) {
+  if(478 != landmarks.length) {
+    throw new Error('Expected 478 points');
+  }
+  const pointsArray = new Float32Array(478 * 2);
+  for (let i = 0; i < 478; i++) {
     const pt = _isValidPoint(landmarks[i], { visibilityThreshold, presenceThreshold }) ?
       landmarks[i] : { x: -10, y: -10 };
 

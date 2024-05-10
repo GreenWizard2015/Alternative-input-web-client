@@ -26,7 +26,7 @@ function sampleSize() {
   return 4 // time
     + 32 * 32 * 1 // sample.leftEye is 32x32 pixels
     + 32 * 32 * 1 // sample.rightEye is 32x32 pixels
-    + 4 * 2 * 468 // sample.points is 468 points
+    + 4 * 2 * 478 // sample.points is 478 points
     + 4 // goal.x
     + 4 // goal.y
     + 36 // userId
@@ -58,8 +58,8 @@ export function serialize(samples: Sample[]) {
       offset += 1;
     });
 
-    if (sample.points.length !== 2 * 468) {
-      throw new Error('Invalid points size. Expected 2x468, got ' + sample.points.length);
+    if (sample.points.length !== 2 * 478) {
+      throw new Error('Invalid points size. Expected 2x478, got ' + sample.points.length);
     }
     sample.points.forEach(value => {
       view.setFloat32(offset, value);
