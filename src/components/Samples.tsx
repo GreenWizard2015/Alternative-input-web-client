@@ -69,9 +69,17 @@ export function serialize(samples: Sample[]) {
     offset += 4;
     view.setFloat32(offset, sample.goal.y);
     offset += 4;
+
+    if(36 !== sample.userId.length) {
+      throw new Error('Invalid userId size. Expected 36, got ' + sample.userId.length);
+    }
     for (let i = 0; i < 36; i++) {
       view.setUint8(offset, sample.userId.charCodeAt(i));
       offset += 1;
+    }
+
+    if(36 !== sample.placeId.length) {
+      throw new Error('Invalid placeId size. Expected 36, got ' + sample.placeId.length);
     }
     for (let i = 0; i < 36; i++) {
       view.setUint8(offset, sample.placeId.charCodeAt(i));

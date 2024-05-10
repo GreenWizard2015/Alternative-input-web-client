@@ -23,8 +23,9 @@ function onGameTick({
   gameMode.onOverlay({ viewport, canvasCtx, goal });
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
-
-function AppComponent({ mode, setMode, userId, placeId}) {
+function AppComponent(
+  { mode, setMode, userId, placeId }: { mode: any, setMode: any, userId: string, placeId: string }
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
