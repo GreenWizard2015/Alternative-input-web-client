@@ -97,19 +97,21 @@ const MAX_CHUNK_SIZE: number = 4 * 1024 * 1024;
 const MAX_SAMPLES: number = Math.floor(MAX_CHUNK_SIZE / sampleSize());
 let samples: Sample[] = [];
 
-function sendSamples({ limit = -1 } = {}) {
+function sendSamples({ limit, clear=false }) {
   let oldSamples = samples;
-  samples = [];
   // Async request
   const saveEndpoint = '/api/upload';
-  if (-1 < limit) {
-    oldSamples = oldSamples.filter(sample => sample.time < limit)
+  if (clear) {
+    samples = [];
+  } else {
+    samples = oldSamples.filter(sample => sample.time >= limit);
   }
-  const serializedSamples = serialize(oldSamples);
-  console.log('Sending', serializedSamples.byteLength, 'bytes');
+  oldSamples = oldSamples.filter(sample => sample.time < limit);
   
   const count = oldSamples.length;
   if(0 < count) {
+    const serializedSamples = serialize(oldSamples);
+    console.log('Sending', serializedSamples.byteLength, 'bytes');
     const userId = oldSamples[0].userId;
     const placeId = oldSamples[0].placeId;
 
@@ -121,10 +123,10 @@ function sendSamples({ limit = -1 } = {}) {
   }
 }
 
-function storeSample(sample: Sample) {
-  samples.push(sample)
+function storeSample(sample: Sample, limit: number) {
+  samples.push(sample);
   if (samples.length >= MAX_SAMPLES) {
-    sendSamples()
+    sendSamples({ limit, clear: false });
   }
 }
 

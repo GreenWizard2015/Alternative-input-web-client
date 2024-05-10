@@ -52,7 +52,8 @@ function AppComponent(
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
-          storeSample(sample);
+          const now = Date.now();
+          storeSample(sample, now - 3000);
         }
       }
     }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode]
@@ -137,7 +138,7 @@ function AppComponent(
 
   function onPause() {
     const now = Date.now();
-    sendSamples({limit: now - 3000}); // send collected samples before exit
+    sendSamples({limit: now - 3000, clear: true}); // send collected samples before exit
   }
 
   function startGame(mode: AppMode) {
