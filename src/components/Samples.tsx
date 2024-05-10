@@ -141,6 +141,9 @@ function sendSamples({ limit, clear=false }) {
 }
 
 function storeSample(sample: Sample, limit: number) {
+  // goal should be within the range -2..2, just to be sure that its valid  
+  if(sample.goal.x < -2 || sample.goal.x > 2) return;
+  if(sample.goal.y < -2 || sample.goal.y > 2) return;
   samples.push(sample);
   if (samples.length >= MAX_SAMPLES) {
     sendSamples({ limit, clear: false });
