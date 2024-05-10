@@ -108,8 +108,19 @@ function sendSamples({ limit, clear=false }) {
   }
   oldSamples = oldSamples.filter(sample => sample.time < limit);
   
-  const count = oldSamples.length;
-  if(0 < count) {
+  if(0 < oldSamples.length) {
+    if(MAX_SAMPLES < oldSamples.length) { // add to start of samples
+      for(let i = MAX_SAMPLES; i < oldSamples.length; i++) {
+        samples.unshift(oldSamples[i]);
+      }
+      oldSamples = oldSamples.slice(0, MAX_SAMPLES);
+    }
+
+    const count = oldSamples.length;
+    if(count < 1) return;
+    if(MAX_SAMPLES < count) {
+      throw new Error('Too many samples to send: ' + count);
+    }
     const serializedSamples = serialize(oldSamples);
     console.log('Sending', serializedSamples.byteLength, 'bytes');
     const userId = oldSamples[0].userId;
