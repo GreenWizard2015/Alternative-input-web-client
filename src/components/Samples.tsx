@@ -40,7 +40,7 @@ export function serialize(samples: Sample[]) {
   const view = new DataView(buffer);
   let offset = 0;
   samples.forEach((sample, index) => {
-    view.setInt32(offset, sample.time);
+    view.setUint32(offset, sample.time);
     offset += 4;
     if (sample.leftEye.length !== 32 * 32) {
       throw new Error('Invalid leftEye size. Expected 32x32, got ' + sample.leftEye.length);
@@ -120,6 +120,12 @@ function sendSamples({ limit, clear=false }) {
     if(count < 1) return;
     if(MAX_SAMPLES < count) {
       throw new Error('Too many samples to send: ' + count);
+    }
+    // check time is monotonicly increasing
+    for(let i = 1; i < count; i++) {
+      if(oldSamples[i-1].time >= oldSamples[i].time) {
+        throw new Error('Time is not increasing');
+      }
     }
     const serializedSamples = serialize(oldSamples);
     console.log('Sending', serializedSamples.byteLength, 'bytes');
