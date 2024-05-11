@@ -1,3 +1,6 @@
+import CBackground from "./CBackground";
+import CRandomIllumination from "./CRandomIllumination";
+
 type Viewport = { width: number, height: number }
 type Position = { x: number, y: number }
 
@@ -13,6 +16,8 @@ export class AppMode {
   _paused: boolean;
   _timeToggledPaused: number = 0;
   onPause: () => void = () => {};
+  _background: CBackground = new CBackground();
+  _illumination: CRandomIllumination = new CRandomIllumination();
 
   constructor() {
     this._paused = true;
@@ -26,6 +31,8 @@ export class AppMode {
         this.onPause();
       }
     }
+    this._background.onEvent(event);
+    this._illumination.onEvent(event);
   }
 
   onRender() {
@@ -33,20 +40,20 @@ export class AppMode {
   }
 
   onOverlay({ canvasCtx, viewport }: { canvasCtx: CanvasRenderingContext2D, viewport: Viewport }) {
+    this._background.onRender(canvasCtx, viewport);
+    this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
     // Transition
-    const transition = clamp((Date.now() - this._timeToggledPaused) / TRANSITION_TIME, 0, 1)
-    const realTransition = this._paused ? transition : 1 - transition
-    const easedTransition = realTransition // Maybe add some easing
+    const transition = clamp((Date.now() - this._timeToggledPaused) / TRANSITION_TIME, 0, 1);
+    const realTransition = this._paused ? transition : 1 - transition;
+    const easedTransition = realTransition; // Maybe add some easing
 
     if (easedTransition > 0) {
-      canvasCtx.save()
       canvasCtx.fillStyle = `rgba(0, 0, 0, ${0.5 * easedTransition})`
       canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
       this.drawText({
         text: 'Paused', viewport, canvasCtx, color: 'white',
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
       });
-      canvasCtx.restore()
     }
   }
 
@@ -72,16 +79,13 @@ export class AppMode {
   drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style?: string }) {
     const absolutePosition = AppMode.makeAbsolute({ position, viewport });
 
-    canvasCtx.save();
     canvasCtx.beginPath();
     canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, 10, 10, 0, 0, Math.PI * 2);
     canvasCtx.fillStyle = style || 'red';
     canvasCtx.fill();
-    canvasCtx.restore();
   }
 
   drawText({ text, viewport, canvasCtx, color, style }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, color?: string, style?:string }) {
-    canvasCtx.save();
     canvasCtx.font = style || '48px Roboto';
     canvasCtx.fillStyle = color || 'red';
     canvasCtx.textBaseline = 'middle';
@@ -91,7 +95,6 @@ export class AppMode {
       (viewport.width - size.width) / 2,
       (viewport.height) / 2
     );
-    canvasCtx.restore();
   }
 
   isPaused() {

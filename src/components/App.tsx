@@ -19,10 +19,11 @@ const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 function onGameTick({
   canvasCtx, viewport, goal, gameMode
 }) {
-  gameMode.onRender({ viewport, canvasCtx, goal });
   gameMode.onOverlay({ viewport, canvasCtx, goal });
+  gameMode.onRender({ viewport, canvasCtx, goal });
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
+
 function AppComponent(
   { mode, setMode, userId, placeId }: { mode: any, setMode: any, userId: string, placeId: string }
 ) {
