@@ -63,36 +63,7 @@ function _ABRect(A, B) {
   };
 }
 
-function _rectFromPoints(pts, { height, width, padding = 0 }) {
-  // find min and max x and y
-  const minmm = pts.reduce((acc, pt) => {
-    return {
-      x: Math.min(acc.x, pt.x),
-      y: Math.min(acc.y, pt.y),
-    };
-  }, { x: width, y: height });
-  const maxmm = pts.reduce((acc, pt) => {
-    return {
-      x: Math.max(acc.x, pt.x),
-      y: Math.max(acc.y, pt.y),
-    };
-  }, { x: 0, y: 0 });
-
-  if (((maxmm.x - minmm.x) < 5) || ((maxmm.y - minmm.y) < 5)) return null;
-
-  const A = {
-    x: Math.max(0, minmm.x - padding),
-    y: Math.max(0, minmm.y - padding),
-  };
-  const B = {
-    x: Math.min(width, maxmm.x + padding),
-    y: Math.min(height, maxmm.y + padding),
-  };
-
-  return _ABRect(A, B);
-}
-
-function _circleROI(pts, { height, width, padding = 1.5 }) {
+function _circleROI(pts, { padding = 1.5 }) {
   const centerPtCum = pts.reduce((acc, pt) => {
     return {
       x: acc.x + pt.x,
@@ -118,7 +89,6 @@ function _circleROI(pts, { height, width, padding = 1.5 }) {
 }
 
 const _CROP_MODES = {
-  "rect": _rectFromPoints,
   "circle": _circleROI,
 };
 

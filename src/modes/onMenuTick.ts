@@ -25,8 +25,29 @@ export function onMenuTick({
     const { SIZE } = frame.settings;
     const leftEyeImage = grayscale2image(frame.sample.leftEye, SIZE);
     const rightEyeImage = grayscale2image(frame.sample.rightEye, SIZE);
-    canvasCtx.putImageData(leftEyeImage, 0, 0);
-    canvasCtx.putImageData(rightEyeImage, leftEyeImage.width, 0);
+// Define the scale factor
+let scaleFactor = 2;
+
+// Create a temporary canvas for the left eye image
+let leftCanvas = document.createElement('canvas');
+leftCanvas.width = leftEyeImage.width;
+leftCanvas.height = leftEyeImage.height;
+let leftCtx = leftCanvas.getContext('2d');
+leftCtx.putImageData(leftEyeImage, 0, 0);
+
+// Draw the left eye image onto the main canvas with scaling
+canvasCtx.drawImage(leftCanvas, 0, 0, leftEyeImage.width * scaleFactor, leftEyeImage.height * scaleFactor);
+
+// Create a temporary canvas for the right eye image
+let rightCanvas = document.createElement('canvas');
+rightCanvas.width = rightEyeImage.width;
+rightCanvas.height = rightEyeImage.height;
+let rightCtx = rightCanvas.getContext('2d');
+rightCtx.putImageData(rightEyeImage, 0, 0);
+
+// Draw the right eye image onto the main canvas with scaling
+canvasCtx.drawImage(rightCanvas, leftEyeImage.width * scaleFactor, 0, rightEyeImage.width * scaleFactor, rightEyeImage.height * scaleFactor);
+
 
     // print other info
     canvasCtx.fillStyle = "black";
