@@ -72,10 +72,29 @@ export const UISlice = createSlice({
     removePlace: (state, action: PayloadAction<string>) => {
       state.places = state.places.filter(p => p.uuid !== action.payload);
       state.placeId = '';
-    }
+    },
+    // reset samples for current user and place
+    resetUser: (state) => {
+      state.users = state.users.map(u => {
+        if (u.uuid === state.userId) {
+          return { ...u, samples: 0 };
+        }
+        return u;
+      });
+    },
+    resetPlace: (state) => {
+      state.places = state.places.map(p => {
+        if (p.uuid === state.placeId) {
+          return { ...p, samples: 0 };
+        }
+        return p;
+      });
+    },
   },
 });
 
-export const { setWebcamId, setUser, setPlace, removeUser, removePlace } = UISlice.actions;
+export const { 
+  setWebcamId, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace 
+} = UISlice.actions;
 export const { incrementStats } = UISlice.actions;
 export default UISlice;

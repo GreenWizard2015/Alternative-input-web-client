@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
 import WebcamSelector from './WebcamSelector';
-import { setUser, setPlace, removeUser, removePlace } from '../store/slices/UI';
+import { setUser, setPlace, removeUser, removePlace, resetUser, resetPlace } from '../store/slices/UI';
 import { connect } from 'react-redux';
 import { validate } from './Samples';
 
@@ -11,7 +11,8 @@ function UI({
   userId, setUser,
   placeId, setPlace,
   users, places,
-  activeUploads, doRemoveUser, doRemovePlace
+  activeUploads, doRemoveUser, doRemovePlace,
+  resetUser, resetPlace
 }) {
   const [subMenu, setSubMenu] = React.useState('');
   const [tempName, setTempName] = useState('');
@@ -87,6 +88,11 @@ function UI({
     </>
   } else {
     content = <>
+      {(0 < activeUploads) && (
+        <div className='flex w100'>
+          {activeUploads} uploads in progress...
+        </div>
+      )}
       <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />
       <div className='flex w100'>
@@ -99,6 +105,7 @@ function UI({
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('user')}>Add</button>
         <button className='flex-grow m5' onClick={removeUser}>Remove</button>
+        <button className='flex-grow m5' onClick={resetUser}>Reset</button>
       </div>
       <div className='flex w100'>
         Place: 
@@ -110,6 +117,7 @@ function UI({
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('place')}>Add</button>
         <button className='flex-grow m5' onClick={removePlace}>Remove</button>
+        <button className='flex-grow m5' onClick={resetPlace}>Reset</button>
       </div>
 
       <button className='w100' onClick={showHelp}>Help</button>
@@ -124,11 +132,6 @@ function UI({
   return (
     <div id="UI">
       <div className="UI-wrapper">
-        {(0 < activeUploads) && (
-          <b>
-            {activeUploads} uploads in progress...
-          </b>
-        )}
         {content}
       </div>
     </div>
@@ -143,5 +146,9 @@ export default connect(
     places: state.UI.places || [],
     activeUploads: state.App.activeUploads
   }),
-  { setUser, setPlace, doRemovePlace: removePlace, doRemoveUser: removeUser }
+  { 
+    setUser, setPlace, 
+    doRemovePlace: removePlace, doRemoveUser: removeUser, 
+    resetUser, resetPlace 
+  }
 )(UI)
