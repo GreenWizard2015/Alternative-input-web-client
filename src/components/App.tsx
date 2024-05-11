@@ -25,13 +25,41 @@ function onGameTick({
 }
 
 function AppComponent(
-  { mode, setMode, userId, placeId }: { mode: any, setMode: any, userId: string, placeId: string }
+  { mode, setMode, userId, placeId, activeUploads }: 
+  { mode: any, setMode: any, userId: string, placeId: string, activeUploads: number },
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
 
+  // show confirmation dialog before leaving the page if there are active uploads
+  React.useEffect(() => {
+    function handleBeforeUnload(event) {
+      // show confirmation dialog
+      const answer = window.confirm(
+        `There are ${activeUploads} active uploads. Are you sure you want to leave the page?`,
+      );
+
+      if (answer) {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        return;
+      } else {
+        // prevent the page from unloading
+        event.preventDefault();
+        event.returnValue = "";
+        return event.returnValue;
+      }
+    }
+
+    if (activeUploads > 0) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
+    }
+  }, [activeUploads]);
+  
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
@@ -150,7 +178,7 @@ function AppComponent(
 
   const [webcamId, setWebcamId] = React.useState(null);
   return (
-    <>
+    <>    
       {('intro' === mode) && (
         <Intro onConfirm={() => setMode('menu')} />
       )}
@@ -175,7 +203,8 @@ export default connect(
   (state: RootState) => ({
     mode: state.App.mode,
     userId: state.UI.userId,
-    placeId: state.UI.placeId
+    placeId: state.UI.placeId,
+    activeUploads: state.App.activeUploads,
   }),
   { setMode }
 )(AppComponent);

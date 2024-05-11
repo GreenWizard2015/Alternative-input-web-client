@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
 import WebcamSelector from './WebcamSelector';
-import { setUser, setPlace } from '../store/slices/UI';
+import { setUser, setPlace, removeUser, removePlace } from '../store/slices/UI';
 import { connect } from 'react-redux';
 import { validate } from './Samples';
 
@@ -10,7 +10,8 @@ function UI({
   onWebcamChange, goFullscreen, onStart,
   userId, setUser,
   placeId, setPlace,
-  users, places
+  users, places,
+  activeUploads, doRemoveUser, doRemovePlace
 }) {
   const [subMenu, setSubMenu] = React.useState('');
   const [tempName, setTempName] = useState('');
@@ -20,6 +21,28 @@ function UI({
   function showHelp() {
     setSubMenu('help')
   }
+
+  const removeUser = React.useCallback(() => {
+    // confirm dialog
+    const name = users.find(u => u.uuid === userId)?.name;
+    const answer = window.confirm(
+      `Are you sure you want to remove the user (${name})?`
+    );
+    if (answer) {
+      doRemoveUser();
+    }
+  }, [userId, users, doRemoveUser]);
+
+  const removePlace = React.useCallback(() => {
+    // confirm dialog
+    const name = places.find(p => p.uuid === placeId)?.name;
+    const answer = window.confirm(
+      `Are you sure you want to remove the place (${name})?`
+    );
+    if (answer) {
+      doRemovePlace();
+    }
+  }, [placeId, places, doRemovePlace]);
   
   let content = null;
   if ('help' === subMenu) {
@@ -75,6 +98,7 @@ function UI({
             </option>)}
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('user')}>Add</button>
+        <button className='flex-grow m5' onClick={removeUser}>Remove</button>
       </div>
       <div className='flex w100'>
         Place: 
@@ -85,6 +109,7 @@ function UI({
             </option>)}
         </select>
         <button className='flex-grow m5' onClick={() => setSubMenu('place')}>Add</button>
+        <button className='flex-grow m5' onClick={removePlace}>Remove</button>
       </div>
 
       <button className='w100' onClick={showHelp}>Help</button>
@@ -99,6 +124,11 @@ function UI({
   return (
     <div id="UI">
       <div className="UI-wrapper">
+        {(0 < activeUploads) && (
+          <b>
+            {activeUploads} uploads in progress...
+          </b>
+        )}
         {content}
       </div>
     </div>
@@ -110,7 +140,8 @@ export default connect(
     userId: state.UI.userId,
     placeId: state.UI.placeId,
     users: state.UI.users || [],
-    places: state.UI.places || []
+    places: state.UI.places || [],
+    activeUploads: state.App.activeUploads
   }),
-  { setUser, setPlace }
+  { setUser, setPlace, doRemovePlace: removePlace, doRemoveUser: removeUser }
 )(UI)

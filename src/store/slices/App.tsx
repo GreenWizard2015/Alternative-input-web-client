@@ -12,11 +12,13 @@ interface IScreen {
 interface AppState {
   mode: EAppMode;
   screen: IScreen | null;
+  activeUploads: number;
 };
 
 const initialState: AppState = {
   mode: "intro",
   screen: null,
+  activeUploads: 0,
 };
 
 export const AppSlice = createSlice({
@@ -29,8 +31,11 @@ export const AppSlice = createSlice({
     updateScreen: (state, action: PayloadAction<IScreen>) => {
       state.screen = action.payload;
     },
+    changeActiveUploads: (state, action: PayloadAction<number>) => {
+      state.activeUploads += action.payload;
+    }
   },
 });
 
-export const { setMode, updateScreen } = AppSlice.actions;
+export const { setMode, updateScreen, changeActiveUploads } = AppSlice.actions;
 export default AppSlice;

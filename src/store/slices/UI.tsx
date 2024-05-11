@@ -65,9 +65,17 @@ export const UISlice = createSlice({
       state.places = places;
       state.users = users;
     },
+    removeUser: (state, action: PayloadAction<string>) => {
+      state.users = state.users.filter(u => u.uuid !== action.payload);
+      state.userId = '';
+    },
+    removePlace: (state, action: PayloadAction<string>) => {
+      state.places = state.places.filter(p => p.uuid !== action.payload);
+      state.placeId = '';
+    }
   },
 });
 
-export const { setWebcamId, setUser, setPlace } = UISlice.actions;
+export const { setWebcamId, setUser, setPlace, removeUser, removePlace } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;
 export default UISlice;

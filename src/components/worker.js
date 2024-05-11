@@ -3,7 +3,8 @@
 self.onmessage = function({ data: { samples, endpoint, userId, placeId, count } }) {
   const fd = new FormData();
   fd.append('chunk', new Blob([samples], {type: 'application/octet-stream'}));
-  
+
+  self.postMessage({ status: 'start', });
   fetch(endpoint, {
     method: 'POST',
     body: fd
@@ -15,6 +16,6 @@ self.onmessage = function({ data: { samples, endpoint, userId, placeId, count } 
   }).then(text => {
     self.postMessage({ status: 'ok', text, userId, placeId, count });
   }).catch(error => {
-    self.postMessage('Error: ' + error.message);
+    self.postMessage({ status: 'error', error: error.message });
   });  
 }
