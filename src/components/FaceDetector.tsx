@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, FaceLandmarkerResult, FilesetResolver, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
 import { results2sample } from '../utils/MP';
 
@@ -47,7 +47,7 @@ export default function FaceDetectorComponent({ onFrame, deviceId, ...settings }
 
       const camera = new cameraUtils.Camera(video, {
         onFrame: async () => {
-          const results = await faceLandmarker.detectForVideo(video, Date.now());
+          const results: FaceLandmarkerResult = await faceLandmarker.detectForVideo(video, Date.now());
           const frame = frameCanvasRef.current;
           if (frame) {
             frame.width = video.videoWidth;
@@ -94,9 +94,9 @@ export default function FaceDetectorComponent({ onFrame, deviceId, ...settings }
 }
 
 export type Frame = {
-  results: any,
+  results: FaceLandmarkerResult,
   sample: any,
   image: HTMLCanvasElement | null,
-  landmarks: any,
+  landmarks: NormalizedLandmark[][],
   settings: typeof DEFAULT_SETTINGS,
 };

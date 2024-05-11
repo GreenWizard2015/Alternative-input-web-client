@@ -1,3 +1,4 @@
+import { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 export const MPParts = {
   leftEye: [
@@ -28,15 +29,16 @@ export const MPParts = {
 
 type Point = { x: number, y: number }
 
-function _isValidPoint(point: Point, { visibilityThreshold, presenceThreshold }) {
-  return true; // consider all points valid
-  // if (point.visibility && (point.visibility < visibilityThreshold)) return false;
+function _isValidPoint(point: NormalizedLandmark, { visibilityThreshold, presenceThreshold }) {
+  if (point.visibility && (point.visibility < visibilityThreshold)) return false;
   // if (point.presence && (point.presence < presenceThreshold)) return false;
-  // return true;
+  return true;
 }
 
-type decodedLandmarksArgs = { width: number, height: number, visibilityThreshold?: number, presenceThreshold?: number }
-export function decodeLandmarks(landmarks: Point[], {
+type decodedLandmarksArgs = { 
+  width: number, height: number, visibilityThreshold?: number, presenceThreshold?: number 
+};
+export function decodeLandmarks(landmarks: NormalizedLandmark[], {
   height, width, visibilityThreshold = 0.5, presenceThreshold = 0.5,
 }: decodedLandmarksArgs) {
   const points = landmarks
@@ -153,7 +155,7 @@ export function results2sample(results, frame, tmpCanvas, {
   if (results.faceLandmarks.length === 0) return null;
 
   const { height, width, } = frame;
-  const landmarks = results.faceLandmarks[0];
+  const landmarks: NormalizedLandmark[] = results.faceLandmarks[0];
   const decoded = decodeLandmarks(landmarks, {
     height, width, visibilityThreshold, presenceThreshold,
   });
