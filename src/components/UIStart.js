@@ -15,7 +15,7 @@ export default function UIStart({ onStart }) {
                     <ul>
                         <li>Right Arrow - start next challenge</li>
                         <li>Esc - return to main menu</li>
-                        <li>P / Enter - toggle pause</li>
+                        <li>P / Enter / Space - toggle pause</li>
                     </ul>
                     <button onClick={() => onStart(new LookAtMode())}>Start</button>
                 </div>
@@ -30,7 +30,7 @@ export default function UIStart({ onStart }) {
                         <li>Right Arrow - go to next corner</li>
                         <li>Right Arrow - go to previous corner</li>
                         <li>Esc - return to main menu</li>
-                        <li>P / Enter - toggle pause</li>
+                        <li>P / Enter / Space - toggle pause</li>
                     </ul>
                     <button onClick={() => onStart(new CornerMode())}>Start</button>
                 </div>
@@ -43,7 +43,7 @@ export default function UIStart({ onStart }) {
                     <p>In this mode you should concentrate on the red circle and ignore others.</p>
                     <ul>
                         <li>Esc - return to main menu</li>
-                        <li>P / Enter - toggle pause</li>
+                        <li>P / Enter / Space - toggle pause</li>
                     </ul>
                     <button onClick={() => onStart(new SplineMode())}>Start</button>
                 </div>
@@ -59,7 +59,7 @@ export default function UIStart({ onStart }) {
                         <li>Arrow Up - increase level of difficulty</li>
                         <li>Arrow Down - decrease level of difficulty</li>
                         <li>Esc - return to main menu</li>
-                        <li>P / Enter - toggle pause</li>
+                        <li>P / Enter / Space - toggle pause</li>
                     </ul>
                     <button onClick={() => onStart(new CircleMovingMode())}>Start</button>
                 </div>
