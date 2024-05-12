@@ -31,9 +31,8 @@ export const AppSlice = createSlice({
     updateScreen: (state, action: PayloadAction<IScreen>) => {
       state.screen = action.payload;
     },
-    changeActiveUploads: (state, action: PayloadAction<number>) => {
-      console.log('Changing active uploads by', action.payload);      
-      state.activeUploads = state.activeUploads + action.payload;
+    changeActiveUploads: (state, action: PayloadAction<number>) => {  
+      state.activeUploads += action.payload;
     }
   },
 });

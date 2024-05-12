@@ -6,7 +6,7 @@ import { incrementStats } from '../store/slices/UI';
 import { connect } from 'react-redux';
 import { changeActiveUploads } from '../store/slices/App';
 
-const HomePage = ({ incrementStats }) => {
+const HomePage = ({ incrementStats, changeActiveUploads }) => {
   return (
       <>
         <WindowDimensions />
