@@ -9,6 +9,7 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
 
     newWorker.onmessage = function(e) {
       if('start' === e.data.status) {
+        console.log('Worker started uploading data');
         changeActiveUploads(1);
         return;
       } else {
@@ -24,7 +25,7 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
     return () => {
       newWorker.terminate();
     };
-  }, [incrementStats]);
+  }, [incrementStats, changeActiveUploads]);
   return null;
 };
 
