@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
 import { cyrb53 } from "../utils/cyrb53";
@@ -34,31 +34,30 @@ function AppComponent(
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
 
   // show confirmation dialog before leaving the page if there are active uploads
-  React.useEffect(() => {
-    function handleBeforeUnload(event) {
-      // show confirmation dialog
-      const answer = window.confirm(
-        `There are ${activeUploads} active uploads. Are you sure you want to leave the page?`,
-      );
+  const activeUploadsRef = useRef(activeUploads);
+  useEffect(() => {
+    activeUploadsRef.current = activeUploads;
+  }, [activeUploads]);
 
-      if (answer) {
-        window.removeEventListener("beforeunload", handleBeforeUnload);
-        return;
-      } else {
-        // prevent the page from unloading
-        event.preventDefault();
-        event.returnValue = "";
-        return event.returnValue;
+  useEffect(() => {
+    function handleBeforeUnload(event) {
+      if (activeUploadsRef.current > 0) {
+        const answer = window.confirm(
+          `There are ${activeUploadsRef.current} active uploads. Are you sure you want to leave the page?`,
+        );
+
+        if (!answer) {
+          event.preventDefault();
+          event.returnValue = '';
+        }
       }
     }
 
-    if (activeUploads > 0) {
-      window.addEventListener("beforeunload", handleBeforeUnload);
-      return () => {
-        window.removeEventListener("beforeunload", handleBeforeUnload);
-      };
-    }
-  }, [activeUploads]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
   
   const onFrame = useCallback(
     function (frame: Frame) {
