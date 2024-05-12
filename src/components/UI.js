@@ -87,9 +87,10 @@ function UI({
       </div>
     </>
   } else {
+    console.log('activeUploads', activeUploads);
     content = <>
       {(0 < activeUploads) && (
-        <div className='flex w100'>
+        <div className='flex w100' style={{ color: 'red' }}>
           {activeUploads} uploads in progress...
         </div>
       )}
