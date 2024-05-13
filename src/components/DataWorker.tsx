@@ -8,17 +8,17 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
     worker = newWorker;
 
     newWorker.onmessage = function(e) {
+      console.log('Message received from worker', e.data);
       if('start' === e.data.status) {
-        console.log('Worker started uploading data');
-        changeActiveUploads(1);
+        const { inQueue } = e.data;
+        changeActiveUploads(inQueue);
         return;
       } else {
-        const { status, userId, placeId, count } = e.data;
+        const { status, userId, placeId, count, inQueue } = e.data;
         if('ok' === status) {
           incrementStats({ userId, placeId, count });
-          changeActiveUploads(-1);
+          changeActiveUploads(inQueue);
         }
-        console.log('Message received from worker', e.data);
       }
     };
 

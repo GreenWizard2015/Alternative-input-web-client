@@ -32,7 +32,7 @@ export const AppSlice = createSlice({
       state.screen = action.payload;
     },
     changeActiveUploads: (state, action: PayloadAction<number>) => {  
-      state.activeUploads += action.payload;
+      state.activeUploads = action.payload;
     }
   },
 });
