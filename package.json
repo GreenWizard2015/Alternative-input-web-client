@@ -30,5 +30,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
+  },
+  "devDependencies": {
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4",
+    "worker-loader": "^3.0.8",
+    "worker-plugin": "^5.0.1"
   }
 }

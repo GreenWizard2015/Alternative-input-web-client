@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
+    "target": "esnext",
     "jsx": "preserve",
     "lib": [
+      "WebWorker",
       "dom",
       "dom.iterable",
       "esnext"

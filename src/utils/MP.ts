@@ -116,7 +116,7 @@ function _points2crop(pts, canvas, {
   // cut out the part and resize to SIZE x SIZE
   canvas.width = SIZE;
   canvas.height = SIZE;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   ctx.drawImage(
     image,
     ROI.x, ROI.y, ROI.width, ROI.height,
@@ -142,7 +142,8 @@ export type Sample = {
   time: number,
   leftEye: Uint8ClampedArray,
   rightEye: Uint8ClampedArray,
-  points: Float32Array
+  points: Float32Array,
+  goal?: Point,
 }
 
 export function results2sample(results, frame, tmpCanvas, {

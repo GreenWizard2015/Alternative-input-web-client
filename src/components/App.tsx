@@ -74,7 +74,7 @@ function AppComponent(
           leftEye: frame.sample.leftEye,
           rightEye: frame.sample.rightEye,
           points: frame.sample.points,
-          goal: goalPosition.current,
+          goal: frame.sample.goal,
           userId: userId,
           placeId: placeId,
           screenId
@@ -190,7 +190,7 @@ function AppComponent(
           )}
         />
       )}
-      <FaceDetector deviceId={webcamId} onFrame={onFrame} />
+      <FaceDetector deviceId={webcamId} onFrame={onFrame} goal={goalPosition} />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
       })} />

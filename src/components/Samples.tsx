@@ -107,6 +107,8 @@ function sendSamples({ limit, clear=false }) {
     samples = oldSamples.filter(sample => sample.time >= limit);
   }
   oldSamples = oldSamples.filter(sample => sample.time < limit);
+  // sort by time
+  oldSamples.sort((a, b) => a.time - b.time);
   
   if(0 < oldSamples.length) {
     if(MAX_SAMPLES < oldSamples.length) { // add to start of samples
@@ -120,12 +122,6 @@ function sendSamples({ limit, clear=false }) {
     if(count < 1) return;
     if(MAX_SAMPLES < count) {
       throw new Error('Too many samples to send: ' + count);
-    }
-    // check time is monotonicly increasing
-    for(let i = 1; i < count; i++) {
-      if(oldSamples[i-1].time >= oldSamples[i].time) {
-        throw new Error('Time is not increasing');
-      }
     }
     const serializedSamples = serialize(oldSamples);
     console.log('Sending', serializedSamples.byteLength, 'bytes');

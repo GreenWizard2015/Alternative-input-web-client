@@ -3,6 +3,7 @@ import Webcam from 'react-webcam';
 import { FaceLandmarker, FaceLandmarkerResult, FilesetResolver, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
 import { results2sample } from '../utils/MP';
+import MyWorker from 'worker-loader!./FaceDetector.worker.js';
 
 const DEFAULT_SETTINGS = {
   mode: 'circle', padding: 1.25,
@@ -13,32 +14,58 @@ const DEFAULT_SETTINGS = {
   minTrackingConfidence: 0.2,
 };
 
-export default function FaceDetectorComponent({ onFrame, deviceId, ...settings }) {
+export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...settings }) {
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [settings]);
+  const settingsRef = useRef(Settings);
+  useEffect(() => {
+    settingsRef.current = Settings;
+  }, [Settings]);
+
   const webcamRef = useRef<Webcam | null>(null);
   const intermediateCanvasRef = useRef<HTMLCanvasElement>(null);
   const frameCanvasRef = useRef<HTMLCanvasElement>(null);
   const callbackRef = useRef<((frame) => void) | null>(null);
-
   useEffect(() => {
     callbackRef.current = onFrame;
   }, [onFrame]);
 
   useEffect(() => {
-    async function setupFaceLandmarker() {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-      );
-      const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-          delegate: "GPU"
-        },
-        outputFaceBlendshapes: true,
-        runningMode: "VIDEO",
-        numFaces: 1
-      });
-      
+    async function setup() {
+      const worker = new MyWorker();
+      worker.onmessage = function(e) {
+        const status = e.data?.status;
+        if (status === 'detected') {
+          const { results, time } = e.data;
+          const elapsed = Date.now() - time;
+          if (elapsed > 75) {
+            console.warn('Detection took', elapsed, 'ms');
+          }
+          const frame = e.data?.frame;
+          if (frame && callbackRef.current) {
+            const sample = results2sample(results, frame, intermediateCanvasRef.current, Settings);
+            if(null == sample) return;
+
+            sample.time = time;
+            sample.goal = goal.current;
+            
+            callbackRef.current({
+              results,
+              sample,
+              image: frame,
+              landmarks: results.faceLandmarks[0],
+              settings: Settings,
+            });
+          }
+          return;
+        }
+        if (status === 'stopped') {
+          console.log('Worker stopped');
+          worker.terminate();
+          return;
+        }
+      };
+      worker.postMessage('start');
+
       const video = webcamRef.current?.video;
       if (!video) {
         console.error('Webcam not available');
@@ -47,35 +74,19 @@ export default function FaceDetectorComponent({ onFrame, deviceId, ...settings }
 
       const camera = new cameraUtils.Camera(video, {
         onFrame: async () => {
-          const results: FaceLandmarkerResult = await faceLandmarker.detectForVideo(video, Date.now());
-          const frame = frameCanvasRef.current;
-          if (frame) {
-            frame.width = video.videoWidth;
-            frame.height = video.videoHeight;
-            const ctx = frame.getContext('2d');
-            ctx?.drawImage(video, 0, 0, frame.width, frame.height);
-            
-            if (callbackRef.current) {
-              callbackRef.current({
-                results,
-                sample: results2sample(results, frame, intermediateCanvasRef.current, Settings),
-                image: frame,
-                landmarks: results.faceLandmarks[0],
-                settings: Settings,
-              });
-            }
-          }
+          const frame = await createImageBitmap(video);
+          worker.postMessage(frame);
         },
       });
       camera.start();
 
       return () => {
-        faceLandmarker.close();
+        worker.postMessage('stop');
         camera.stop();
       };
     }
 
-    setupFaceLandmarker();
+    setup();
   }, [Settings, deviceId]);
 
   const videoConstraints = deviceId ? { deviceId: { exact: deviceId } } : undefined;
