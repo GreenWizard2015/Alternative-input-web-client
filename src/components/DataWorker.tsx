@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import MyWorker from 'worker-loader!./data.worker.js';
 
 let worker;
 const DataWorker = ({ incrementStats, changeActiveUploads }) => {
   useEffect(() => {
-    const newWorker = new MyWorker();
+    const newWorker = new Worker(new URL('./data.worker.js', import.meta.url));
     worker = newWorker;
 
     newWorker.onmessage = function(e) {

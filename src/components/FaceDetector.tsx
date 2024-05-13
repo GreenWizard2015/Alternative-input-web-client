@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
-import { FaceLandmarker, FaceLandmarkerResult, FilesetResolver, NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
 import { results2sample } from '../utils/MP';
-import MyWorker from 'worker-loader!./FaceDetector.worker.js';
 
 const DEFAULT_SETTINGS = {
   mode: 'circle', padding: 1.25,
@@ -31,7 +30,7 @@ export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...sett
 
   useEffect(() => {
     async function setup() {
-      const worker = new MyWorker();
+      const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
       worker.onmessage = function(e) {
         const status = e.data?.status;
         if (status === 'detected') {

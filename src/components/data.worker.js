@@ -1,7 +1,6 @@
 /* eslint-env worker */
-import { serialize } from './Samples';
-
 /* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
+const { serialize } = require('./Samples');
 let queue = [];
 
 function processQueue() {
