@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import MyWorker from 'worker-loader!./worker.js';
+import MyWorker from 'worker-loader!./data.worker.js';
 
 let worker;
 const DataWorker = ({ incrementStats, changeActiveUploads }) => {
