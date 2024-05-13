@@ -1,4 +1,6 @@
 /* eslint-env worker */
+import { serialize } from './Samples';
+
 /* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
 let queue = [];
 
@@ -9,8 +11,10 @@ function processQueue() {
   }
   const chunk = queue.shift();
   const { samples, endpoint, userId, placeId, count } = chunk;
+  const serializedSamples = serialize(samples);
+  console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint, 'for', userId, placeId, count);
   const fd = new FormData();
-  fd.append('chunk', new Blob([samples], {type: 'application/octet-stream'}));
+  fd.append('chunk', new Blob([serializedSamples], {type: 'application/octet-stream'}));
 
   fetch(endpoint, {
     method: 'POST',

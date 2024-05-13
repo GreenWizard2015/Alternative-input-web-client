@@ -123,13 +123,11 @@ function sendSamples({ limit, clear=false }) {
     if(MAX_SAMPLES < count) {
       throw new Error('Too many samples to send: ' + count);
     }
-    const serializedSamples = serialize(oldSamples);
-    console.log('Sending', serializedSamples.byteLength, 'bytes');
     const userId = oldSamples[0].userId;
     const placeId = oldSamples[0].placeId;
-
+    
     worker.postMessage({ 
-      samples: serializedSamples,
+      samples: oldSamples,
       endpoint: saveEndpoint,
       userId, placeId, count
     });
