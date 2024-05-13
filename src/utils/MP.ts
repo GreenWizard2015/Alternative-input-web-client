@@ -82,7 +82,7 @@ function _circleROI(pts, { padding = 1.5 }) {
     const dy = pt.y - centerPt.y;
     return Math.max(acc, Math.sqrt(dx * dx + dy * dy));
   }, 0);
-  if (radius < 5) return null;
+  // if (radius < 1) return null;
 
   const R = Math.ceil(radius * padding);
   const A = { x: centerPt.x - R, y: centerPt.y - R };
