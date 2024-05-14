@@ -19,7 +19,7 @@ type Sample = {
   goal: Position,
   userId: string,
   placeId: string,
-  screenId: number
+  screenId: string,
 };
 
 function sampleSize() {
@@ -31,7 +31,7 @@ function sampleSize() {
     + 4 // goal.y
     + 36 // userId
     + 36 // placeId
-    + 4; // screenId
+    + 36; // screenId
 }
 
 export function serialize(samples: Sample[]) {
@@ -85,7 +85,15 @@ export function serialize(samples: Sample[]) {
       view.setUint8(offset, sample.placeId.charCodeAt(i));
       offset += 1;
     }
-    view.setInt32(offset, sample.screenId);
+    
+    if(36 !== sample.screenId.length) {
+      throw new Error('Invalid screenId size. Expected 36, got ' + sample.screenId.length);
+    }
+    for (let i = 0; i < 36; i++) {
+      view.setUint8(offset, sample.screenId.charCodeAt(i));
+      offset += 1;
+    }
+    
     offset += 4;
   });
 

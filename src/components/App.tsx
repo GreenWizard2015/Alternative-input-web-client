@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
-import { cyrb53 } from "../utils/cyrb53";
+import murmur128 from 'murmur-128';
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "../modes/AppMode";
 import { Frame } from "./FaceDetector";
@@ -33,6 +33,21 @@ type AppSettings = {
   activeUploads: number
 };
 
+function hash128Hex(str: string) {
+  const hash: ArrayBuffer = murmur128(str);
+  const hashView = new DataView(hash);
+  let res = '';
+  for (let i = 0; i < hash.byteLength; i++) {
+    res += hashView.getUint8(i).toString(16).padStart(2, '0');
+  }
+  // add intermediate dash to make it more readable
+  res = res.slice(0, 8) + '-' + res.slice(8, 12) + '-' + res.slice(12, 16) + '-' + res.slice(16, 20) + '-' + res.slice(20);
+  if(36 !== res.length) {
+    throw new Error('Unexpected hash length: ' + res.length);
+  }
+  return res;
+}
+
 function AppComponent(
   { mode, setMode, userId, placeId, activeUploads }: AppSettings
 ) {
@@ -51,11 +66,9 @@ function AppComponent(
       if (goalPosition.current != null && canvasRef.current != null && frame.sample != null) {
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
-        const screenId = cyrb53(JSON.stringify(canvasRect));
+        const screenId = hash128Hex(JSON.stringify(canvasRect));
         // placeId should be a combination of placeId and webcamId
-        // cut off the last N characters of the webcamId and append it to the placeId
-        const webcamHash = cyrb53(webcamId) + '';
-        const newPlaceId = placeId.slice(0, -webcamHash.length) + webcamHash;
+        const newPlaceId = hash128Hex(placeId + webcamId);
         const sample: Sample = {
           time: frame.sample.time,
           leftEye: frame.sample.leftEye,
@@ -133,8 +146,7 @@ function AppComponent(
       const screenStr = JSON.stringify(viewport);
       // placeId should be a combination of placeId and webcamId
       // cut off the last N characters of the webcamId and append it to the placeId
-      const webcamHash = cyrb53(webcamId) + '';
-      const newPlaceId = placeId.slice(0, -webcamHash.length) + webcamHash;
+      const newPlaceId = hash128Hex(placeId + webcamId);
 
       goalPosition.current = onTick({
         canvas: canvasElement,
@@ -144,7 +156,7 @@ function AppComponent(
         goal: goalPosition.current,
         user: userId,
         place: newPlaceId,
-        screenId: cyrb53(screenStr),
+        screenId: hash128Hex(screenStr),
         gameMode,
       });
       canvasCtx.restore();
