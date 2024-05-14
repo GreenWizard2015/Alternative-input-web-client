@@ -1,9 +1,9 @@
 // uploadsNotification component
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import { RootState } from '../store';
 
-function UploadsNotification({ activeUploads, show }) {
+function UploadsNotification({ activeUploads }) {
   // show confirmation dialog before leaving the page if there are active uploads
   const activeUploadsRef = useRef(activeUploads);
   useEffect(() => {
