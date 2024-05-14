@@ -132,8 +132,6 @@ function sendSamples(
     if(MAX_SAMPLES < count) {
       throw new Error('Too many samples to send: ' + count);
     }
-    const userId = oldSamples[0].userId;
-    const placeId = oldSamples[0].placeId;
     
     worker.postMessage({ 
       samples: oldSamples,
