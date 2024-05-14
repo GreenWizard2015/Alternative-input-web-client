@@ -103,7 +103,10 @@ const MAX_CHUNK_SIZE: number = 4 * 1024 * 1024;
 const MAX_SAMPLES: number = Math.floor(MAX_CHUNK_SIZE / sampleSize());
 let samples: Sample[] = [];
 
-function sendSamples({ limit, clear=false }) {
+function sendSamples(
+  { limit, clear=false, placeId, userId }: 
+  { limit: number, clear?: boolean, placeId: string, userId: string }
+) {
   let oldSamples = samples;
   // Async request
   const saveEndpoint = '/api/upload';
@@ -135,12 +138,16 @@ function sendSamples({ limit, clear=false }) {
     worker.postMessage({ 
       samples: oldSamples,
       endpoint: saveEndpoint,
-      userId, placeId, count
+      userId: userId ?? oldSamples[0].userId,
+      placeId: placeId ?? oldSamples[0].placeId,
+      count
     });
   }
 }
 
-function storeSample(sample: Sample, limit: number) {
+function storeSample({
+  sample, limit, placeId, userId
+}: { sample: Sample, limit: number, placeId: string, userId: string }) {
   // goal should be within the range -2..2, just to be sure that its valid  
   const isValidGoal = (
     (-2 < sample.goal.x) && (sample.goal.x < 2) &&
@@ -152,7 +159,7 @@ function storeSample(sample: Sample, limit: number) {
   }
   samples.push(sample);
   if (samples.length >= 2 * MAX_SAMPLES) {
-    sendSamples({ limit, clear: false });
+    sendSamples({ limit, clear: false, placeId, userId });
   }
 }
 
