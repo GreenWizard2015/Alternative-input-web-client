@@ -43,6 +43,8 @@ body {
 
   min-width: 30dvw;
   min-width: 30vw;
+  max-width: 30dvw;
+  max-width: 30vw;
   min-height: 30dvh;
   min-height: 30vh;
 }
