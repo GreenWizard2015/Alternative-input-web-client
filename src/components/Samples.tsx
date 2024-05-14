@@ -93,8 +93,6 @@ export function serialize(samples: Sample[]) {
       view.setUint8(offset, sample.screenId.charCodeAt(i));
       offset += 1;
     }
-    
-    offset += 4;
   });
 
   return buffer;
