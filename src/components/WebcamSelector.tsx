@@ -18,7 +18,7 @@ function WebcamSelector({ onWebcamChange }) {
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
       setWebcams(videoDevices);
-      setSelectedWebcam('');
+      if(0 < videoDevices.length) setSelectedWebcam(videoDevices[0].deviceId);
     });
   }
 
@@ -28,7 +28,6 @@ function WebcamSelector({ onWebcamChange }) {
     <div className="webcam-selector">
       <label htmlFor="webcam-select">Select Webcam: </label>
       <select id="webcam-select" value={selectedWebcam} onChange={handleWebcamChange}>
-        <option value="">--Select--</option>
         {webcams.map(webcam => (
           <option key={webcam.deviceId} value={webcam.deviceId}>{webcam.label}</option>
         ))}

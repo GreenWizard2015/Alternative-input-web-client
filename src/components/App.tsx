@@ -12,6 +12,7 @@ import { connect } from "react-redux";
 import { setMode } from "../store/slices/App";
 import { RootState } from "../store";
 import dynamic from "next/dynamic";
+import UploadsNotification from "./uploadsNotification";
 
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
@@ -24,41 +25,23 @@ function onGameTick({
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
+type AppSettings = {
+  mode: string,
+  setMode: (mode: string) => void,
+  userId: string,
+  placeId: string,
+  activeUploads: number
+};
+
 function AppComponent(
-  { mode, setMode, userId, placeId, activeUploads }: 
-  { mode: any, setMode: any, userId: string, placeId: string, activeUploads: number },
+  { mode, setMode, userId, placeId, activeUploads }: AppSettings
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
   const goalPosition = useRef(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
+  const [webcamId, setWebcamId] = React.useState<string>("");
 
-  // show confirmation dialog before leaving the page if there are active uploads
-  const activeUploadsRef = useRef(activeUploads);
-  useEffect(() => {
-    activeUploadsRef.current = activeUploads;
-  }, [activeUploads]);
-
-  useEffect(() => {
-    function handleBeforeUnload(event) {
-      if (activeUploadsRef.current > 0) {
-        const answer = window.confirm(
-          `There are ${activeUploadsRef.current} active uploads. Are you sure you want to leave the page?`,
-        );
-
-        if (!answer) {
-          event.preventDefault();
-          event.returnValue = '';
-        }
-      }
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-  
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
@@ -69,6 +52,10 @@ function AppComponent(
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
         const screenId = cyrb53(JSON.stringify(canvasRect));
+        // placeId should be a combination of placeId and webcamId
+        // cut off the last N characters of the webcamId and append it to the placeId
+        const webcamHash = cyrb53(webcamId) + '';
+        const newPlaceId = placeId.slice(0, -webcamHash.length) + webcamHash;
         const sample: Sample = {
           time: frame.sample.time,
           leftEye: frame.sample.leftEye,
@@ -76,7 +63,7 @@ function AppComponent(
           points: frame.sample.points,
           goal: frame.sample.goal,
           userId: userId,
-          placeId: placeId,
+          placeId: newPlaceId,
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
@@ -144,6 +131,10 @@ function AppComponent(
         height: canvasElement.height,
       };
       const screenStr = JSON.stringify(viewport);
+      // placeId should be a combination of placeId and webcamId
+      // cut off the last N characters of the webcamId and append it to the placeId
+      const webcamHash = cyrb53(webcamId) + '';
+      const newPlaceId = placeId.slice(0, -webcamHash.length) + webcamHash;
 
       goalPosition.current = onTick({
         canvas: canvasElement,
@@ -152,7 +143,7 @@ function AppComponent(
         frame: lastFrame.current,
         goal: goalPosition.current,
         user: userId,
-        place: placeId,
+        place: newPlaceId,
         screenId: cyrb53(screenStr),
         gameMode,
       });
@@ -175,21 +166,41 @@ function AppComponent(
     mode.onPause = onPause;
   }
 
-  const [webcamId, setWebcamId] = React.useState(null);
+  let content = null;
+  if('intro' === mode) {
+    content = <Intro onConfirm={() => setMode('menu')} />;
+  }
+  if('menu' === mode) {
+    content = (
+      <UI
+        onWebcamChange={setWebcamId}
+        onStart={startGame}
+        goFullscreen={() => toggleFullscreen(
+          document.getElementById("root") ?? document.body // app root element
+        )}
+      />
+    );
+  }
+  if(content != null) { // wrap content in UI
+    content = (
+      <div id="UI">
+        <div className="UI-wrapper">
+          {(0 < activeUploads) ? (
+            <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
+              Currently there are {activeUploads} active uploads.<br />
+              Please wait until they are finished.
+            </div>
+          ) : null}         
+          {content}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>    
-      {('intro' === mode) && (
-        <Intro onConfirm={() => setMode('menu')} />
-      )}
-      {('menu' === mode) && (
-        <UI
-          onWebcamChange={setWebcamId}
-          onStart={startGame}
-          goFullscreen={() => toggleFullscreen(
-            document.getElementById("root") ?? document.body // app root element
-          )}
-        />
-      )}
+    <>
+      <UploadsNotification />
+      {content}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} goal={goalPosition} />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
@@ -203,7 +214,7 @@ export default connect(
     mode: state.App.mode,
     userId: state.UI.userId,
     placeId: state.UI.placeId,
-    activeUploads: state.App.activeUploads,
+    activeUploads: state.App.activeUploads
   }),
   { setMode }
 )(AppComponent);

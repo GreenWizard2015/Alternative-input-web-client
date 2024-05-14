@@ -40,10 +40,10 @@ export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...sett
             console.warn('Detection took', elapsed, 'ms');
           }
           const frame = e.data?.frame;
-          if (frame && callbackRef.current) {
+          if (frame && callbackRef.current && intermediateCanvasRef.current) {
             const sample = results2sample(results, frame, intermediateCanvasRef.current, Settings);
             if(null == sample) return;
-
+            // override the time with the time from the worker and add the goal
             sample.time = time;
             sample.goal = goal.current;
             

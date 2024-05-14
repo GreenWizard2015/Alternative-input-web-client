@@ -11,7 +11,7 @@ function UI({
   userId, setUser,
   placeId, setPlace,
   users, places,
-  activeUploads, doRemoveUser, doRemovePlace,
+  doRemoveUser, doRemovePlace,
   resetUser, resetPlace
 }) {
   const [subMenu, setSubMenu] = React.useState('');
@@ -87,13 +87,7 @@ function UI({
       </div>
     </>
   } else {
-    console.log('activeUploads', activeUploads);
     content = <>
-      {(0 < activeUploads) && (
-        <div className='flex w100' style={{ color: 'red' }}>
-          {activeUploads} uploads in progress...
-        </div>
-      )}
       <div>Webcamera:</div>
       <WebcamSelector onWebcamChange={onWebcamChange} />
       <div className='flex w100'>
@@ -130,13 +124,7 @@ function UI({
     </>
   }
 
-  return (
-    <div id="UI">
-      <div className="UI-wrapper">
-        {content}
-      </div>
-    </div>
-  );
+  return content;
 }
 
 export default connect(
@@ -145,7 +133,6 @@ export default connect(
     placeId: state.UI.placeId,
     users: state.UI.users || [],
     places: state.UI.places || [],
-    activeUploads: state.App.activeUploads
   }),
   { 
     setUser, setPlace, 
