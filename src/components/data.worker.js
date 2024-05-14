@@ -35,5 +35,5 @@ function processQueue() {
 
 self.onmessage = function({ data }) {
   queue.push(data);
-  processQueue();
+  if(queue.length === 1) processQueue(); // start processing the queue only if didn't start yet
 }
