@@ -41,10 +41,10 @@ body {
   border: 1px solid #222;
   border-radius: 1rem;
 
-  min-width: 30dvw;
-  min-width: 30vw;
-  max-width: 30dvw;
-  max-width: 30vw;
+  min-width: 50dvw;
+  min-width: 50vw;
+  max-width: 50dvw;
+  max-width: 50vw;
   min-height: 30dvh;
   min-height: 30vh;
 }
