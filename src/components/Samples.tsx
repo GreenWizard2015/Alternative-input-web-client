@@ -151,7 +151,7 @@ function storeSample(sample: Sample, limit: number) {
     return;
   }
   samples.push(sample);
-  if (samples.length >= MAX_SAMPLES) {
+  if (samples.length >= 2 * MAX_SAMPLES) {
     sendSamples({ limit, clear: false });
   }
 }
