@@ -118,9 +118,9 @@ function sendSamples({ limit, clear=false }) {
   
   if(0 < oldSamples.length) {
     if(MAX_SAMPLES < oldSamples.length) { // add to start of samples
-      for(let i = MAX_SAMPLES; i < oldSamples.length; i++) {
-        samples.unshift(oldSamples[i]);
-      }
+      // Add elements to the start of samples
+      samples = oldSamples.slice(MAX_SAMPLES).concat(samples);
+      // Reduce oldSamples to the first MAX_SAMPLES elements
       oldSamples = oldSamples.slice(0, MAX_SAMPLES);
     }
 
