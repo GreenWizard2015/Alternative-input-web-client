@@ -8,7 +8,7 @@ function processQueue() {
   if (queue.length === 0) {
     return;
   }
-  const chunk = queue.shift();
+  const chunk = queue[queue.length - 1]; // take the last element from the queue
   const { samples, endpoint, userId, placeId, count } = chunk;
   const serializedSamples = serialize(samples);
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint, 'for', userId, placeId, count);
@@ -24,11 +24,12 @@ function processQueue() {
     }
     throw new Error('Network response was not ok.');
   }).then(text => {
+    queue.pop(); // remove the last element from the queue
     self.postMessage({ status: 'ok', text, userId, placeId, count, inQueue: queue.length});
     processQueue();
   }).catch(error => {
     self.postMessage({ status: 'error', error: error.message });
-    queue.unshift(chunk);
+    // don't remove the last element from the queue, so it will be retried
     processQueue();
   });
 }
