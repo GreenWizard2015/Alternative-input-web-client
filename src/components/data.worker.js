@@ -9,8 +9,7 @@ function processQueue() {
     return;
   }
   const chunk = queue[queue.length - 1]; // take the last element from the queue
-  const { samples, endpoint, userId, placeId, count } = chunk;
-  const serializedSamples = serialize(samples);
+  const { serializedSamples, endpoint, userId, placeId, count } = chunk;
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint, 'for', userId, placeId, count);
   const fd = new FormData();
   fd.append('chunk', new Blob([serializedSamples], {type: 'application/octet-stream'}));
@@ -35,6 +34,15 @@ function processQueue() {
 }
 
 self.onmessage = function({ data }) {
-  queue.push(data);
+  const { samples, endpoint, userId, placeId, count } = data;
+  // serialize the samples before pushing them to the queue
+  // in hope that it will reduce the memory usage
+  queue.push({
+    serializedSamples: serialize(samples),
+    endpoint,
+    userId,
+    placeId,
+    count
+  });
   if(queue.length === 1) processQueue(); // start processing the queue only if didn't start yet
 }
