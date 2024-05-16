@@ -11,7 +11,7 @@ function clamp(val: number, min: number, max: number) {
   return val
 }
 
-const MAX_UPLOADS = 3;
+const MAX_UPLOADS = 10;
 export class AppMode {
   _pos: Position = { x: 0, y: 0 };
   _paused: boolean;
