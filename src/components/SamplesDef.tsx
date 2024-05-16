@@ -26,10 +26,9 @@ export function sampleSize() {
     + 32 * 32 * 1 // sample.rightEye is 32x32 pixels
     + 4 * 2 * 478 // sample.points is 478 points
     + 4 // goal.x
-    + 4 // goal.y
-    + 36 // userId
-    + 36 // placeId
-    + 36; // screenId
+    + 4; // goal.y
+  // userId, placeId and screenId are not included in the size
+  // as they are common to all samples and are written only once
 }
 
 export type { UUIDed, Position, Sample };

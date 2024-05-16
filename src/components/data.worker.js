@@ -40,14 +40,26 @@ function processQueue() {
 
 self.onmessage = function({ data }) {
   const { samples, endpoint, userId, placeId, count } = data;
+  // samples could have different ids, so we need to serialize them separately
+  const grouped = samples.reduce((acc, sample) => {
+    const { userId, placeId, screenId } = sample;
+    const key = `${userId}-${placeId}-${screenId}`;
+    
+    if (!(key in acc)) acc[key] = [];
+     acc[key].push(sample);
+    return acc;
+  }, {});
   // serialize the samples before pushing them to the queue
   // in hope that it will reduce the memory usage
-  queue.push({
-    serializedSamples: serialize(samples),
-    endpoint,
-    userId,
-    placeId,
-    count
-  });
+  for(const groupId in grouped) {
+    const samples = grouped[groupId];
+    queue.push({
+      serializedSamples: serialize(samples),
+      endpoint,
+      userId,
+      placeId,
+      count
+    });
+  }
   if(queue.length === 1) processQueue(); // start processing the queue only if didn't start yet
 }
