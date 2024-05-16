@@ -32,31 +32,24 @@ export function serialize(samples: Sample[]) {
   const version = 1;
   view.setUint8(offset, version);
   offset += 1;
+  // encode the strings to utf-8
+  const encoder = new TextEncoder();
+  const saveString = (str, name) => {
+    let encoded = encoder.encode(str);
+    if (36 !== encoded.length) {
+      throw new Error(`Invalid ${name} size. Expected 36, got ${encoded.length}`);
+    }
+    for (let i = 0; i < 36; i++) {
+      view.setUint8(offset, encoded[i]);
+      offset += 1;
+    }
+  };
+  
   // first write the user ID, place ID and screen ID, which are common to all samples
   const sample = samples[0];
-  if(36 !== sample.userId.length) {
-    throw new Error('Invalid userId size. Expected 36, got ' + sample.userId.length);
-  }
-  for (let i = 0; i < 36; i++) {
-    view.setUint8(offset, sample.userId.charCodeAt(i));
-    offset += 1;
-  }
-
-  if(36 !== sample.placeId.length) {
-    throw new Error('Invalid placeId size. Expected 36, got ' + sample.placeId.length);
-  }
-  for (let i = 0; i < 36; i++) {
-    view.setUint8(offset, sample.placeId.charCodeAt(i));
-    offset += 1;
-  }
-  
-  if(36 !== sample.screenId.length) {
-    throw new Error('Invalid screenId size. Expected 36, got ' + sample.screenId.length);
-  }
-  for (let i = 0; i < 36; i++) {
-    view.setUint8(offset, sample.screenId.charCodeAt(i));
-    offset += 1;
-  }
+  saveString(sample.userId, 'userID');
+  saveString(sample.placeId, 'placeID');
+  saveString(sample.screenId, 'screenID');
   // then write the samples
   samples.forEach((sample, index) => {
     view.setUint32(offset, sample.time);
