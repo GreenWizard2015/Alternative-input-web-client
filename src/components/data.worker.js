@@ -53,7 +53,8 @@ self.onmessage = function({ data }) {
   // in hope that it will reduce the memory usage
   for(const groupId in grouped) {
     const samples = grouped[groupId];
-    queue.push({
+    // put to the start of the queue
+    queue.unshift({
       serializedSamples: serialize(samples),
       endpoint,
       userId,
