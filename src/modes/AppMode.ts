@@ -1,10 +1,8 @@
-import { isUtf8 } from "buffer";
+import { Position } from "../components/SamplesDef";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 
 type Viewport = { width: number, height: number }
-type Position = { x: number, y: number }
-
 const TRANSITION_TIME = 100;
 
 function clamp(val: number, min: number, max: number) {
@@ -15,6 +13,7 @@ function clamp(val: number, min: number, max: number) {
 
 const MAX_UPLOADS = 3;
 export class AppMode {
+  _pos: Position = { x: 0, y: 0 };
   _paused: boolean;
   _timeToggledPaused: number = 0;
   onPause: () => void = () => {};
@@ -115,7 +114,14 @@ export class AppMode {
     }
   }
 
-  drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style?: string }) {
+  drawTarget(
+    { position=null, viewport, canvasCtx, style }:
+    { 
+      position: Position | null, viewport: Viewport, 
+      canvasCtx: CanvasRenderingContext2D, style?: string 
+    }
+  ) {
+    position = position ?? this._pos;
     const absolutePosition = AppMode.makeAbsolute({ position, viewport });
 
     canvasCtx.beginPath();
@@ -143,5 +149,9 @@ export class AppMode {
   timeSincePaused() {
     const now = Date.now();
     return now - this._timeToggledPaused;
+  }
+  
+  getGoal() {
+    return this._pos;
   }
 }

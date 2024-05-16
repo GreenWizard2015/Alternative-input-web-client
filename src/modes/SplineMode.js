@@ -51,10 +51,6 @@ export class SplineMode extends AppMode {
     if (!isNaN(pos.x) && !isNaN(pos.y)) { // sometimes it's NaN, ignore it
       this._pos = pos;
     }
-    this.drawTarget({ position: this._pos, canvasCtx, viewport });
-  }
-
-  getGoal() {
-    return this._pos;
+    this.drawTarget({ canvasCtx, viewport });
   }
 }
