@@ -1,7 +1,6 @@
 import React, { useCallback, useRef } from "react";
 import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
-import murmur128 from 'murmur-128';
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "../modes/AppMode";
 import { Frame } from "./FaceDetector";
@@ -13,6 +12,7 @@ import { setMode } from "../store/slices/App";
 import { RootState } from "../store";
 import dynamic from "next/dynamic";
 import UploadsNotification from "./uploadsNotification";
+import { hash128Hex } from "../Utils";
 
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
@@ -33,21 +33,6 @@ type AppSettings = {
   meanUploadDuration: number,
 };
 
-function hash128Hex(str: string) {
-  const hash: ArrayBuffer = murmur128(str);
-  const hashView = new DataView(hash);
-  let res = '';
-  for (let i = 0; i < hash.byteLength; i++) {
-    res += hashView.getUint8(i).toString(16).padStart(2, '0');
-  }
-  // add intermediate dash to make it more readable
-  res = res.slice(0, 8) + '-' + res.slice(8, 12) + '-' + res.slice(12, 16) + '-' + res.slice(16, 20) + '-' + res.slice(20);
-  if(36 !== res.length) {
-    throw new Error('Unexpected hash length: ' + res.length);
-  }
-  return res;
-}
-
 function AppComponent(
   { mode, setMode, userId, placeId, activeUploads, meanUploadDuration }: AppSettings
 ) {
@@ -60,8 +45,7 @@ function AppComponent(
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
-      if (gameMode == null) return;
-      if (gameMode.isPaused()) return;
+      if ((gameMode == null) || gameMode.isPaused()) return;
 
       if (goalPosition.current != null && canvasRef.current != null && frame.sample != null) {
         const canvasElement = canvasRef.current;
@@ -69,24 +53,16 @@ function AppComponent(
         const screenId = hash128Hex(JSON.stringify(canvasRect));
         // placeId should be a combination of placeId and webcamId
         const newPlaceId = hash128Hex(placeId + webcamId);
+        const { time, leftEye, rightEye, points, goal } = frame.sample;
         const sample: Sample = {
-          time: frame.sample.time,
-          leftEye: frame.sample.leftEye,
-          rightEye: frame.sample.rightEye,
-          points: frame.sample.points,
-          goal: frame.sample.goal,
+          time, leftEye, rightEye, points, goal, // sample data
           userId: userId,
           placeId: newPlaceId,
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
           const now = Date.now();
-          storeSample({
-            sample: sample,
-            limit: now - 3000,
-            placeId: placeId,
-            userId: userId
-          });
+          storeSample({ sample: sample, limit: now - 3000, placeId, userId });
         }
       }
     }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode]
