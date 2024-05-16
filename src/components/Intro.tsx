@@ -21,6 +21,10 @@ const Intro: React.FC<PrivacyNoticeProps> = ({ onConfirm }) => {
         <li>Conduct several short sessions throughout the day, lasting 5-15 minutes each. Perform sessions under different lighting conditions. Avoid overly long sessions to prevent system overload.</li>
         <li>Primarily use the spline mode (it is the simplest and most effective), but do not forget about the other modes as well.</li>
       </ol>
+      <p style={{ color: "red", fontWeight: "bold" }}>
+        <strong>Warning:</strong> This application is data-intensive and requires a high-speed internet connection for optimal performance.
+      </p>
+ 
       <button onClick={onConfirm}>
         I Understand
       </button>

@@ -29,64 +29,58 @@ export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...sett
   }, [onFrame]);
 
   useEffect(() => {
-    async function setup() {
-      const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
-      worker.onmessage = function(e) {
-        const status = e.data?.status;
-        if (status === 'detected') {
-          const { results, time } = e.data;
-          const elapsed = Date.now() - time;
-          if (elapsed > 75) {
-            console.warn('Detection took', elapsed, 'ms');
-          }
-          const frame = e.data?.frame;
-          if (frame && callbackRef.current && intermediateCanvasRef.current) {
-            const sample = results2sample(results, frame, intermediateCanvasRef.current, Settings);
-            if(null == sample) return;
-            // override the time with the time from the worker and add the goal
-            sample.time = time;
-            sample.goal = goal.current;
-            
-            callbackRef.current({
-              results,
-              sample,
-              image: frame,
-              landmarks: results.faceLandmarks[0],
-              settings: Settings,
-            });
-          }
-          return;
+    const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
+    console.log('Worker created');
+    
+    worker.onmessage = function(e) {
+      const status = e.data?.status;
+      if (status === 'detected') {
+        const { results, time } = e.data;
+        const frame = e.data?.frame;
+        if (frame && callbackRef.current && intermediateCanvasRef.current) {
+          const sample = results2sample(results, frame, intermediateCanvasRef.current, Settings);
+          if(null == sample) return;
+          // override the time with the time from the worker and add the goal
+          sample.time = time;
+          sample.goal = goal.current;
+          
+          callbackRef.current({
+            results,
+            sample,
+            image: frame,
+            landmarks: results.faceLandmarks[0],
+            settings: Settings,
+          });
         }
-        if (status === 'stopped') {
-          console.log('Worker stopped');
-          worker.terminate();
-          return;
-        }
-      };
-      worker.postMessage('start');
-
-      const video = webcamRef.current?.video;
-      if (!video) {
-        console.error('Webcam not available');
         return;
       }
+      if (status === 'stopped') {
+        console.log('Worker stopped');
+        worker.terminate();
+        return;
+      }
+    };
+    worker.postMessage('start');
 
-      const camera = new cameraUtils.Camera(video, {
-        onFrame: async () => {
-          const frame = await createImageBitmap(video);
-          worker.postMessage(frame);
-        },
-      });
-      camera.start();
-
-      return () => {
-        worker.postMessage('stop');
-        camera.stop();
-      };
+    const video = webcamRef.current?.video;
+    if (!video) {
+      console.error('Webcam not available');
+      return;
     }
 
-    setup();
-  }, [Settings, deviceId]);
+    const camera = new cameraUtils.Camera(video, {
+      onFrame: async () => {
+        const frame = await createImageBitmap(video);
+        worker.postMessage(frame);
+      },
+    });
+    camera.start();
+
+    return () => {
+      camera.stop();
+      worker.postMessage('stop');
+    };
+  }, [Settings, deviceId, goal]);
 
   const videoConstraints = deviceId ? { deviceId: { exact: deviceId } } : undefined;
 

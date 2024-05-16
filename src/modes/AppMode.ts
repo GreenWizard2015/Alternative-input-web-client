@@ -1,3 +1,4 @@
+import { isUtf8 } from "buffer";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 
@@ -12,24 +13,30 @@ function clamp(val: number, min: number, max: number) {
   return val
 }
 
+const MAX_UPLOADS = 3;
 export class AppMode {
   _paused: boolean;
   _timeToggledPaused: number = 0;
   onPause: () => void = () => {};
   _background: CBackground = new CBackground();
   _illumination: CRandomIllumination = new CRandomIllumination();
+  _overflowed: boolean = false;
 
   constructor() {
     this._paused = true;
   }
 
+  _setPaused(paused: boolean) {
+    this._paused = paused;
+    this._timeToggledPaused = Date.now();
+    if (this._paused) {
+      this.onPause();
+    }
+  }
+
   onKeyDown(event: KeyboardEvent) {
     if (['KeyP', 'Enter', 'Space'].includes(event.code)) {
-      this._paused = !this._paused;
-      this._timeToggledPaused = Date.now();
-      if (this._paused) {
-        this.onPause();
-      }
+      this._setPaused(!this._paused);
     }
     this._background.onEvent(event);
     this._illumination.onEvent(event);
@@ -39,10 +46,43 @@ export class AppMode {
     // Does nothing
   }
 
-  onOverlay({ canvasCtx, viewport }: { canvasCtx: CanvasRenderingContext2D, viewport: Viewport }) {
+  onOverlay(
+    { canvasCtx, viewport, activeUploads, meanUploadDuration }: 
+    { 
+      canvasCtx: CanvasRenderingContext2D, viewport: Viewport, 
+      activeUploads: number, meanUploadDuration: number
+    }
+  ) {
     this._background.onRender(canvasCtx, viewport);
     this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
-    // Transition
+
+    const isOverflowed = MAX_UPLOADS < activeUploads;
+    if(this._overflowed && (0 === activeUploads)) { // Reset
+      this._overflowed = false;
+    }
+
+    if (isOverflowed) {
+      this._overflowed = true;
+      this._setPaused(true);
+    }
+
+    if(this._overflowed) { // Show overlay when overflowed
+      canvasCtx.fillStyle = `rgba(0, 0, 0, 0.5)`;
+      canvasCtx.fillRect(0, 0, viewport.width, viewport.height);
+      const estimatedTime = activeUploads * meanUploadDuration / 1000;
+      const minutes = Math.floor(estimatedTime / 60).toString().padStart(2, '0');
+      const seconds = Math.floor(estimatedTime % 60).toString().padStart(2, '0');
+      const text = `There is ${activeUploads} uploads in progress. Please wait. ` + 
+        `Estimated time: ${minutes}:${seconds}`;
+      this.drawText({
+        text,
+        viewport, canvasCtx, color: 'white',
+        style: '16px Roboto'
+      });
+      return;
+    }
+
+    // Transition for pausing
     const transition = clamp((Date.now() - this._timeToggledPaused) / TRANSITION_TIME, 0, 1);
     const realTransition = this._paused ? transition : 1 - transition;
     const easedTransition = realTransition; // Maybe add some easing
@@ -74,7 +114,6 @@ export class AppMode {
       y: position.y / viewport.height
     }
   }
-
 
   drawTarget({ position, viewport, canvasCtx, style }: { position: Position, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, style?: string }) {
     const absolutePosition = AppMode.makeAbsolute({ position, viewport });

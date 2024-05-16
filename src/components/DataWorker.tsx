@@ -10,13 +10,13 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
       console.log('Message received from worker', e.data);
       if('start' === e.data.status) {
         const { inQueue } = e.data;
-        changeActiveUploads(inQueue);
+        changeActiveUploads({ total: inQueue, duration: null });
         return;
       } else {
-        const { status, userId, placeId, count, inQueue } = e.data;
+        const { status, userId, placeId, count, inQueue, duration } = e.data;
         if('ok' === status) {
           incrementStats({ userId, placeId, count });
-          changeActiveUploads(inQueue);
+          changeActiveUploads({ total: inQueue, duration });
         }
       }
     };

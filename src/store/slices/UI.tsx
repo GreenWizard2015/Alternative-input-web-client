@@ -17,7 +17,7 @@ const initialState: UIState = {
   users: [],
   places: [],
 };
-
+// PERSISTED slice
 export const UISlice = createSlice({
   name: "UI",
   initialState,

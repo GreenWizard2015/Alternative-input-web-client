@@ -1,6 +1,6 @@
 /* eslint-env worker */
 /* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
-const { serialize } = require('./Samples');
+const { serialize } = require('./SerializeSamples');
 let queue = [];
 
 function processQueue() {
@@ -14,6 +14,7 @@ function processQueue() {
   const fd = new FormData();
   fd.append('chunk', new Blob([serializedSamples], {type: 'application/octet-stream'}));
 
+  const startTime = Date.now();
   fetch(endpoint, {
     method: 'POST',
     body: fd
@@ -23,8 +24,12 @@ function processQueue() {
     }
     throw new Error('Network response was not ok.');
   }).then(text => {
+    const endTime = Date.now();
     queue.pop(); // remove the last element from the queue
-    self.postMessage({ status: 'ok', text, userId, placeId, count, inQueue: queue.length});
+    self.postMessage({ 
+      status: 'ok', text, userId, placeId, count, inQueue: queue.length,
+      duration: endTime - startTime
+    });
     processQueue();
   }).catch(error => {
     self.postMessage({ status: 'error', error: error.message });

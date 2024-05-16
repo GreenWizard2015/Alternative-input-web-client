@@ -17,11 +17,10 @@ import UploadsNotification from "./uploadsNotification";
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 
-function onGameTick({
-  canvasCtx, viewport, goal, gameMode
-}) {
-  gameMode.onOverlay({ viewport, canvasCtx, goal });
-  gameMode.onRender({ viewport, canvasCtx, goal });
+function onGameTick(data) {
+  const { gameMode } = data;
+  gameMode.onOverlay(data);
+  gameMode.onRender(data);
   return gameMode.accept() ? gameMode.getGoal() : null;
 }
 
@@ -30,7 +29,8 @@ type AppSettings = {
   setMode: (mode: string) => void,
   userId: string,
   placeId: string,
-  activeUploads: number
+  activeUploads: number,
+  meanUploadDuration: number,
 };
 
 function hash128Hex(str: string) {
@@ -49,7 +49,7 @@ function hash128Hex(str: string) {
 }
 
 function AppComponent(
-  { mode, setMode, userId, placeId, activeUploads }: AppSettings
+  { mode, setMode, userId, placeId, activeUploads, meanUploadDuration }: AppSettings
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
@@ -163,6 +163,8 @@ function AppComponent(
         place: newPlaceId,
         screenId: hash128Hex(screenStr),
         gameMode,
+        activeUploads,
+        meanUploadDuration
       });
       canvasCtx.restore();
       animationFrameId.current = requestAnimationFrame(f);
@@ -236,7 +238,8 @@ export default connect(
     mode: state.App.mode,
     userId: state.UI.userId,
     placeId: state.UI.placeId,
-    activeUploads: state.App.activeUploads
+    activeUploads: state.App.activeUploads,
+    meanUploadDuration: state.App.meanUploadDuration,
   }),
   { setMode }
 )(AppComponent);
