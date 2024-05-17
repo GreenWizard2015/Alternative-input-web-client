@@ -71,7 +71,7 @@ export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...sett
     const camera = new cameraUtils.Camera(video, {
       onFrame: async () => {
         const frame = await createImageBitmap(video);
-        worker.postMessage(frame);
+        worker.postMessage({ data: frame, time: Date.now() });
       },
     });
     camera.start();

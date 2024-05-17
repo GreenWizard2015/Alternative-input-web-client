@@ -108,10 +108,10 @@ function AppComponent(
   React.useEffect(() => {
     const f = () => {
       const canvasElement = canvasRef.current;
-      if (!canvasElement) return; // TODO: Make smth more appropriate
+      if (!canvasElement) return;
       canvasElement.width = canvasElement.clientWidth;
       canvasElement.height = canvasElement.clientHeight;
-      const canvasCtx = canvasElement.getContext("2d"); // move to ref
+      const canvasCtx = canvasElement.getContext("2d");
       if (!canvasCtx) return;
       canvasCtx.save();
       // clear canvas by filling it with white color

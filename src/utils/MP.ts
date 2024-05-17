@@ -185,7 +185,7 @@ export function results2sample(results, frame, tmpCanvas, {
   }
 
   return {
-    time: Date.now(),
+    time: -1,
     leftEye,
     rightEye,
     points: pointsArray,

@@ -38,7 +38,6 @@ self.onmessage = async function({ data }) {
     });
     return;
   }
-  const time = Date.now();
-  queue.push({ data, time });
+  queue.push(data);
   processQueue();
 }
