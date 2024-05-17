@@ -5,6 +5,10 @@ export function onMenuTick({
 }) {
   if(frame == null) {
     // Cam not working probably
+    // print message
+    canvasCtx.fillStyle = "black";
+    canvasCtx.font = "36px Arial";
+    canvasCtx.fillText("Not connected to the web camera", 10, 50);
     return null;
   }
   if (frame.landmarks) {
@@ -76,6 +80,10 @@ export function onMenuTick({
     for (let i = 0; i < texts.length; i++) {
       canvasCtx.fillText(texts[i], 10, startY + i * 20);
     }
+  } else { // no landmarks
+    canvasCtx.fillStyle = "black";
+    canvasCtx.font = "36px Arial";
+    canvasCtx.fillText("Failed to detect face landmarks", 10, 50);
   }
   return null;
 }
