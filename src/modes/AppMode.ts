@@ -115,17 +115,33 @@ export class AppMode {
   }
 
   drawTarget(
-    { position=null, viewport, canvasCtx, style }:
+    { position=null, viewport, radius=10, canvasCtx, style }:
     { 
       position: Position | null, viewport: Viewport, 
+      radius: number,
       canvasCtx: CanvasRenderingContext2D, style?: string 
     }
   ) {
     position = position ?? this._pos;
     const absolutePosition = AppMode.makeAbsolute({ position, viewport });
 
+    // draw just border of red circle, not filled
     canvasCtx.beginPath();
-    canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, 10, 10, 0, 0, Math.PI * 2);
+    canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, radius * 2, radius * 2, 0, 0, Math.PI * 2);
+    canvasCtx.strokeStyle = 'red';
+    canvasCtx.lineWidth = 2;
+    canvasCtx.setLineDash([5, 5]);
+    canvasCtx.stroke();
+
+    // draw "border" circle
+    canvasCtx.beginPath();
+    canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, radius * 1.5, radius * 1.5, 0, 0, Math.PI * 2);
+    canvasCtx.fillStyle = 'black';
+    canvasCtx.fill();
+
+    // draw main circle
+    canvasCtx.beginPath();
+    canvasCtx.ellipse(absolutePosition.x, absolutePosition.y, radius, radius, 0, 0, Math.PI * 2);
     canvasCtx.fillStyle = style || 'red';
     canvasCtx.fill();
   }
