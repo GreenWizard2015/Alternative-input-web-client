@@ -24,6 +24,11 @@ const Intro: React.FC<PrivacyNoticeProps> = ({ onConfirm }) => {
       <p style={{ color: "red", fontWeight: "bold" }}>
         <strong>Warning:</strong> This application is data-intensive and requires a high-speed internet connection for optimal performance.
       </p>
+      <h3>Known Issues</h3>
+      <ol>
+        <li>Could be very slow due to the usage AI for face detection. Sadly, but could not be fixed.</li>
+        <li>Couldn't run face detection in Safari. Please use Chrome, Edge or Firefox.</li>
+      </ol>
  
       <button onClick={onConfirm}>
         I Understand
