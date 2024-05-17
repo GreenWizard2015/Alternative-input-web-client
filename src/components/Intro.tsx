@@ -29,6 +29,8 @@ const Intro: React.FC<PrivacyNoticeProps> = ({ onConfirm }) => {
         <li>Could be very slow due to the usage AI for face detection. Sadly, but could not be fixed.</li>
         <li>Couldn't run face detection in Safari. Please use Chrome, Edge or Firefox.</li>
       </ol>
+      <h3>Final note</h3>
+      <p>For each user/location/etc., it is crucial to gather a sufficient amount of data. Don’t abandon data collection after just a few minutes! You need at least 20,000 frames; otherwise, it will only harm the project.</p>
  
       <button onClick={onConfirm}>
         I Understand
