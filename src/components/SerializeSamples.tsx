@@ -1,4 +1,4 @@
-import { Sample, sampleSize } from "./SamplesDef";
+import { EYE_SIZE, Sample, sampleSize } from "./SamplesDef";
 
 function accumulateUnique(key) {
   return (array, value) => {
@@ -29,7 +29,7 @@ export function serialize(samples: Sample[]) {
   const view = new DataView(buffer);
   let offset = 0;
   // write the version of the format
-  const version = 1;
+  const version = 2;
   view.setUint8(offset, version);
   offset += 1;
   // encode the strings to utf-8
@@ -54,16 +54,20 @@ export function serialize(samples: Sample[]) {
   samples.forEach((sample, index) => {
     view.setUint32(offset, sample.time);
     offset += 4;
-    if (sample.leftEye.length !== 32 * 32) {
-      throw new Error('Invalid leftEye size. Expected 32x32, got ' + sample.leftEye.length);
+    if (sample.leftEye.length !== EYE_SIZE * EYE_SIZE) {
+      throw new Error(
+        `Invalid leftEye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${sample.leftEye.length}`
+      );
     }
     sample.leftEye.forEach(value => {
       view.setUint8(offset, value);
       offset += 1;
     });
 
-    if (sample.rightEye.length !== 32 * 32) {
-      throw new Error('Invalid rightEye size. Expected 32x32, got ' + sample.rightEye.length);
+    if (sample.rightEye.length !== EYE_SIZE * EYE_SIZE) {
+      throw new Error(
+        `Invalid rightEye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${sample.rightEye.length}`
+      );
     }
     sample.rightEye.forEach(value => {
       view.setUint8(offset, value);

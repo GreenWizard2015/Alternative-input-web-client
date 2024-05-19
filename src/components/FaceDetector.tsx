@@ -5,9 +5,9 @@ import cameraUtils from '@mediapipe/camera_utils';
 import { results2sample } from '../utils/MP';
 
 const DEFAULT_SETTINGS = {
-  mode: 'circle', padding: 1.25,
+  mode: 'circle', padding: 1.35,
   visibilityThreshold: 0.2, presenceThreshold: 0.2,
-  SIZE: 32,
+  SIZE: 48,
   maxNumFaces: 1,
   minDetectionConfidence: 0.2,
   minTrackingConfidence: 0.2,

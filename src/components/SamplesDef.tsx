@@ -20,10 +20,11 @@ type Sample = {
   screenId: string,
 };
 
+export const EYE_SIZE = 48;
 export function sampleSize() {
   return 4 // time
-    + 32 * 32 * 1 // sample.leftEye is 32x32 pixels
-    + 32 * 32 * 1 // sample.rightEye is 32x32 pixels
+    + EYE_SIZE * EYE_SIZE * 1 // sample.leftEye is 32x32 pixels
+    + EYE_SIZE * EYE_SIZE * 1 // sample.rightEye is 32x32 pixels
     + 4 * 2 * 478 // sample.points is 478 points
     + 4 // goal.x
     + 4; // goal.y
