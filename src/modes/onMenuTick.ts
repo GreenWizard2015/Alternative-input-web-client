@@ -1,4 +1,6 @@
+import { Position } from "../components/SamplesDef";
 import { decodeLandmarks, grayscale2image } from "../utils/MP";
+import { drawTarget } from "../utils/target";
 
 export function onMenuTick({ 
   viewport, canvasCtx, frame, user, place, screen, screenId
@@ -85,5 +87,21 @@ export function onMenuTick({
     canvasCtx.font = "36px Arial";
     canvasCtx.fillText("Failed to detect face landmarks", 10, 50);
   }
+
+  // draw example of target
+  const targetPos: Position = { x: 0.1 * viewport.width, y: 0.5 * viewport.height };
+  drawTarget({
+    position: targetPos,
+    canvasCtx, radius: 10, style: "red"
+  });
+  // TEXT "This is how target looks like"
+  canvasCtx.fillStyle = "red";
+  canvasCtx.font = "21px Arial";
+  canvasCtx.fillText("This is how target looks like", targetPos.x - 120, targetPos.y - 70);
+  // rectangle around the target
+  canvasCtx.setLineDash([]);
+  canvasCtx.strokeStyle = "red";
+  canvasCtx.lineWidth = 2;
+  canvasCtx.strokeRect(targetPos.x - 50, targetPos.y - 50, 100, 100);
   return null;
 }
