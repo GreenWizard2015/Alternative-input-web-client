@@ -43,6 +43,7 @@ function AppComponent(
   const [webcamId, setWebcamId] = React.useState<string>("");
   // flag to indicate if eyes are detected at least once
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
+  const [score, setScore] = React.useState<number|null>(null);
 
   const onFrame = useCallback(
     function (frame: Frame) {
@@ -80,6 +81,7 @@ function AppComponent(
       const isExit = event.code === 'Escape';
       if (gameMode) {
         if (isExit) {
+          setScore(gameMode.getScore());
           gameMode.onPause();
           exit();
           return;
@@ -205,6 +207,11 @@ function AppComponent(
               Eyes was not detected yet.
             </div>
           )}
+          {score != null ? (
+            <div className="w-100 mx-auto text-center">
+              In your last game you scored {score.toFixed(2)} points.
+            </div>
+          ) : null}
           {content}
         </div>
       </div>

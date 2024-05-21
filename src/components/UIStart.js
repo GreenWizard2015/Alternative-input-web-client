@@ -62,6 +62,9 @@ export default function UIStart({ onStart }) {
           <h1>Spline mode</h1>
           <p>In this mode you should concentrate on the red circle and ignore others.</p>
           <p>This is the main mode of the application. It is intended to adjust gaze predictions in motion.</p>
+          <div style={{ color: 'red' }}>
+            This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
+          </div>
           <ul>
             <li>Esc - return to main menu</li>
             <li>P / Enter / Space - toggle pause</li>

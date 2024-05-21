@@ -90,9 +90,11 @@ export function onMenuTick({
 
   // draw example of target
   const targetPos: Position = { x: 0.1 * viewport.width, y: 0.5 * viewport.height };
+  const arrows: string[] = ['Z', 'A', 'S', 'X'];
   drawTarget({
     position: targetPos,
-    canvasCtx, radius: 10, style: "red"
+    canvasCtx, radius: 10, style: "red",
+    sign: arrows[Math.floor(Date.now() / 5000) % arrows.length]
   });
   // TEXT "This is how target looks like"
   canvasCtx.fillStyle = "red";

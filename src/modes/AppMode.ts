@@ -116,18 +116,18 @@ export class AppMode {
   }
 
   drawTarget(
-    { position=null, viewport, radius=10, canvasCtx, style }:
+    { position=null, viewport, radius=10, canvasCtx, style, sign='' }:
     { 
       position: Position | null, viewport: Viewport, 
       radius: number,
-      canvasCtx: CanvasRenderingContext2D, style?: string 
+      canvasCtx: CanvasRenderingContext2D, style?: string, sign?: string
     }
   ) {
     position = position ?? this._pos;
     const absolutePosition = AppMode.makeAbsolute({ position, viewport });
     drawTarget({ 
       position: absolutePosition, 
-      radius, canvasCtx, style 
+      radius, canvasCtx, style, sign
     });
   }
 
@@ -154,5 +154,9 @@ export class AppMode {
   
   getGoal() {
     return this._pos;
+  }
+
+  getScore() {
+    return null;
   }
 }

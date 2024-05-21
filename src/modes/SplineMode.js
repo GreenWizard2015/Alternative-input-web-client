@@ -7,7 +7,16 @@ export class SplineMode extends AppMode {
     super();
     this._pos = { x: 0.5, y: 0.5 }
     this._points = null;
-    this._newSpline({ extend: false })
+    this._newSpline({ extend: false });
+
+    this._Signs = ['Z', 'A', 'S', 'X'];
+    this._mapping = ['z', 'a', 's', 'x'];
+    this._currentSign = 0;
+    this._activeTime = 3 * 1000; // 3 seconds
+    this._lastActiveTime = 0;
+    this._started = 0;
+    this._isActivated = false; 
+    this._score = 0;   
   }
 
   _newSpline({ extend } = { extend: true }) {
@@ -51,6 +60,52 @@ export class SplineMode extends AppMode {
     if (!isNaN(pos.x) && !isNaN(pos.y)) { // sometimes it's NaN, ignore it
       this._pos = pos;
     }
-    this.drawTarget({ canvasCtx, viewport });
+    this._isActivated = (Date.now() - this._lastActiveTime) < this._activeTime;
+    this.drawTarget({ 
+      canvasCtx, viewport,
+      style: this._isActivated ? 'red' : 'yellow',
+      sign: this._Signs[this._currentSign],
+    });
+  }
+
+  onKeyDown(event) {
+    const key = event.key.toLowerCase();
+    if(this._mapping.includes(key)) {
+      const correct = this._mapping[this._currentSign] === key;
+      if (correct) {
+        // randomly change the key, but not same as the current one
+        const oldSign = this._currentSign;
+        while (this._currentSign === oldSign) {
+          this._currentSign = Math.floor(Math.random() * this._Signs.length);
+        }
+        // reset the active time, if it's not activated
+        if (!this._isActivated) {
+          this._started = Date.now();
+        }
+        this._lastActiveTime = Date.now();
+        this._isActivated = true;
+        this._score += 2 * this._timeBonus();
+      } else {
+        this._score -= 1 * this._timeBonus();
+      }
+    }
+    super.onKeyDown(event);
+  }
+
+  _timeBonus() {
+    const now = Date.now();
+    const sec = Math.floor((now - this._started) / 1000);
+    return Math.sqrt(1 + sec);
+  }
+
+  getScore() {
+    return this._score;
+  }
+
+  accept() {
+    if(!this._isActivated) {
+      return false;
+    }
+    return super.accept();
   }
 }
