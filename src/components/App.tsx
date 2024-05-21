@@ -12,7 +12,7 @@ import { setMode } from "../store/slices/App";
 import { RootState } from "../store";
 import dynamic from "next/dynamic";
 import UploadsNotification from "./uploadsNotification";
-import { hash128Hex } from "../Utils";
+import { hash128Hex } from "../utils";
 
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
@@ -41,19 +41,26 @@ function AppComponent(
   const goalPosition = useRef(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
   const [webcamId, setWebcamId] = React.useState<string>("");
+  // flag to indicate if eyes are detected at least once
+  const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
 
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
-      if ((gameMode == null) || gameMode.isPaused()) return;
+      if (canvasRef.current != null && frame.sample != null) {
+        const { time, leftEye, rightEye, points, goal } = frame.sample;
+        const eyesDetected = (leftEye != null) || (rightEye != null);
+        setEyesVisible(eyesVisible || eyesDetected);
+        // exit if not in game mode or game is paused
+        if ((gameMode == null) || gameMode.isPaused()) return;
+        if (!eyesDetected) return; // exit if eyes are not detected
+        if (goalPosition.current == null) return; // exit if goal is not set
 
-      if (goalPosition.current != null && canvasRef.current != null && frame.sample != null) {
         const canvasElement = canvasRef.current;
-        const canvasRect = canvasElement.getBoundingClientRect(); // could we get more info about the screen?
+        const canvasRect = canvasElement.getBoundingClientRect();
         const screenId = hash128Hex(JSON.stringify(canvasRect));
         // placeId should be a combination of placeId and webcamId
         const newPlaceId = hash128Hex(placeId + webcamId);
-        const { time, leftEye, rightEye, points, goal } = frame.sample;
         const sample: Sample = {
           time, leftEye, rightEye, points, goal, // sample data
           userId: userId,
@@ -65,7 +72,7 @@ function AppComponent(
           storeSample({ sample: sample, limit: now - 3000, placeId, userId });
         }
       }
-    }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode]
+    }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode, eyesVisible]
   );
 
   function onKeyDown(exit) {
@@ -175,6 +182,7 @@ function AppComponent(
       <UI
         onWebcamChange={setWebcamId}
         onStart={startGame}
+        canStart={eyesVisible}
         goFullscreen={() => toggleFullscreen(
           document.getElementById("root") ?? document.body // app root element
         )}
@@ -190,7 +198,13 @@ function AppComponent(
               Currently there are {activeUploads} active uploads.<br />
               Please wait until they are finished.
             </div>
-          ) : null}         
+          ) : null}
+          {eyesVisible ? null : (
+            <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
+              There are some problems with the webcam or browser.<br />
+              Eyes was not detected yet.
+            </div>
+          )}
           {content}
         </div>
       </div>

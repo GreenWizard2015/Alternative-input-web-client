@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 import { validate } from './Samples';
 
 function UI({
-  onWebcamChange, goFullscreen, onStart,
+  onWebcamChange, goFullscreen, onStart, canStart,
   userId, setUser,
   placeId, setPlace,
   users, places,
@@ -118,7 +118,7 @@ function UI({
       <button className='w100' onClick={showHelp}>Help</button>
       <button className='w100' 
         onClick={() => setSubMenu('start')} 
-        disabled={(userId === '') || (placeId === '')}
+        disabled={!canStart || (userId === '') || (placeId === '')}
       >Start</button>
       <button className='w100' onClick={goFullscreen}>Fullscreen</button>
     </>

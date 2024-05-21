@@ -33,7 +33,7 @@ body {
   /* center the UI */
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex-direction: column;
 
   padding: 20px;

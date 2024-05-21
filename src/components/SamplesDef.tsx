@@ -11,8 +11,8 @@ type Position = {
 
 type Sample = {
   time: number,
-  leftEye: Uint8ClampedArray,
-  rightEye: Uint8ClampedArray,
+  leftEye: Uint8ClampedArray | null,
+  rightEye: Uint8ClampedArray | null,
   points: Float32Array,
   goal: Position,
   userId: string,

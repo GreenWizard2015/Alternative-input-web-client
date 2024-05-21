@@ -111,7 +111,7 @@ function _points2crop(pts, canvas, {
   padding, SIZE, image
 }) {
   const ROI = _CROP_MODES[mode](pts, { height: image.height, width: image.width, padding });
-  if (null === ROI) return new Uint8ClampedArray(SIZE * SIZE);
+  if (null === ROI) return null;
 
   // cut out the part and resize to SIZE x SIZE
   canvas.width = SIZE;
@@ -140,8 +140,8 @@ export function grayscale2image(gray, size) {
 
 export type Sample = {
   time: number,
-  leftEye: Uint8ClampedArray,
-  rightEye: Uint8ClampedArray,
+  leftEye: Uint8ClampedArray | null,
+  rightEye: Uint8ClampedArray | null,
   points: Float32Array,
   goal?: Point,
 }

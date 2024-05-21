@@ -50,29 +50,25 @@ export function serialize(samples: Sample[]) {
   saveString(sample.userId, 'userID');
   saveString(sample.placeId, 'placeID');
   saveString(sample.screenId, 'screenID');
+  const EMPTY_EYE = new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(0);
+
+  const saveEye = (eye) => {
+    if (eye.length !== EYE_SIZE * EYE_SIZE) {
+      throw new Error(`Invalid eye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${eye.length}`);
+    }
+    for (let i = 0; i < EYE_SIZE * EYE_SIZE; i++) {
+      const value = eye[i];
+      view.setUint8(offset, value);
+      offset += 1;
+    }
+  };
   // then write the samples
   samples.forEach((sample, index) => {
     view.setUint32(offset, sample.time);
     offset += 4;
-    if (sample.leftEye.length !== EYE_SIZE * EYE_SIZE) {
-      throw new Error(
-        `Invalid leftEye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${sample.leftEye.length}`
-      );
-    }
-    sample.leftEye.forEach(value => {
-      view.setUint8(offset, value);
-      offset += 1;
-    });
 
-    if (sample.rightEye.length !== EYE_SIZE * EYE_SIZE) {
-      throw new Error(
-        `Invalid rightEye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${sample.rightEye.length}`
-      );
-    }
-    sample.rightEye.forEach(value => {
-      view.setUint8(offset, value);
-      offset += 1;
-    });
+    saveEye(sample.leftEye ?? EMPTY_EYE);
+    saveEye(sample.rightEye ?? EMPTY_EYE);
 
     if (sample.points.length !== 2 * 478) {
       throw new Error('Invalid points size. Expected 2x478, got ' + sample.points.length);
