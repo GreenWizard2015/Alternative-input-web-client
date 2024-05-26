@@ -20,6 +20,11 @@ export default function UIStart({ onStart }) {
   const back = (
     <button className='ms-2' onClick={() => setHelpMode('')}>Back</button>
   );
+  const gamificationNote = (
+    <div style={{ color: 'red' }}>
+      This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
+    </div>
+  );
   switch (helpMode) {
     case 'lookAt':
       return (
@@ -27,8 +32,8 @@ export default function UIStart({ onStart }) {
           <h1>LookAt mode</h1>
           <p>In this mode you should concentrate on the static red circle. Grey circle means inactive mode.</p>
           <p>This mode intended to stabilize gaze predictions.</p>
+          {gamificationNote}
           <ul>
-            <li>Right Arrow - start next challenge</li>
             <li>Esc - return to main menu</li>
             <li>P / Enter / Space - toggle pause</li>
           </ul>
@@ -62,9 +67,7 @@ export default function UIStart({ onStart }) {
           <h1>Spline mode</h1>
           <p>In this mode you should concentrate on the red circle and ignore others.</p>
           <p>This is the main mode of the application. It is intended to adjust gaze predictions in motion.</p>
-          <div style={{ color: 'red' }}>
-            This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
-          </div>
+          {gamificationNote}
           <ul>
             <li>Esc - return to main menu</li>
             <li>P / Enter / Space - toggle pause</li>

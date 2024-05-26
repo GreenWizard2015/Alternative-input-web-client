@@ -1,32 +1,29 @@
-import { AppMode } from "./AppMode"
+import { AppMode } from "./AppMode";
+import MiniGameController from "./MiniGameController";
 
 export class LookAtMode extends AppMode {
   constructor() {
     super();
-    // Maybe constant is better?
     this._visibleT = 5.0;
     this._pos = { x: 0.5, y: 0.5 };
+    this._controller = new MiniGameController();
   }
 
   _next() {
     this._pos = { x: Math.random(), y: Math.random() };
     this._active = false;
     this._startT = null;
+    this._controller.reset();
   }
 
   onKeyDown(event) {
-    super.onKeyDown(event);
-    // Notice: Numpad keys won't work. If this's unwanted behaviour
-    // use event.key instead.
-    if (event.code === 'ArrowRight') {
-      this._active = true;
-    }
+    this._controller.onKeyDown(event);
+    this._active = this._controller.isActivated();
   }
 
   onRender({ viewport, canvasCtx }) {
     super.onRender({ viewport, canvasCtx });
 
-    // onRender = on_tick + on_render
     if (this._active) {
       const dT = Date.now() / 1000 - this._startT;
       if (this._visibleT < dT) {
@@ -36,7 +33,11 @@ export class LookAtMode extends AppMode {
       this._startT = Date.now() / 1000;
     }
 
-    this.drawTarget({ viewport, canvasCtx, style: this._active ? 'red' : 'gray' });
+    this.drawTarget({ 
+      viewport, canvasCtx, 
+      style: this._active ? 'red' : 'yellow',
+      sign: this._controller.sign()
+    });
   }
 
   accept() {
@@ -44,5 +45,9 @@ export class LookAtMode extends AppMode {
       return super.accept();
     }
     return false;
+  }
+
+  getScore() {
+    return this._controller.getScore();
   }
 }
