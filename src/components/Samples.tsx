@@ -68,6 +68,8 @@ export { storeSample, sendSamples };
 export function validate(obj: UUIDed | null) {
   if (obj == null) return false;
   if (obj === undefined) return false;
+  if (obj.name === undefined) return false;
+  if (obj.uuid === undefined) return false;
   return obj.name.length > 0 && obj.uuid.length > 0;
 }
 export type { UUIDed, Position, Sample };
