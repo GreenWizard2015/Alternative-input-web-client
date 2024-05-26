@@ -17,6 +17,7 @@ export class LookAtMode extends AppMode {
   }
 
   onKeyDown(event) {
+    super.onKeyDown(event);
     this._controller.onKeyDown(event);
     this._active = this._controller.isActivated();
   }
