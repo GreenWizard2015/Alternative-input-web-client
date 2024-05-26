@@ -23,6 +23,19 @@ function UI({
     setSubMenu('help')
   }
 
+  React.useEffect(() => {
+    // if user not found, set to first
+    const isUserFound = users.find(u => u.uuid === userId) !== undefined;
+    if (!isUserFound && users.length > 0) {
+      setUser(users[0].uuid);
+    }
+    // if place not found, set to first
+    const isPlaceFound = places.find(p => p.uuid === placeId) !== undefined;
+    if (!isPlaceFound && places.length > 0) {
+      setPlace(places[0].uuid);
+    }
+  }, [users, places, userId, placeId, setPlace, setUser]);
+
   const removeUser = React.useCallback(() => {
     // confirm dialog
     const name = users.find(u => u.uuid === userId)?.name;
