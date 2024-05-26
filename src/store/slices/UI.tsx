@@ -65,12 +65,12 @@ export const UISlice = createSlice({
       state.places = places;
       state.users = users;
     },
-    removeUser: (state, action: PayloadAction<string>) => {
-      state.users = state.users.filter(u => u.uuid !== action.payload);
+    removeUser: (state, action: PayloadAction<{ uuid: string }>) => {
+      state.users = state.users.filter(u => u.uuid !== action.payload.uuid);
       state.userId = '';
     },
-    removePlace: (state, action: PayloadAction<string>) => {
-      state.places = state.places.filter(p => p.uuid !== action.payload);
+    removePlace: (state, action: PayloadAction<{ uuid: string }>) => {
+      state.places = state.places.filter(p => p.uuid !== action.payload.uuid);
       state.placeId = '';
     },
     // reset samples for current user and place

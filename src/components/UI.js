@@ -30,7 +30,7 @@ function UI({
       `Are you sure you want to remove the user (${name})?`
     );
     if (answer) {
-      doRemoveUser();
+      doRemoveUser({ uuid: userId});
     }
   }, [userId, users, doRemoveUser]);
 
@@ -41,7 +41,7 @@ function UI({
       `Are you sure you want to remove the place (${name})?`
     );
     if (answer) {
-      doRemovePlace();
+      doRemovePlace({ uuid: placeId });
     }
   }, [placeId, places, doRemovePlace]);
   
