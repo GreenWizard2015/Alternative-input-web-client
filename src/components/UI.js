@@ -16,8 +16,6 @@ function UI({
 }) {
   const [subMenu, setSubMenu] = React.useState('');
   const [tempName, setTempName] = useState('');
-  users = users.filter(validate);
-  places = places.filter(validate);
 
   function showHelp() {
     setSubMenu('help')
@@ -34,7 +32,7 @@ function UI({
     if (!isPlaceFound && places.length > 0) {
       setPlace(places[0].uuid);
     }
-  }, [users, places, userId, placeId, setPlace, setUser]);
+  }, [users, places, userId, placeId]);
 
   const removeUser = React.useCallback(() => {
     // confirm dialog
