@@ -90,11 +90,29 @@ export const UISlice = createSlice({
         return p;
       });
     },
+
+    selectDefaultValues: (state) => {
+      if (state.users.length > 0) {
+        const user = state.users.find(u => u.uuid === state.userId);
+        if (undefined === user) { // if user not found, select first user
+          state.userId = state.users[0].uuid;
+        }
+        state.users = state.users.filter(validate);
+      }
+      if (state.places.length > 0) {
+        const place = state.places.find(p => p.uuid === state.placeId);
+        if (undefined === place) { // if place not found, select first place
+          state.placeId = state.places[0].uuid;
+        }
+        state.places = state.places.filter(validate);
+      }
+    }
   },
 });
 
 export const { 
-  setWebcamId, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace 
+  setWebcamId, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace,
+  selectDefaultValues
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;
 export default UISlice;

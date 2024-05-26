@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import UIHelp from './UIHelp';
 import UIStart from './UIStart';
 import WebcamSelector from './WebcamSelector';
-import { setUser, setPlace, removeUser, removePlace, resetUser, resetPlace } from '../store/slices/UI';
+import { setUser, setPlace, removeUser, removePlace, resetUser, resetPlace, selectDefaultValues } from '../store/slices/UI';
 import { connect } from 'react-redux';
-import { validate } from './Samples';
 
 function UI({
   onWebcamChange, goFullscreen, onStart, canStart,
@@ -12,7 +11,8 @@ function UI({
   placeId, setPlace,
   users, places,
   doRemoveUser, doRemovePlace,
-  resetUser, resetPlace
+  resetUser, resetPlace,
+  selectDefaultValues
 }) {
   const [subMenu, setSubMenu] = React.useState('');
   const [tempName, setTempName] = useState('');
@@ -22,17 +22,8 @@ function UI({
   }
 
   React.useEffect(() => {
-    // if user not found, set to first
-    const isUserFound = users.find(u => u.uuid === userId) !== undefined;
-    if (!isUserFound && users.length > 0) {
-      setUser(users[0].uuid);
-    }
-    // if place not found, set to first
-    const isPlaceFound = places.find(p => p.uuid === placeId) !== undefined;
-    if (!isPlaceFound && places.length > 0) {
-      setPlace(places[0].uuid);
-    }
-  }, [users, places, userId, placeId]);
+    selectDefaultValues();
+  }, []);
 
   const removeUser = React.useCallback(() => {
     // confirm dialog
@@ -148,6 +139,6 @@ export default connect(
   { 
     setUser, setPlace, 
     doRemovePlace: removePlace, doRemoveUser: removeUser, 
-    resetUser, resetPlace 
+    resetUser, resetPlace, selectDefaultValues
   }
 )(UI)
