@@ -2,12 +2,12 @@
 /* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
 const { serialize } = require('./SerializeSamples');
 let queue = [];
+let isRunning = false;
 
 function processQueue() {
   self.postMessage({ status: 'start', inQueue: queue.length });
-  if (queue.length === 0) {
-    return;
-  }
+  isRunning = queue.length > 0;
+  if (!isRunning) return;
   const chunk = queue[queue.length - 1]; // take the last element from the queue
   const { serializedSamples, endpoint, userId, placeId, count } = chunk;
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint, 'for', userId, placeId, count);
@@ -62,5 +62,5 @@ self.onmessage = function({ data }) {
       count
     });
   }
-  if(queue.length === 1) processQueue(); // start processing the queue only if didn't start yet
+  if(!isRunning) processQueue(); // start processing the queue only if didn't start yet
 }

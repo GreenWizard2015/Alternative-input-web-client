@@ -1,16 +1,17 @@
 const { FilesetResolver, FaceLandmarker } = require("@mediapipe/tasks-vision");
 
 let queue = [];
+let isRunning = false;
 let faceLandmarker = null;
 
 async function processQueue() {
-  if (queue.length === 0) {
-    return;
-  }
+  isRunning = queue.length > 0;
+  if (!isRunning) return;
   const chunk = queue.shift();
   const { data, time } = chunk;
   const results = await faceLandmarker.detectForVideo(data, time);
   self.postMessage({ status: "detected", results, time, frame: data });
+  processQueue(); // process next chunk
 }
 
 self.onmessage = async function({ data }) {
@@ -39,5 +40,5 @@ self.onmessage = async function({ data }) {
     return;
   }
   queue.push(data);
-  processQueue();
+  if (!isRunning) processQueue();
 }
