@@ -7,11 +7,16 @@ let faceLandmarker = null;
 async function processQueue() {
   isRunning = queue.length > 0;
   if (!isRunning) return;
+
   const chunk = queue.shift();
   const { data, time } = chunk;
-  const results = await faceLandmarker.detectForVideo(data, time);
-  self.postMessage({ status: "detected", results, time, frame: data });
-  processQueue(); // process next chunk
+  try {
+    // could throw an error
+    const results = await faceLandmarker.detectForVideo(data, time);
+    self.postMessage({ status: "detected", results, time, frame: data });
+  } finally {
+    processQueue(); // process next chunk
+  }
 }
 
 self.onmessage = async function({ data }) {
@@ -40,5 +45,7 @@ self.onmessage = async function({ data }) {
     return;
   }
   queue.push(data);
+  // leave up to 10 frames in the queue
+  queue.splice(0, queue.length - 10);
   if (!isRunning) processQueue();
 }

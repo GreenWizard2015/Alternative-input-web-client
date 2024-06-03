@@ -8,7 +8,7 @@ function processQueue() {
   self.postMessage({ status: 'start', inQueue: queue.length });
   isRunning = queue.length > 0;
   if (!isRunning) return;
-  const chunk = queue[queue.length - 1]; // take the last element from the queue
+  const chunk = queue.pop(); // get the last element from the queue
   const { serializedSamples, endpoint, userId, placeId, count } = chunk;
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint, 'for', userId, placeId, count);
   const fd = new FormData();
@@ -30,11 +30,11 @@ function processQueue() {
       status: 'ok', text, userId, placeId, count, inQueue: queue.length,
       duration: endTime - startTime
     });
-    processQueue();
   }).catch(error => {
     self.postMessage({ status: 'error', error: error.message });
-    // don't remove the last element from the queue, so it will be retried
-    processQueue();
+    queue.push(chunk); // put the chunk back to the queue
+  }).finally(() => {
+    processQueue(); // process next chunk no matter what
   });
 }
 
@@ -54,7 +54,7 @@ self.onmessage = function({ data }) {
   for(const groupId in grouped) {
     const samples = grouped[groupId];
     // put to the start of the queue
-    queue.unshift({
+    queue.push({
       serializedSamples: serialize(samples),
       endpoint,
       userId,
