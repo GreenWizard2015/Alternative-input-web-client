@@ -13,6 +13,8 @@ import { RootState } from "../store";
 import dynamic from "next/dynamic";
 import UploadsNotification from "./uploadsNotification";
 import { hash128Hex } from "../utils";
+import { notifyServer } from "./notify";
+import ErrorWatcher from "./ErrorWatcher";
 
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
@@ -173,6 +175,11 @@ function AppComponent(
     setMode("game");
     setGameMode(mode);
     mode.onPause = onPause;
+    notifyServer({
+      type: "start",
+      placeId: placeId,
+      userId: userId,
+    });
   }
 
   let content = null;
@@ -219,14 +226,14 @@ function AppComponent(
   }
 
   return (
-    <>
+    <ErrorWatcher>
       <UploadsNotification />
       {content}
       <FaceDetector deviceId={webcamId} onFrame={onFrame} goal={goalPosition} />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
       })} />
-    </>
+    </ErrorWatcher>
   );
 }
 

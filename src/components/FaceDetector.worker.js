@@ -12,6 +12,7 @@ async function processQueue() {
   const { data, time } = chunk;
   try {
     // could throw an error
+    if (!faceLandmarker) return;
     const results = await faceLandmarker.detectForVideo(data, time);
     self.postMessage({ status: "detected", results, time, frame: data });
   } finally {
