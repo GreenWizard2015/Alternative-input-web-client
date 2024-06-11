@@ -13,7 +13,21 @@ const DEFAULT_SETTINGS = {
   minTrackingConfidence: 0.2,
 };
 
-export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...settings }) {
+export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, ...settings }) {
+  // calculate avg fps
+  const framesCount = useRef(0);
+  const lastTime = useRef(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const fps = framesCount.current / (now - lastTime.current) * 1000;
+      onFPS(fps);
+      framesCount.current = 0;
+      lastTime.current = now;
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [onFPS]);
+
   const Settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings }), [settings]);
   const settingsRef = useRef(Settings);
   useEffect(() => {
@@ -44,6 +58,7 @@ export default function FaceDetectorComponent({ onFrame, deviceId, goal, ...sett
           sample.time = time;
           sample.goal = goal.current;
           
+          framesCount.current++;
           callbackRef.current({
             results,
             sample,

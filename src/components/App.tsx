@@ -46,6 +46,7 @@ function AppComponent(
   // flag to indicate if eyes are detected at least once
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
   const [score, setScore] = React.useState<number|null>(null);
+  const fps = useRef<number>(0);
 
   const onFrame = useCallback(
     function (frame: Frame) {
@@ -151,15 +152,20 @@ function AppComponent(
         screenId: hash128Hex(screenStr),
         gameMode,
         activeUploads,
-        meanUploadDuration
+        meanUploadDuration,
       });
+      // draw FPS
+      canvasCtx.fillStyle = "black";
+      canvasCtx.font = "16px Arial";
+      canvasCtx.fillText(`Samples per second: ${fps.current.toFixed(2)}`, 10, 20);
+
       canvasCtx.restore();
       animationFrameId.current = requestAnimationFrame(f);
     };
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode, userId, placeId]);
+  }, [onTick, gameMode, userId, placeId, fps]);
 
   function onPause() {
     const now = Date.now();
@@ -229,7 +235,10 @@ function AppComponent(
     <ErrorWatcher>
       <UploadsNotification />
       {content}
-      <FaceDetector deviceId={webcamId} onFrame={onFrame} goal={goalPosition} />
+      <FaceDetector deviceId={webcamId} 
+        onFrame={onFrame} goal={goalPosition} 
+        onFPS={(value) => { fps.current = value; }}
+      />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
       })} />
