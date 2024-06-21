@@ -123,9 +123,12 @@ class CBackground {
 
   _brightness() {
     const T = Date.now() / 1000; // Current time in seconds
-    const amplitude = 0.5;
-    const duration = 15.0; // 15 seconds
+    const amplitude = 10.0;
+    const duration = 30.0;
     const sin = Math.sin(2.0 * Math.PI * T / duration);
+    if (sin < 0) {
+      return 1.0 / (amplitude * Math.abs(sin) + 1.0);
+    }
     const res = 1.0 + amplitude * sin;
     return res;
   }
