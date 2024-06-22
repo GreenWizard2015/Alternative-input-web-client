@@ -104,7 +104,7 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
         higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
       />
       {/* chunks on server */}
-      <MultiLevelProgressBar
+      {/* <MultiLevelProgressBar
         currentValue={placeSamples}
         levels={[
           { value: 500, color: "lime", message: "Better than nothing, but still not enough samples for training. Keep going!" },
@@ -112,7 +112,7 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
           { value: 1500, color: "red", message: "Great! Almost the perfect amount of samples for training." }
         ]}
         higherLevelMessage="Good job! We are hit the perfect amount of samples for training. Now we can start training the neural network."
-      />
+      /> */}
     </div>
   );
 }
