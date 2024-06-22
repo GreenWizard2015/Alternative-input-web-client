@@ -1,5 +1,4 @@
 import React from "react";
-import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { RootState } from "../store";
 
@@ -70,9 +69,9 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
   return (
     <div className="w-100">
       {message}
-      <Row>
+      <div className="w-100 d-flex">
         {sections}
-      </Row>
+      </div>
     </div>
   );
 };
