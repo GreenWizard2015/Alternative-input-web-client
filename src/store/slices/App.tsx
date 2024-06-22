@@ -14,6 +14,7 @@ interface AppState {
   screen: IScreen | null;
   activeUploads: number;
   meanUploadDuration: number;
+  chunksOnServer: number;
 };
 
 const SMOOTHING_FACTOR = 0.9;
@@ -22,6 +23,13 @@ const initialState: AppState = {
   screen: null,
   activeUploads: 0,
   meanUploadDuration: 0,
+  chunksOnServer: 0,
+};
+
+interface IChangeActiveUploads {
+  total: number;
+  duration: number|null;
+  chunks?: number;
 };
 
 // NON-PERSISTED slice
@@ -35,12 +43,15 @@ export const AppSlice = createSlice({
     updateScreen: (state, action: PayloadAction<IScreen>) => {
       state.screen = action.payload;
     },
-    changeActiveUploads: (state, action: PayloadAction<{ total: number, duration: number|null }>) => {
+    changeActiveUploads: (state, action: PayloadAction<IChangeActiveUploads>) => {
       console.log(action.payload);
-      const { total, duration } = action.payload;
+      const { total, duration, chunks } = action.payload;
       state.activeUploads = total;
       if(null !== duration) {
         state.meanUploadDuration = SMOOTHING_FACTOR * state.meanUploadDuration + (1 - SMOOTHING_FACTOR) * duration;
+      }
+      if(null !== chunks) {
+        state.chunksOnServer = chunks;
       }
     }
   },

@@ -4,7 +4,9 @@ import { UUIDed, validate } from "../../components/Samples";
 interface UIState {
   webcamId: string | null;
   userId: string,
+  userSamples: number,
   placeId: string,
+  placeSamples: number,
 
   users: UUIDed[];
   places: UUIDed[];
@@ -13,7 +15,9 @@ interface UIState {
 const initialState: UIState = {
   webcamId: null,
   userId: '',
+  userSamples: 0,
   placeId: '',
+  placeSamples: 0,
   users: [],
   places: [],
 };
@@ -32,6 +36,7 @@ export const UISlice = createSlice({
         state.users.push(action.payload);
       }
       state.users = state.users.filter(validate);
+      state.userSamples = state.users.find(u => u.uuid === state.userId)?.samples || 0;
     },
     setPlace: (state, action: PayloadAction<UUIDed>) => {
       state.placeId = action.payload.uuid;
@@ -40,6 +45,7 @@ export const UISlice = createSlice({
         state.places.push(action.payload);
       }
       state.places = state.places.filter(validate);
+      state.placeSamples = state.places.find(p => p.uuid === state.placeId)?.samples || 0;
     },
     incrementStats: (state, action) => {
       const { userId, placeId, count } = action.payload;      
@@ -48,7 +54,9 @@ export const UISlice = createSlice({
           if(typeof p.samples !== 'number') {
             p.samples = 0;
           }
-          return { ...p, samples: p.samples + count };
+          const newSamples = p.samples + count;
+          state.placeSamples = newSamples;
+          return { ...p, samples: newSamples };
         }
         return p;
       });
@@ -57,7 +65,9 @@ export const UISlice = createSlice({
           if(typeof u.samples !== 'number') {
             u.samples = 0;
           }
-          return { ...u, samples: u.samples + count };
+          const newSamples = u.samples + count;
+          state.userSamples = newSamples;
+          return { ...u, samples: newSamples };
         }
         return u;
       });

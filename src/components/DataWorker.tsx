@@ -13,10 +13,10 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
         changeActiveUploads({ total: inQueue, duration: null });
         return;
       } else {
-        const { status, userId, placeId, count, inQueue, duration } = e.data;
+        const { status, userId, placeId, count, inQueue, duration, chunks } = e.data;
         if('ok' === status) {
           incrementStats({ userId, placeId, count });
-          changeActiveUploads({ total: inQueue, duration });
+          changeActiveUploads({ total: inQueue, duration, chunks });
         }
       }
     };

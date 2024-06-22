@@ -19,16 +19,15 @@ function processQueue() {
     method: 'POST',
     body: fd
   }).then(response => {
-    if (response.ok) {
-      return response.text();  // or response.json() if response is JSON
-    }
+    if (response.ok) return response.json();
     throw new Error('Network response was not ok.');
-  }).then(text => {
+  }).then(json => {
     const endTime = Date.now();
     queue.pop(); // remove the last element from the queue
     self.postMessage({ 
-      status: 'ok', text, userId, placeId, count, inQueue: queue.length,
-      duration: endTime - startTime
+      status: 'ok', userId, placeId, count, inQueue: queue.length,
+      duration: endTime - startTime,
+      chunks: json.chunks,
     });
   }).catch(error => {
     self.postMessage({ status: 'error', error: error.message });

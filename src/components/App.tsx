@@ -15,6 +15,7 @@ import UploadsNotification from "./uploadsNotification";
 import { hash128Hex } from "../utils";
 import { notifyServer } from "./notify";
 import ErrorWatcher from "./ErrorWatcher";
+import GoalsProgress from "./GoalsProgress";
 
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
@@ -225,6 +226,7 @@ function AppComponent(
               In your last game you scored {score.toFixed(2)} points.
             </div>
           ) : null}
+          <GoalsProgress />
           {content}
         </div>
       </div>
