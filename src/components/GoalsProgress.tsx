@@ -79,7 +79,7 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
 
 function GoalsProgress({ userSamples, placeSamples }) {
   return (
-    <Container fluid className="w-100">
+    <div className="w-100">
       {/* user samples */}
       <MultiLevelProgressBar
         currentValue={userSamples}
@@ -110,7 +110,7 @@ function GoalsProgress({ userSamples, placeSamples }) {
         ]}
         higherLevelMessage="Good job! We are hit the perfect amount of samples for training. Now we can start training the neural network."
       />
-    </Container>
+    </div>
   );
 }
 
