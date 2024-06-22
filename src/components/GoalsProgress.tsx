@@ -68,12 +68,12 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
     message = higherLevelMessage;
   }
   return (
-    <Container fluid className="w-100">
+    <div className="w-100">
       {message}
       <Row>
         {sections}
       </Row>
-    </Container>
+    </div>
   );
 };
 
