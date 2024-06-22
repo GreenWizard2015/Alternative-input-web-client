@@ -76,7 +76,11 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
   );
 };
 
-function GoalsProgress({ userSamples, placeSamples }) {
+function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
+  // convert to number if it is a string
+  userSamples = (typeof userSamples === "string") ? parseInt(userSamples) : userSamples;
+  placeSamples = (typeof placeSamples === "string") ? parseInt(placeSamples) : placeSamples;
+  chunksOnServer = (typeof chunksOnServer === "string") ? parseInt(chunksOnServer) : chunksOnServer;
   return (
     <div className="w-100">
       {/* user samples */}
