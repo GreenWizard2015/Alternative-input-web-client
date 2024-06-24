@@ -93,7 +93,7 @@ export class CircleMovingMode extends AppMode {
     // calculate an array of distances between points
     this._distances = calcDistance(this._path);
     const totalDistance = this._distances[this._distances.length - 1];
-    const speed = uniform(0.01, 0.1);
+    const speed = uniform(0.05, 0.15);
     // normalize distances
     this._distances = this._distances.map(d => d / totalDistance);
     this._maxT = (totalDistance / speed) * 1000; // in milliseconds
