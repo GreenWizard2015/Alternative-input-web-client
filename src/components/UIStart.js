@@ -65,8 +65,11 @@ export default function UIStart({ onStart }) {
           <h1>Circle moving mode</h1>
           <p>In this mode you should concentrate on the red circle while it moving.</p>
           <p>This mode intended to stabilize gaze predictions in motion.</p>
+          {gamificationNote}
+          <div style={{ color: 'red' }}>
+            Data collection is started after the first activation of the circle.
+          </div>
           <ul>
-            <li>Arrow Right - start new challenge</li>
             <li>Arrow Up - increase level of difficulty</li>
             <li>Arrow Down - decrease level of difficulty</li>
             <li>Esc - return to main menu</li>

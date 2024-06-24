@@ -1,18 +1,19 @@
 import { add, addScalar, multipleScalar, subtract } from "../utils/pointOperations";
 import { AppMode } from "./AppMode";
 import { calcDistance, uniform } from "./utils";
+import MiniGameController from "./MiniGameController";
 
 export class CircleMovingMode extends AppMode {
   constructor() {
     super();
 
+    this._controller = new MiniGameController();
     this._maxLevel = 25;
     this._level = 5;
     this._reset();
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender({ viewport, canvasCtx });
+  _doTick() {
     // update goal
     const now = Date.now();
     const dt = this._active ? Math.max(
@@ -43,13 +44,28 @@ export class CircleMovingMode extends AppMode {
         ) // A + (B - A) * relT
       );
     }
+  }
+
+  onRender({ viewport, canvasCtx }) {
+    super.onRender({ viewport, canvasCtx });
+    this._doTick();
 
     // draw it
-    this.drawTarget({ canvasCtx, viewport, style: this._active ? 'red' : 'silver' });
+    this.drawTarget({ 
+      viewport, canvasCtx, 
+      style: this._controller.isActivated() ? 'red' : 'yellow',
+      sign: this._controller.sign()
+    });
   }
 
   onKeyDown(event) {
-    super.onKeyDown(event);
+    super.onKeyDown(event);    
+    this._controller.onKeyDown(event);
+    if (!this._active && this._controller.isActivated()) {
+      this._active = true;
+      this._startT = Date.now(); // start time
+    }
+
     if (event.code === 'ArrowUp') {
       this._level = Math.min(this._maxLevel, this._level + 1);
       this._reset();
@@ -59,18 +75,6 @@ export class CircleMovingMode extends AppMode {
       this._level = Math.max(0, this._level - 1);
       this._reset();
     }
-    
-    if (event.code === 'ArrowRight') {
-      this._active = true;
-      this._startT = Date.now(); // start time
-    }
-  }
-
-  accept() {
-    if (this._active) {
-      return super.accept();
-    }
-    return false;
   }
 
   _reset() {
@@ -88,12 +92,23 @@ export class CircleMovingMode extends AppMode {
     // calculate an array of distances between points
     this._distances = calcDistance(this._path);
     const totalDistance = this._distances[this._distances.length - 1];
-    const speed = uniform(0.1, 0.4);
+    const speed = uniform(0.01, 0.2);
     // normalize distances
     this._distances = this._distances.map(d => d / totalDistance);
     this._maxT = (totalDistance / speed) * 1000; // in milliseconds
 
     this._active = false;
     this._startT = null;
+  }
+
+  accept() {
+    if (this._active && this._controller.isActivated()) {
+      return super.accept();
+    }
+    return false;
+  }
+
+  getScore() {
+    return this._controller.getScore();
   }
 }
