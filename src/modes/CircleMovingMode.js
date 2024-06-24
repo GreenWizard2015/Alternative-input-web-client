@@ -21,8 +21,9 @@ export class CircleMovingMode extends AppMode {
       Math.min(1, (now - this._startT) / this._maxT)
     ) : 0;
     if ((1 === dt) && this._active) { // if we reached the end
-      this._active = false;
-      this._pos = this._path[0];
+      const nextLevel = Math.floor(Math.random() * this._maxLevel);
+      this._level = Math.min(this._maxLevel, Math.max(0, nextLevel));
+      this._reset();
     }
     if(0 === dt) { // if we are at the start
       this._pos = this._path[0];
@@ -92,7 +93,7 @@ export class CircleMovingMode extends AppMode {
     // calculate an array of distances between points
     this._distances = calcDistance(this._path);
     const totalDistance = this._distances[this._distances.length - 1];
-    const speed = uniform(0.01, 0.2);
+    const speed = uniform(0.01, 0.1);
     // normalize distances
     this._distances = this._distances.map(d => d / totalDistance);
     this._maxT = (totalDistance / speed) * 1000; // in milliseconds
