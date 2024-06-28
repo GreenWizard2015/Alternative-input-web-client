@@ -1,12 +1,11 @@
 import { AppMode } from "./AppMode";
-import MiniGameController from "./MiniGameController";
 
 export class LookAtMode extends AppMode {
-  constructor() {
+  constructor(controller) {
     super();
     this._visibleT = 5.0;
     this._pos = { x: 0.5, y: 0.5 };
-    this._controller = new MiniGameController();
+    this._controller = controller;
   }
 
   _next() {

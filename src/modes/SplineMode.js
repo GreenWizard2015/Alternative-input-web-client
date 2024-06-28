@@ -1,15 +1,14 @@
 import Spline from "cubic-spline";
 import { AppMode } from "./AppMode";
 import { calcDistance, clip, generatePoints, uniform } from "./utils";
-import MiniGameController from "./MiniGameController";
 
 export class SplineMode extends AppMode {
-  constructor() {
+  constructor(controller) {
     super();
     this._pos = { x: 0.5, y: 0.5 }
     this._points = null;
     this._newSpline({ extend: false });
-    this._controller = new MiniGameController();
+    this._controller = controller;
   }
 
   _newSpline({ extend } = { extend: true }) {

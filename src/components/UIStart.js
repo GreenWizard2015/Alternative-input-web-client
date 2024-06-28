@@ -2,6 +2,8 @@ import { CircleMovingMode } from '../modes/CircleMovingMode';
 import { LookAtMode } from '../modes/LookAtMode';
 import { SplineMode } from '../modes/SplineMode';
 import React, { useState } from 'react';
+import MiniGameController from '../modes/MiniGameController';
+import NullController from '../modes/NullController';
 
 export default function UIStart({ onStart }) {
   const [helpMode, setHelpMode] = useState('');
@@ -19,11 +21,26 @@ export default function UIStart({ onStart }) {
   const back = (
     <button className='ms-2' onClick={() => setHelpMode('')}>Back</button>
   );
-  const gamificationNote = (
-    <div style={{ color: 'red' }}>
-      This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
-    </div>
-  );
+  const [useGamification, setUseGamification] = useState(true);
+  const gamificationNote = React.useMemo(() => {
+    if (!useGamification) return null;
+
+
+    return (
+      <div style={{ color: 'red' }}>
+        This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
+      </div>
+    );
+  }, [useGamification]);
+  const [controller, setController] = useState(new MiniGameController());
+  React.useEffect(() => {
+    if (useGamification) {
+      setController(new MiniGameController());
+    } else {
+      setController(new NullController());
+    }
+  }, [useGamification]);
+
   switch (helpMode) {
     case 'lookAt':
       return (
@@ -37,7 +54,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new LookAtMode())}>Start</button>
+          <button onClick={() => onStart(new LookAtMode(controller))}>Start</button>
           {back}
         </div>
       )
@@ -54,7 +71,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new SplineMode())}>Start</button>
+          <button onClick={() => onStart(new SplineMode(controller))}>Start</button>
           {back}
         </div>
       )
@@ -76,7 +93,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new CircleMovingMode())}>Start</button>
+          <button onClick={() => onStart(new CircleMovingMode(controller))}>Start</button>
           {back}
         </div>
       )
@@ -86,9 +103,17 @@ export default function UIStart({ onStart }) {
         <div className="ui-start">
           <button onClick={() => setHelpMode('spline')}>Spline Mode</button>
           <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
-          <button onClick={() => setHelpMode('circleMoving')}>Circle Moving Mode</button>
+          <button
+            onClick={() => setHelpMode('circleMoving')}
+            disabled={!useGamification}
+          >Circle Moving Mode</button>
+          <div>
+            <label>
+              <input type="checkbox" checked={useGamification} onChange={() => setUseGamification(!useGamification)} />
+              Use gamification (disable <b>only</b> if you can't press the keys (Z, A, S, X).)
+            </label>
+          </div>
         </div>
       );
   }
-
 }

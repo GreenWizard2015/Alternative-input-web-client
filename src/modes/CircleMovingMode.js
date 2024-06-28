@@ -1,13 +1,12 @@
 import { add, addScalar, multipleScalar, subtract } from "../utils/pointOperations";
 import { AppMode } from "./AppMode";
 import { calcDistance, uniform } from "./utils";
-import MiniGameController from "./MiniGameController";
 
 export class CircleMovingMode extends AppMode {
-  constructor() {
+  constructor(controller) {
     super();
 
-    this._controller = new MiniGameController();
+    this._controller = controller;
     this._maxLevel = 25;
     this._level = 5;
     this._reset();
