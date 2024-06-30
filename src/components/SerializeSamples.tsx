@@ -23,7 +23,7 @@ export function serialize(samples: Sample[]) {
   if(1 !== screenIDs.length) {
     throw new Error('Expected one screen ID, got ' + screenIDs.length);
   }
-  const headerSize = 36 + 36 + 36 + 1
+  const headerSize = 36 + 36 + 36 + 1;
   const totalSize = samples.length * sampleSize() + headerSize;
   const buffer = new ArrayBuffer(totalSize);
   const view = new DataView(buffer);
@@ -35,12 +35,12 @@ export function serialize(samples: Sample[]) {
   // encode the strings to utf-8
   const encoder = new TextEncoder();
   const saveString = (str, name) => {
-    let encoded = encoder.encode(str);
+    const encoded = encoder.encode(str);
     if (36 !== encoded.length) {
       throw new Error(`Invalid ${name} size. Expected 36, got ${encoded.length}`);
     }
     for (let i = 0; i < 36; i++) {
-      view.setUint8(offset, encoded[i]);
+      view.setUint8(offset, encoded.at(i));
       offset += 1;
     }
   };
