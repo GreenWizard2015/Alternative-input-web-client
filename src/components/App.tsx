@@ -80,7 +80,9 @@ function AppComponent(
           storeSample({ sample: sample, limit: now - 3000, placeId, userId });
         }
       }
-    }, [canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId]
+    }, [
+      canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId, placeId
+    ]
   );
 
   function onKeyDown(exit) {
