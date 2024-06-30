@@ -3,7 +3,7 @@ import { decodeLandmarks, grayscale2image } from "../utils/MP";
 import { drawTarget } from "../utils/target";
 
 export function onMenuTick({ 
-  viewport, canvasCtx, frame, user, place, screen, screenId
+  viewport, canvasCtx, frame, user, place, screenId
 }) {
   if(frame == null) {
     // Cam not working probably

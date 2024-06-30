@@ -48,6 +48,11 @@ function AppComponent(
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
   const [score, setScore] = React.useState<number|null>(null);
   const fps = useRef<number>(0);
+  // placeId should be a combination of placeId and webcamId
+  const fullPlaceId = React.useMemo(
+    () => hash128Hex(placeId + webcamId),
+    [placeId, webcamId]
+  );
 
   const onFrame = useCallback(
     function (frame: Frame) {
@@ -64,12 +69,10 @@ function AppComponent(
         const canvasElement = canvasRef.current;
         const canvasRect = canvasElement.getBoundingClientRect();
         const screenId = hash128Hex(JSON.stringify(canvasRect));
-        // placeId should be a combination of placeId and webcamId
-        const newPlaceId = hash128Hex(placeId + webcamId);
         const sample: Sample = {
           time, leftEye, rightEye, points, goal, // sample data
           userId: userId,
-          placeId: newPlaceId,
+          placeId: fullPlaceId,
           screenId
         };
         if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
@@ -77,7 +80,7 @@ function AppComponent(
           storeSample({ sample: sample, limit: now - 3000, placeId, userId });
         }
       }
-    }, [canvasRef, lastFrame, goalPosition, userId, placeId, gameMode, eyesVisible]
+    }, [canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId]
   );
 
   function onKeyDown(exit) {
@@ -138,10 +141,6 @@ function AppComponent(
         height: canvasElement.height,
       };
       const screenStr = JSON.stringify(viewport);
-      // placeId should be a combination of placeId and webcamId
-      // cut off the last N characters of the webcamId and append it to the placeId
-      const newPlaceId = hash128Hex(placeId + webcamId);
-
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
@@ -149,7 +148,7 @@ function AppComponent(
         frame: lastFrame.current,
         goal: goalPosition.current,
         user: userId,
-        place: newPlaceId,
+        place: fullPlaceId,
         screenId: hash128Hex(screenStr),
         gameMode,
         activeUploads,
@@ -166,7 +165,7 @@ function AppComponent(
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode, userId, placeId, fps]);
+  }, [onTick, gameMode, userId, fullPlaceId, activeUploads, meanUploadDuration]);
 
   function onPause() {
     const now = Date.now();
