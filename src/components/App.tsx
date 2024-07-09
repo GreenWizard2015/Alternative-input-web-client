@@ -54,6 +54,8 @@ function AppComponent(
     [placeId, webcamId]
   );
 
+  const [screenId, setScreenId] = React.useState<string>("");
+
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
@@ -66,9 +68,6 @@ function AppComponent(
         if (!eyesDetected) return; // exit if eyes are not detected
         if (goalPosition.current == null) return; // exit if goal is not set
 
-        const canvasElement = canvasRef.current;
-        const canvasRect = canvasElement.getBoundingClientRect();
-        const screenId = hash128Hex(JSON.stringify(canvasRect));
         const sample: Sample = {
           time, leftEye, rightEye, points, goal, // sample data
           userId: userId,
@@ -81,7 +80,7 @@ function AppComponent(
         }
       }
     }, [
-      canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId, placeId
+      canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId, placeId, screenId
     ]
   );
 
@@ -142,7 +141,8 @@ function AppComponent(
         width: canvasElement.width,
         height: canvasElement.height,
       };
-      const screenStr = JSON.stringify(viewport);
+      const newScreenId = hash128Hex(JSON.stringify(viewport));
+      setScreenId(old => (old === newScreenId) ? old : newScreenId);
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
@@ -151,7 +151,7 @@ function AppComponent(
         goal: goalPosition.current,
         user: userId,
         place: fullPlaceId,
-        screenId: hash128Hex(screenStr),
+        screenId: newScreenId,
         gameMode,
         activeUploads,
         meanUploadDuration,
