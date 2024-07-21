@@ -88,7 +88,7 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
         currentValue={userSamples}
         levels={[
           { value: 50000, color: "lime", message: "Less than the minimum amount of samples for a single user. Keep going!" },
-          { value: 75000, color: "blue", message: "Good job! The neural network has a chance to learn something about your face." },
+          { value: 75000, color: "yellow", message: "Good job! The neural network has a chance to learn something about your face." },
           { value: 100000, color: "red", message: "Great! Almost the perfect amount of samples for training." }
         ]}
         higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
@@ -98,7 +98,7 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
         currentValue={placeSamples}
         levels={[
           { value: 15000, color: "lime", message: "Less than the minimum amount of samples for training. Keep going!" },
-          { value: 30000, color: "blue", message: "Good job! The neural network has a chance to be trained." },
+          { value: 30000, color: "yellow", message: "Good job! The neural network has a chance to be trained." },
           { value: 50000, color: "red", message: "Great! Almost the perfect amount of samples for training." }
         ]}
         higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
@@ -108,7 +108,7 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
         currentValue={placeSamples}
         levels={[
           { value: 500, color: "lime", message: "Better than nothing, but still not enough samples for training. Keep going!" },
-          { value: 1000, color: "blue", message: "There is a chance that the neural network will be able to learn something." },
+          { value: 1000, color: "yellow", message: "There is a chance that the neural network will be able to learn something." },
           { value: 1500, color: "red", message: "Great! Almost the perfect amount of samples for training." }
         ]}
         higherLevelMessage="Good job! We are hit the perfect amount of samples for training. Now we can start training the neural network."

@@ -111,6 +111,7 @@ function AppComponent(
         case "menu":
           return onMenuTick(data);
         case "game":
+          canvasRef.current.focus();
           return onGameTick(data);
         case "intro":
           return null; // ignore
