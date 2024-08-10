@@ -16,6 +16,11 @@ function UI({
 }) {
   const [subMenu, setSubMenu] = React.useState('');
   const [tempName, setTempName] = useState('');
+  const [tempUUID, setTempUUID] = useState('');
+
+  React.useEffect(() => {
+    setTempUUID(crypto.randomUUID());
+  }, [subMenu]);
 
   function showHelp() {
     setSubMenu('help')
@@ -59,8 +64,13 @@ function UI({
         <input value={tempName} onInput={e => setTempName(e.target.value)} />
       </div>
       <div>
+        <span>Enter user UUID </span>
+        <input value={tempUUID} onInput={e => setTempUUID(e.target.value)} />
+      </div>
+      <div>
         <button onClick={() => {
-          setUser({ name: tempName, uuid: crypto.randomUUID(), samples: 0 })
+          const uuid = tempUUID || crypto.randomUUID();
+          setUser({ name: tempName, uuid, samples: 0 })
           setTempName('')
           setSubMenu('')
         }}>Ok</button>
