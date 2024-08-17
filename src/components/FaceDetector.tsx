@@ -44,7 +44,7 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
 
   useEffect(() => {
     const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
-    console.log('Worker created');
+    console.log('Worker created for device:', deviceId);
     
     worker.onmessage = function(e) {
       const status = e.data?.status;
@@ -103,7 +103,7 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
     <>
       <Webcam
         ref={webcamRef}
-        style={{ display: 'none' }}
+        style={{ display: 'block' }}
         videoConstraints={videoConstraints}
       />
       <canvas ref={intermediateCanvasRef} style={{ display: 'none' }} />

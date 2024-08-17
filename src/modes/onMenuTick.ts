@@ -14,6 +14,9 @@ export function onMenuTick({
     return null;
   }
   if (frame.landmarks) {
+    // draw frame as is
+    canvasCtx.drawImage(frame.image, 0, 0, viewport.width, viewport.height);
+    
     const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
       width: viewport.width, height: viewport.height,
