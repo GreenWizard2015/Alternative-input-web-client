@@ -16,6 +16,11 @@ export function onMenuTick({
   if (frame.landmarks) {
     // draw frame as is
     canvasCtx.drawImage(frame.image, 0, 0, viewport.width, viewport.height);
+    // print frame height and width
+    canvasCtx.fillStyle = "black";
+    canvasCtx.font = "16px Arial";
+    canvasCtx.fillText(`Frame: ${frame.image.width}x${frame.image.height}`, 310, 20);
+
     
     const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
