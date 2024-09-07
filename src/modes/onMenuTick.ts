@@ -13,15 +13,15 @@ export function onMenuTick({
     canvasCtx.fillText("Not connected to the web camera", 10, 50);
     return null;
   }
-  if (frame.landmarks) {
+  if (frame.image) {
     // draw frame as is
     canvasCtx.drawImage(frame.image, 0, 0, viewport.width, viewport.height);
     // print frame height and width
     canvasCtx.fillStyle = "black";
     canvasCtx.font = "16px Arial";
     canvasCtx.fillText(`Frame: ${frame.image.width}x${frame.image.height}`, 310, 20);
-
-    
+  }
+  if (frame.landmarks) {    
     const { visibilityThreshold, presenceThreshold } = frame.settings;
     const decodedLandmarks = decodeLandmarks(frame.landmarks, {
       width: viewport.width, height: viewport.height,

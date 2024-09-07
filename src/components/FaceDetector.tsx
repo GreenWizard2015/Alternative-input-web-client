@@ -98,7 +98,6 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
 
   const videoConstraints = deviceId ? { 
     deviceId: { exact: deviceId },
-    frameRate: { ideal: 30, max: 60 },
   } : undefined;
 
   return (

@@ -27,7 +27,11 @@ function WebcamSelector({ onWebcamChange }) {
   return (
     <div className="webcam-selector">
       <label htmlFor="webcam-select">Select Webcam: </label>
-      <select id="webcam-select" value={selectedWebcam} onChange={handleWebcamChange}>
+      <select 
+        id="webcam-select" 
+        value={selectedWebcam} onChange={handleWebcamChange}
+        disabled={0 === webcams.length}
+      >
         {webcams.map(webcam => (
           <option key={webcam.deviceId} value={webcam.deviceId}>{webcam.label}</option>
         ))}
