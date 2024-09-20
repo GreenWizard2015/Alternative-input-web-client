@@ -10,6 +10,10 @@ function accumulateUnique(key) {
   };
 }
 
+function isUint32(value) {
+  return value >= 0 && value <= 4294967295 && Number.isInteger(value);
+}
+
 export function serialize(samples: Sample[]) {
   const userIDs = samples.reduce(accumulateUnique('userId'), []);
   if(1 !== userIDs.length) {
@@ -63,7 +67,18 @@ export function serialize(samples: Sample[]) {
     }
   };
   // then write the samples
+  let lastTime = null;
   samples.forEach((sample, index) => {
+    if (!isUint32(sample.time)) {
+      throw new Error('Invalid time. Expected uint32, got ' + sample.time);
+    }
+    if (sample.time <= lastTime) {
+      throw new Error(
+        'Duplicate or decreasing time. Expected increasing time, got ' + sample.time + '. ' +
+        'Previous time was ' + lastTime
+      );
+    }
+    lastTime = sample.time; // save last time
     view.setUint32(offset, sample.time);
     offset += 4;
 
