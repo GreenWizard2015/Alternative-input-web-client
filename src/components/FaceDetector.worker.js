@@ -9,14 +9,11 @@ async function processQueue() {
   if (!isRunning) return;
 
   const chunk = queue.shift();
-  const { data, time, bitmapTime } = chunk;
+  const { data, time } = chunk;
   try {
     // could throw an error
     if (!faceLandmarker) return;
-    const startTime = performance.now();
     const results = await faceLandmarker.detectForVideo(data, time);
-    const detectionDuration = performance.now() - startTime;
-    console.log(`Pipeline: bitmap=${bitmapTime?.toFixed(1)}ms, detection=${detectionDuration.toFixed(1)}ms, queueSize=${queue.length}`);
     self.postMessage({ status: "detected", results, time, frame: data });
   } finally {
     processQueue(); // process next chunk

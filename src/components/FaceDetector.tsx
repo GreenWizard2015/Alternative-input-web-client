@@ -83,12 +83,9 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
 
     const camera = new cameraUtils.Camera(video, {
       onFrame: async () => {
-        const t1 = performance.now();
         const frame = await createImageBitmap(video);
-        const t2 = performance.now();
-        const bitmapTime = t2 - t1;
         // Transfer frame ownership to worker to avoid memory copies
-        worker.postMessage({ data: frame, time: Date.now(), bitmapTime }, [frame]);
+        worker.postMessage({ data: frame, time: Date.now() }, [frame]);
       },
     });
     camera.start();
