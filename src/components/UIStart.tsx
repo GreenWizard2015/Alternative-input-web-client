@@ -1,13 +1,47 @@
-import { CircleMovingMode } from '../modes/CircleMovingMode';
-import { LookAtMode } from '../modes/LookAtMode';
-import { SplineMode } from '../modes/SplineMode';
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, ReactNode } from 'react';
 import MiniGameController from '../modes/MiniGameController';
 import NullController from '../modes/NullController';
+import { AppMode } from '../modes/AppMode';
 
-export default function UIStart({ onStart }) {
-  const [helpMode, setHelpMode] = useState('');
-  const augmentations = (
+type GameModeConstructor = new (controller: MiniGameController | NullController) => AppMode;
+
+// Game modes are lazily imported on demand to reduce initial bundle size
+let CircleMovingMode: GameModeConstructor | null = null;
+let LookAtMode: GameModeConstructor | null = null;
+let SplineMode: GameModeConstructor | null = null;
+
+// Lazy load game modes on first use
+const getCircleMovingMode = async (): Promise<GameModeConstructor> => {
+  if (!CircleMovingMode) {
+    const { CircleMovingMode: Mode } = await import('../modes/CircleMovingMode');
+    CircleMovingMode = Mode;
+  }
+  return CircleMovingMode;
+};
+
+const getLookAtMode = async (): Promise<GameModeConstructor> => {
+  if (!LookAtMode) {
+    const { LookAtMode: Mode } = await import('../modes/LookAtMode');
+    LookAtMode = Mode;
+  }
+  return LookAtMode;
+};
+
+const getSplineMode = async (): Promise<GameModeConstructor> => {
+  if (!SplineMode) {
+    const { SplineMode: Mode } = await import('../modes/SplineMode');
+    SplineMode = Mode;
+  }
+  return SplineMode;
+};
+
+interface UIStartProps {
+  onStart: (mode: AppMode) => void;
+}
+
+export default function UIStart({ onStart }: UIStartProps) {
+  const [helpMode, setHelpMode] = useState<string>('');
+  const augmentations: ReactNode = useMemo(() => (
     <div className="ui-augmentations">
       <div className="mx-auto">
         <b>Augmentations</b>
@@ -17,14 +51,13 @@ export default function UIStart({ onStart }) {
         <li>B - toggle random background</li>
       </ul>
     </div>
-  );
-  const back = (
+  ), []);
+  const back: ReactNode = useMemo(() => (
     <button className='ms-2' onClick={() => setHelpMode('')}>Back</button>
-  );
-  const [useGamification, setUseGamification] = useState(true);
-  const gamificationNote = React.useMemo(() => {
+  ), []);
+  const [useGamification, setUseGamification] = useState<boolean>(true);
+  const gamificationNote: ReactNode = React.useMemo(() => {
     if (!useGamification) return null;
-
 
     return (
       <div style={{ color: 'red' }}>
@@ -32,7 +65,7 @@ export default function UIStart({ onStart }) {
       </div>
     );
   }, [useGamification]);
-  const [controller, setController] = useState(new MiniGameController());
+  const [controller, setController] = useState<MiniGameController | NullController>(new MiniGameController());
   React.useEffect(() => {
     if (useGamification) {
       setController(new MiniGameController());
@@ -40,6 +73,21 @@ export default function UIStart({ onStart }) {
       setController(new NullController());
     }
   }, [useGamification]);
+
+  const handleStartLookAt = useCallback(async () => {
+    const Mode = await getLookAtMode();
+    onStart(new Mode(controller));
+  }, [controller, onStart]);
+
+  const handleStartSpline = useCallback(async () => {
+    const Mode = await getSplineMode();
+    onStart(new Mode(controller));
+  }, [controller, onStart]);
+
+  const handleStartCircleMoving = useCallback(async () => {
+    const Mode = await getCircleMovingMode();
+    onStart(new Mode(controller));
+  }, [controller, onStart]);
 
   switch (helpMode) {
     case 'lookAt':
@@ -54,7 +102,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new LookAtMode(controller))}>Start</button>
+          <button onClick={handleStartLookAt}>Start</button>
           {back}
         </div>
       )
@@ -71,7 +119,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new SplineMode(controller))}>Start</button>
+          <button onClick={handleStartSpline}>Start</button>
           {back}
         </div>
       )
@@ -93,7 +141,7 @@ export default function UIStart({ onStart }) {
             <li>P / Enter / Space - toggle pause</li>
           </ul>
           {augmentations}
-          <button onClick={() => onStart(new CircleMovingMode(controller))}>Start</button>
+          <button onClick={handleStartCircleMoving}>Start</button>
           {back}
         </div>
       )
@@ -109,7 +157,7 @@ export default function UIStart({ onStart }) {
           >Circle Moving Mode</button>
           <div>
             <label>
-              <input type="checkbox" checked={useGamification} onChange={() => setUseGamification(!useGamification)} />
+              <input type="checkbox" checked={useGamification} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUseGamification(e.target.checked)} />
               Use gamification (disable <b>only</b> if you can't press the keys (Z, A, S, X).)
             </label>
           </div>

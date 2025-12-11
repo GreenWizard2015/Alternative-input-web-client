@@ -125,14 +125,16 @@ function AppComponent(
     const f = () => {
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
-      canvasElement.width = canvasElement.clientWidth;
-      canvasElement.height = canvasElement.clientHeight;
+      // Only resize if dimensions actually changed
+      if (canvasElement.width !== canvasElement.clientWidth ||
+          canvasElement.height !== canvasElement.clientHeight) {
+        canvasElement.width = canvasElement.clientWidth;
+        canvasElement.height = canvasElement.clientHeight;
+      }
       const canvasCtx = canvasElement.getContext("2d");
       if (!canvasCtx) return;
-      canvasCtx.save();
-      // clear canvas by filling it with white color
-      canvasCtx.fillStyle = "white";
-      canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      // Use clearRect for faster clearing
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
       const viewport = {
         left: canvasElement.offsetLeft,
@@ -140,8 +142,9 @@ function AppComponent(
         width: canvasElement.width,
         height: canvasElement.height,
       };
+      // Compute hash once and use for both state update and immediate use
       const newScreenId = hash128Hex(JSON.stringify(viewport));
-      setScreenId(old => (old === newScreenId) ? old : newScreenId);
+      setScreenId(prevScreenId => (prevScreenId === newScreenId) ? prevScreenId : newScreenId);
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
@@ -160,7 +163,6 @@ function AppComponent(
       canvasCtx.font = "16px Arial";
       canvasCtx.fillText(`Samples per second: ${fps.current.toFixed(2)}`, 10, 20);
 
-      canvasCtx.restore();
       animationFrameId.current = requestAnimationFrame(f);
     };
     animationFrameId.current = requestAnimationFrame(f);
@@ -234,7 +236,7 @@ function AppComponent(
       {content}
       <FaceDetector deviceId={webcamId}
         onFrame={onFrame} goal={goalPosition}
-        onFPS={(value) => { fps.current = value; }}
+        onFPS={(value: number) => { fps.current = value; }}
       />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');

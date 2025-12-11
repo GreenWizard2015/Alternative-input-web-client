@@ -26,10 +26,17 @@ class MultipartParser {
   }
 
   body() {
-    const res = Buffer.concat(this.buffers).toString('binary');
-    const start = res.indexOf('\r\n\r\n') + 4;
-    const end = res.lastIndexOf('\r\n' + this.boundary);
-    return res.slice(start, end);
+    const buffer = Buffer.concat(this.buffers);
+    // Find header/body boundary without converting to string
+    const headerEnd = buffer.indexOf('\r\n\r\n');
+    const start = headerEnd + 4;
+
+    // Find the end boundary
+    const boundaryStr = '\r\n' + this.boundary;
+    const boundaryBuf = Buffer.from(boundaryStr);
+    const end = buffer.lastIndexOf(boundaryBuf);
+
+    return buffer.slice(start, end);
   }
 
   getBuffer() {
@@ -37,13 +44,8 @@ class MultipartParser {
     if (res.includes(this.boundary)) {
       throw new Error('Invalid boundary found in the data');
     }
-    // wrap to ArrayBuffer
-    const ab = new ArrayBuffer(res.length);
-    const v = new DataView(ab);
-    for (let i = 0; i < res.length; ++i) {
-      v.setUint8(i, res.charCodeAt(i));
-    }
-    return ab;
+    // Return Buffer directly - it's compatible with ArrayBuffer
+    return res.buffer.slice(res.byteOffset, res.byteOffset + res.byteLength);
   }
 }
 

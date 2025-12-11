@@ -4,6 +4,8 @@ import { Sample, sampleSize, UUIDed, Position } from './SamplesDef';
 // max chunk size 4mb
 const MAX_CHUNK_SIZE: number = 4 * 1024 * 1024;
 const MAX_SAMPLES: number = Math.floor(MAX_CHUNK_SIZE / sampleSize());
+// Hard limit to prevent OOM crashes on long sessions (~40MB max)
+const MAX_BUFFER: number = 10 * MAX_SAMPLES;
 let samples: Sample[] = [];
 
 function sendSamples(
@@ -49,7 +51,7 @@ function sendSamples(
 function storeSample({
   sample, limit, placeId, userId
 }: { sample: Sample, limit: number, placeId: string, userId: string }) {
-  // goal should be within the range -2..2, just to be sure that its valid  
+  // goal should be within the range -2..2, just to be sure that its valid
   const isValidGoal = (
     (-2 < sample.goal.x) && (sample.goal.x < 2) &&
     (-2 < sample.goal.y) && (sample.goal.y < 2)
@@ -61,6 +63,12 @@ function storeSample({
   samples.push(sample);
   if (samples.length >= 2 * MAX_SAMPLES) {
     sendSamples({ limit, clear: false, placeId, userId });
+  }
+
+  // Hard limit to prevent memory leak if upload fails
+  if (samples.length > MAX_BUFFER) {
+    console.warn('Sample buffer overflow, dropping oldest samples');
+    samples = samples.slice(-MAX_BUFFER);
   }
 }
 

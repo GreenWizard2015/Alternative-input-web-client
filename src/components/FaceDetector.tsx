@@ -51,9 +51,8 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
     settingsRef.current = Settings;
   }, [Settings]);
 
-  const webcamRef = useRef<Webcam | null>(null); 
+  const webcamRef = useRef<Webcam | null>(null);
   const intermediateCanvasRef = useRef<HTMLCanvasElement>(null);
-  const frameCanvasRef = useRef<HTMLCanvasElement>(null);
   const callbackRef = useRef<((frame) => void) | null>(null);
   useEffect(() => {
     callbackRef.current = onFrame;
@@ -102,7 +101,8 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
     const camera = new cameraUtils.Camera(video, {
       onFrame: async () => {
         const frame = await createImageBitmap(video);
-        worker.postMessage({ data: frame, time: getTimestamp() });
+        // Transfer frame ownership to worker to avoid memory copies
+        worker.postMessage({ data: frame, time: getTimestamp() }, [frame]);
       },
     });
     camera.start();
@@ -126,7 +126,6 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
         key={deviceId} // force re-render on deviceId change
       />
       <canvas ref={intermediateCanvasRef} style={{ display: 'none' }} />
-      <canvas ref={frameCanvasRef} style={{ display: 'none' }} />
     </>
   );
 }
