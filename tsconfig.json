@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "lib": [
       "WebWorker",
       "dom",
@@ -17,7 +17,8 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",
