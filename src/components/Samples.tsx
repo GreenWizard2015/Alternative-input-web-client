@@ -9,11 +9,10 @@ const MAX_BUFFER: number = 10 * MAX_SAMPLES;
 let samples: Sample[] = [];
 
 function sendSamples(
-  { limit, clear=false, placeId, userId }: 
+  { limit, clear=false, placeId, userId }:
   { limit: number, clear?: boolean, placeId: string, userId: string }
 ) {
   let oldSamples = samples;
-  // Async request
   const saveEndpoint = '/api/upload';
   if (clear) {
     samples = [];
@@ -21,7 +20,6 @@ function sendSamples(
     samples = oldSamples.filter(sample => sample.time >= limit);
   }
   oldSamples = oldSamples.filter(sample => sample.time < limit);
-  // sort by time
   oldSamples.sort((a, b) => a.time - b.time);
   
   if(0 < oldSamples.length) {
@@ -51,7 +49,7 @@ function sendSamples(
 function storeSample({
   sample, limit, placeId, userId
 }: { sample: Sample, limit: number, placeId: string, userId: string }) {
-  // goal should be within the range -2..2, just to be sure that its valid
+  // Validate goal is within expected range
   const isValidGoal = (
     (-2 < sample.goal.x) && (sample.goal.x < 2) &&
     (-2 < sample.goal.y) && (sample.goal.y < 2)

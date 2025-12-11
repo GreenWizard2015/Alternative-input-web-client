@@ -14,8 +14,26 @@ export function onMenuTick({
     return null;
   }
   if (frame.image) {
-    // draw frame as is
-    canvasCtx.drawImage(frame.image, 0, 0, viewport.width, viewport.height);
+    // Draw frame maintaining aspect ratio without stretching
+    const imgAspect = frame.image.width / frame.image.height;
+    const canvasAspect = viewport.width / viewport.height;
+
+    let drawWidth = viewport.width;
+    let drawHeight = viewport.height;
+    let drawX = 0;
+    let drawY = 0;
+
+    if (imgAspect > canvasAspect) {
+      // Image is wider, fit to width
+      drawHeight = viewport.width / imgAspect;
+      drawY = (viewport.height - drawHeight) / 2;
+    } else {
+      // Image is taller, fit to height
+      drawWidth = viewport.height * imgAspect;
+      drawX = (viewport.width - drawWidth) / 2;
+    }
+
+    canvasCtx.drawImage(frame.image, drawX, drawY, drawWidth, drawHeight);
     // print frame height and width
     canvasCtx.fillStyle = "black";
     canvasCtx.font = "16px Arial";

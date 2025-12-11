@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import cameraUtils from '@mediapipe/camera_utils';
@@ -12,23 +12,6 @@ const DEFAULT_SETTINGS = {
   minDetectionConfidence: 0.2,
   minTrackingConfidence: 0.2,
 };
-
-const CORRECTED_BASE_TIME = Math.round(Date.now() - performance.now());
-let old_now = performance.now();
-let old_timestamp = Math.round(CORRECTED_BASE_TIME + old_now);
-function getTimestamp() {
-  // Date.now() is int number of milliseconds since 1970
-  // performance.now() is float number of milliseconds since page load, with microsecond precision
-  // we combine them to get a float number of milliseconds since 1970 with microsecond precision
-  let timestamp = Math.round(CORRECTED_BASE_TIME + performance.now());
-  if(timestamp == old_now) {
-    timestamp = old_timestamp + 1; // add 1ms to old_timestamp, to avoid duplicates in the same millisecond
-  } else { // update old_now
-    old_now = timestamp;
-  }
-  old_timestamp = timestamp; // save last timestamp
-  return timestamp;
-}
 
 export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, ...settings }) {
   // calculate avg fps
@@ -102,7 +85,7 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
       onFrame: async () => {
         const frame = await createImageBitmap(video);
         // Transfer frame ownership to worker to avoid memory copies
-        worker.postMessage({ data: frame, time: getTimestamp() }, [frame]);
+        worker.postMessage({ data: frame, time: Date.now() }, [frame]);
       },
     });
     camera.start();

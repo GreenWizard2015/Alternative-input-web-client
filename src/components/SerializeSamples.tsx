@@ -10,10 +10,6 @@ function accumulateUnique(key) {
   };
 }
 
-function isUint32(value) {
-  return value >= 0 && value <= 4294967295 && Number.isInteger(value);
-}
-
 export function serialize(samples: Sample[]) {
   const userIDs = samples.reduce(accumulateUnique('userId'), []);
   if(1 !== userIDs.length) {
@@ -33,7 +29,7 @@ export function serialize(samples: Sample[]) {
   const view = new DataView(buffer);
   let offset = 0;
   // write the version of the format
-  const version = 2;
+  const version = 3;
   view.setUint8(offset, version);
   offset += 1;
   // encode the strings to utf-8
@@ -67,20 +63,12 @@ export function serialize(samples: Sample[]) {
     }
   };
   // then write the samples
-  let lastTime = null;
-  samples.forEach((sample, index) => {
-    if (!isUint32(sample.time)) {
-      throw new Error('Invalid time. Expected uint32, got ' + sample.time);
-    }
-    if (sample.time <= lastTime) {
-      throw new Error(
-        'Duplicate or decreasing time. Expected increasing time, got ' + sample.time + '. ' +
-        'Previous time was ' + lastTime
-      );
-    }
-    lastTime = sample.time; // save last time
-    view.setUint32(offset, sample.time);
-    offset += 4;
+  samples.forEach((sample) => {
+    // Store timestamp as uint64 (8 bytes) using BigInt
+    // This supports full range of Date.now() values without overflow
+    const timestamp = BigInt(sample.time);
+    view.setBigUint64(offset, timestamp);
+    offset += 8;
 
     saveEye(sample.leftEye ?? EMPTY_EYE);
     saveEye(sample.rightEye ?? EMPTY_EYE);
