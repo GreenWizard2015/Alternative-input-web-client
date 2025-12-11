@@ -104,7 +104,7 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
     <>
       <Webcam
         ref={webcamRef}
-        style={{ display: 'block' }}
+        style={{ display: 'none' }}
         videoConstraints={videoConstraints}
         key={deviceId} // force re-render on deviceId change
       />

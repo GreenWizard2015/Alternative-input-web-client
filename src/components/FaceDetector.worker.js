@@ -13,7 +13,10 @@ async function processQueue() {
   try {
     // could throw an error
     if (!faceLandmarker) return;
+    const startTime = performance.now();
     const results = await faceLandmarker.detectForVideo(data, time);
+    const duration = performance.now() - startTime;
+    console.log("Duration:", duration);    
     self.postMessage({ status: "detected", results, time, frame: data });
   } finally {
     processQueue(); // process next chunk
