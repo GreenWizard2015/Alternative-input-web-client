@@ -6,7 +6,7 @@ import { setUser, setPlace, removeUser, removePlace, resetUser, resetPlace, sele
 import { connect } from 'react-redux';
 
 function UI({
-  onWebcamChange, goFullscreen, onStart, canStart,
+  onWebcamChange, goFullscreen, onStart, canStart, fps,
   userId, setUser,
   placeId, setPlace,
   users, places,
@@ -136,7 +136,14 @@ function UI({
     </>
   }
 
-  return content;
+  return (
+    <>
+      <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '14px', color: 'black' }}>
+        Camera FPS: {fps.camera.toFixed(2)} | Samples FPS: {fps.samples.toFixed(2)}
+      </div>
+      {content}
+    </>
+  );
 }
 
 export default connect(

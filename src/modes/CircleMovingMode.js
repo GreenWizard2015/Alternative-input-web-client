@@ -9,15 +9,18 @@ export class CircleMovingMode extends AppMode {
     this._controller = controller;
     this._maxLevel = 25;
     this._level = 5;
+    this._currentTime = 0;
     this._reset();
   }
 
-  _doTick() {
+  doTick(deltaT, _viewport) {
     // update goal
-    const now = Date.now();
+    if (this._active) {
+      this._currentTime += deltaT;
+    }
     const dt = this._active ? Math.max(
       0,
-      Math.min(1, (now - this._startT) / this._maxT)
+      Math.min(1, this._currentTime / this._maxT)
     ) : 0;
     if ((1 === dt) && this._active) { // if we reached the end
       const nextLevel = Math.floor(Math.random() * this._maxLevel);
@@ -47,23 +50,22 @@ export class CircleMovingMode extends AppMode {
   }
 
   onRender({ viewport, canvasCtx }) {
-    super.onRender({ viewport, canvasCtx });
-    this._doTick();
+    super.onRender(viewport);
 
     // draw it
-    this.drawTarget({ 
-      viewport, canvasCtx, 
+    this.drawTarget({
+      viewport, canvasCtx,
       style: this._controller.isActivated() ? 'red' : 'yellow',
       sign: this._controller.sign()
     });
   }
 
   onKeyDown(event) {
-    super.onKeyDown(event);    
+    super.onKeyDown(event);
     this._controller.onKeyDown(event);
     if (!this._active && this._controller.isActivated()) {
       this._active = true;
-      this._startT = Date.now(); // start time
+      this._currentTime = 0; // reset timer
     }
 
     if (event.code === 'ArrowUp') {
@@ -95,10 +97,10 @@ export class CircleMovingMode extends AppMode {
     const speed = uniform(0.05, 0.15);
     // normalize distances
     this._distances = this._distances.map(d => d / totalDistance);
-    this._maxT = (totalDistance / speed) * 1000; // in milliseconds
+    this._maxT = totalDistance / speed; // in seconds (since we use deltaT in seconds)
 
     this._active = false;
-    this._startT = null;
+    this._currentTime = 0;
   }
 
   accept() {

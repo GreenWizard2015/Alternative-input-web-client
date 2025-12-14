@@ -14,15 +14,19 @@ const DEFAULT_SETTINGS = {
 };
 
 export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, ...settings }) {
-  // calculate avg fps
+  // calculate avg fps for camera and samples
   const framesCount = useRef(0);
+  const samplesCount = useRef(0);
   const lastTime = useRef(Date.now());
+
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      const fps = framesCount.current / (now - lastTime.current) * 1000;
-      onFPS(fps);
+      const cameraFps = framesCount.current / (now - lastTime.current) * 1000;
+      const samplesFps = samplesCount.current / (now - lastTime.current) * 1000;
+      onFPS({ camera: cameraFps, samples: samplesFps });
       framesCount.current = 0;
+      samplesCount.current = 0;
       lastTime.current = now;
     }, 1500);
     return () => clearInterval(interval);
@@ -55,8 +59,9 @@ export default function FaceDetectorComponent({ onFrame, onFPS, deviceId, goal, 
           // override the time with the time from the worker and add the goal
           sample.time = time;
           sample.goal = goal.current;
-          
+
           framesCount.current++;
+          samplesCount.current++;
           callbackRef.current({
             results,
             sample,

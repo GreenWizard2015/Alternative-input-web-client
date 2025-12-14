@@ -39,13 +39,15 @@ function AppComponent(
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastFrame = useRef<Frame | null>(null);
+  const lastFrameTime = useRef<number>(Date.now());
   const goalPosition = useRef(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
   const [webcamId, setWebcamId] = React.useState<string>("");
   // flag to indicate if eyes are detected at least once
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
   const [score, setScore] = React.useState<number|null>(null);
-  const fps = useRef<number>(0);
+  const [fps, setFps] = React.useState<{ camera: number, samples: number }>({ camera: 0, samples: 0 });
+  const FRAME_TIMEOUT = 500; // ms - pause if no frame received in this time
   // placeId should be a combination of placeId and webcamId
   const fullPlaceId = React.useMemo(
     () => hash128Hex(placeId + webcamId),
@@ -57,6 +59,7 @@ function AppComponent(
   const onFrame = useCallback(
     function (frame: Frame) {
       lastFrame.current = frame;
+      lastFrameTime.current = Date.now();
       if (canvasRef.current != null && frame.sample != null) {
         const { time, leftEye, rightEye, points, goal } = frame.sample;
         const eyesDetected = (leftEye != null) || (rightEye != null);
@@ -145,6 +148,15 @@ function AppComponent(
       // Compute hash once and use for both state update and immediate use
       const newScreenId = hash128Hex(JSON.stringify(viewport));
       setScreenId(prevScreenId => (prevScreenId === newScreenId) ? prevScreenId : newScreenId);
+      const timeSinceLastFrame = Date.now() - lastFrameTime.current;
+      const frameTimedOut = timeSinceLastFrame > FRAME_TIMEOUT;
+
+      // Eyes detected only if: frames are arriving AND sample has eye data
+      let eyesDetected = false;
+      if (!frameTimedOut && lastFrame.current?.sample) {
+        eyesDetected = (lastFrame.current.sample.leftEye != null) || (lastFrame.current.sample.rightEye != null);
+      }
+
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
@@ -157,12 +169,9 @@ function AppComponent(
         gameMode,
         activeUploads,
         meanUploadDuration,
+        eyesDetected,
+        fps,
       });
-      // draw FPS
-      canvasCtx.fillStyle = "black";
-      canvasCtx.font = "16px Arial";
-      canvasCtx.fillText(`Samples per second: ${fps.current.toFixed(2)}`, 10, 20);
-
       animationFrameId.current = requestAnimationFrame(f);
     };
     animationFrameId.current = requestAnimationFrame(f);
@@ -196,6 +205,7 @@ function AppComponent(
         onWebcamChange={setWebcamId}
         onStart={startGame}
         canStart={eyesVisible}
+        fps={fps}
         goFullscreen={() => toggleFullscreen(
           document.getElementById("root") ?? document.body // app root element
         )}
@@ -236,7 +246,7 @@ function AppComponent(
       {content}
       <FaceDetector deviceId={webcamId}
         onFrame={onFrame} goal={goalPosition}
-        onFPS={(value: number) => { fps.current = value; }}
+        onFPS={setFps}
       />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');

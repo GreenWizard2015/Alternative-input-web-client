@@ -7,12 +7,13 @@ export class SplineMode extends AppMode {
     super();
     this._pos = { x: 0.5, y: 0.5 }
     this._points = null;
+    this._currentTime = 0;
     this._newSpline({ extend: false });
     this._controller = controller;
   }
 
   _newSpline({ extend } = { extend: true }) {
-    this._startT = Date.now();
+    this._currentTime = 0;
     const N = 3;
     let points = generatePoints(4);
     if (extend) {
@@ -38,12 +39,11 @@ export class SplineMode extends AppMode {
     });
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender({ viewport, canvasCtx });
-    this._T = (Date.now() - this._startT) / 1000;
-    if (this._maxT < this._T) this._newSpline();
+  doTick(deltaT, viewport) {
+    this._currentTime += deltaT;
+    if (this._maxT < this._currentTime) this._newSpline();
 
-    let pos = this._getPoint(this._T / this._maxT);
+    let pos = this._getPoint(this._currentTime / this._maxT);
     pos = {
       x: clip(pos.x, 0.0, 1.0),
       y: clip(pos.y, 0.0, 1.0)
@@ -52,8 +52,12 @@ export class SplineMode extends AppMode {
     if (!isNaN(pos.x) && !isNaN(pos.y)) { // sometimes it's NaN, ignore it
       this._pos = pos;
     }
-   
-    this.drawTarget({ 
+  }
+
+  onRender({ viewport, canvasCtx }) {
+    super.onRender(viewport);
+
+    this.drawTarget({
       canvasCtx, viewport,
       style: this._controller.isActivated() ? 'red' : 'yellow',
       sign: this._controller.sign()

@@ -6,20 +6,16 @@ export class MoveToGoal extends AppMode {
     super();
     this._speed = 55 * 2 * 2;
     this._pos = this._goal = { x: 0.5, y: 0.5 };
-    this._startT = Date.now();
+    this._currentTime = 0;
     this._active = true;
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender({ viewport, canvasCtx });
-    
-    const deltaT = (Date.now() - this._startT) / 1000;
-    this._startT = Date.now();
-    
+  doTick(deltaT, viewport) {
     if(!this._active) {
-      this.drawTarget({ viewport, canvasCtx, style: 'gray' });
-      return
+      return;
     }
+
+    this._currentTime += deltaT;
 
     const pos = AppMode.makeAbsolute({ position: this._pos, viewport });
     const goal = AppMode.makeAbsolute({ position: this._goal, viewport });
@@ -34,8 +30,13 @@ export class MoveToGoal extends AppMode {
     const dist = distance(subtract(pos, goal));
     if(dist < 3.0) {
       this._goal = this._nextGoal(this._goal);
+      this._currentTime = 0; // reset timer on goal change
     }
+  }
 
-    this.drawTarget({ viewport, canvasCtx });
+  onRender({ viewport, canvasCtx }) {
+    super.onRender(viewport);
+    const style = this._active ? undefined : 'gray';
+    this.drawTarget({ viewport, canvasCtx, style });
   }
 }

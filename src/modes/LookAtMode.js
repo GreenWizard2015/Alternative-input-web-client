@@ -6,12 +6,13 @@ export class LookAtMode extends AppMode {
     this._visibleT = 5.0;
     this._pos = { x: 0.5, y: 0.5 };
     this._controller = controller;
+    this._currentTime = 0;
   }
 
   _next() {
     this._pos = { x: Math.random(), y: Math.random() };
     this._active = false;
-    this._startT = null;
+    this._currentTime = 0;
     this._controller.reset();
   }
 
@@ -21,20 +22,22 @@ export class LookAtMode extends AppMode {
     this._active = this._controller.isActivated();
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender({ viewport, canvasCtx });
-
+  doTick(deltaT, viewport) {
     if (this._active) {
-      const dT = Date.now() / 1000 - this._startT;
-      if (this._visibleT < dT) {
+      this._currentTime += deltaT;
+      if (this._visibleT < this._currentTime) {
         this._next();
       }
     } else {
-      this._startT = Date.now() / 1000;
+      this._currentTime = 0;
     }
+  }
 
-    this.drawTarget({ 
-      viewport, canvasCtx, 
+  onRender({ viewport, canvasCtx }) {
+    super.onRender(viewport);
+
+    this.drawTarget({
+      viewport, canvasCtx,
       style: this._active ? 'red' : 'yellow',
       sign: this._controller.sign()
     });

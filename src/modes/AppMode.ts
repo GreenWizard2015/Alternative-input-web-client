@@ -3,7 +3,7 @@ import { drawTarget } from "../utils/target";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 
-type Viewport = { width: number, height: number }
+export type Viewport = { width: number, height: number }
 const TRANSITION_TIME = 100;
 
 function clamp(val: number, min: number, max: number) {
@@ -17,10 +17,11 @@ export class AppMode {
   _pos: Position = { x: 0, y: 0 };
   _paused: boolean;
   _timeToggledPaused: number = 0;
-  onPause: () => void = () => {};
+  _lastTickTime: number = Date.now();
   _background: CBackground = new CBackground();
   _illumination: CRandomIllumination = new CRandomIllumination();
   _overflowed: boolean = false;
+  _eyesDetected: boolean = true;
 
   constructor() {
     this._paused = true;
@@ -42,17 +43,30 @@ export class AppMode {
     this._illumination.onEvent(event);
   }
 
-  onRender() {
-    // Does nothing
+  doTick(_deltaT: number, _viewport: Viewport) {
+    // Does nothing - subclasses should override this to update game state
+    // AppMode controls when this is called based on pause state
+  }
+
+  onRender(viewport: Viewport) {
+    // Call doTick and visual effects only when not paused - AppMode manages timing
+    const now = Date.now();
+    const deltaT = this._paused ? 0 : (now - this._lastTickTime) / 1000; // in seconds
+    this._lastTickTime = now;
+    this.doTick(deltaT, viewport);
+    this._background.onTick(deltaT);
+    this._illumination.onTick(deltaT);
   }
 
   onOverlay(
-    { canvasCtx, viewport, activeUploads, meanUploadDuration }: 
-    { 
-      canvasCtx: CanvasRenderingContext2D, viewport: Viewport, 
-      activeUploads: number, meanUploadDuration: number
+    { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesDetected, fps = { camera: 0, samples: 0 } }:
+    {
+      canvasCtx: CanvasRenderingContext2D, viewport: Viewport,
+      activeUploads: number, meanUploadDuration: number,
+      eyesDetected: boolean, fps?: { camera: number, samples: number }
     }
   ) {
+    this._eyesDetected = eyesDetected;
     this._background.onRender(canvasCtx, viewport);
     this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
 
@@ -84,21 +98,29 @@ export class AppMode {
 
     // Transition for pausing
     const transition = clamp((Date.now() - this._timeToggledPaused) / TRANSITION_TIME, 0, 1);
-    const realTransition = this._paused ? transition : 1 - transition;
+    const realTransition = this.isPaused() ? transition : 1 - transition;
     const easedTransition = realTransition; // Maybe add some easing
 
     if (easedTransition > 0) {
       canvasCtx.fillStyle = `rgba(0, 0, 0, ${0.5 * easedTransition})`
       canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
+
+      // Show appropriate message based on why we're paused
+      const pauseText = !this._eyesDetected ? 'Eyes not visible' : 'Paused';
       this.drawText({
-        text: 'Paused', viewport, canvasCtx, color: 'white',
+        text: pauseText, viewport, canvasCtx, color: 'white',
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
       });
     }
+
+    // Draw FPS in top-left corner
+    canvasCtx.fillStyle = 'black';
+    canvasCtx.font = '16px Arial';
+    canvasCtx.fillText(`Camera FPS: ${fps.camera.toFixed(2)} | Samples FPS: ${fps.samples.toFixed(2)}`, 10, 20);
   }
 
   accept() {
-    return !this._paused;
+    return !this._paused && this._eyesDetected;
   }
 
   static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {
@@ -158,5 +180,9 @@ export class AppMode {
 
   getScore() {
     return null;
+  }
+  
+  onPause() {
+
   }
 }

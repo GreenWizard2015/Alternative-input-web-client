@@ -1,6 +1,8 @@
 class CBackground {
   private _backgroundDynamic: boolean;
   private _colors: number[][];
+  private _currentTime: number = 0;
+
   constructor() {
     this._backgroundDynamic = true;
     // Example colors similar to the Colors.asList from Python
@@ -118,14 +120,14 @@ class CBackground {
     ];    
   }
 
-  onTick(deltaT) {
+  onTick(deltaT: number) {
+    this._currentTime += deltaT;
   }
 
   _brightness() {
-    const T = Date.now() / 1000; // Current time in seconds
     const amplitude = 10.0;
     const duration = 30.0;
-    const sin = Math.sin(2.0 * Math.PI * T / duration);
+    const sin = Math.sin(2.0 * Math.PI * this._currentTime / duration);
     if (sin < 0) {
       return 1.0 / (amplitude * Math.abs(sin) + 1.0);
     }
@@ -136,17 +138,17 @@ class CBackground {
   onRender(canvasCtx, viewport) {
     let bg = [192, 192, 192]; // Default color (Silver)
     if (this._backgroundDynamic) {
-      const colorIndex = Math.floor(Date.now() / 15000) % this._colors.length;
+      const colorIndex = Math.floor(this._currentTime / 15.0) % this._colors.length;
       bg = this._colors[colorIndex];
     }
 
     // Apply brightness to the background color
     const [r, g, b] = bg;
     const brightnessFactor = this._brightness();
-    
+
     const brightenedColor = `rgb(
-      ${this.clamp(Math.round(r * brightnessFactor), 0, 255)}, 
-      ${this.clamp(Math.round(g * brightnessFactor), 0, 255)}, 
+      ${this.clamp(Math.round(r * brightnessFactor), 0, 255)},
+      ${this.clamp(Math.round(g * brightnessFactor), 0, 255)},
       ${this.clamp(Math.round(b * brightnessFactor), 0, 255)})`;
 
     canvasCtx.fillStyle = brightenedColor;

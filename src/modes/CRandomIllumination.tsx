@@ -2,13 +2,12 @@ import Spline from 'cubic-spline';
 import { calcDistance, clip, generatePoints, uniform } from './utils';
 
 type Point = { x: number, y: number };
-type SplineSet = { x: Spline; y: Spline; };
 
 class CIlluminationSource {
   radius: number;
   color: number[];
   points: Point[];
-  T: number;
+  currentTime: number;
   maxT: number;
   pos: number[];
   getPoint: (t: number) => Point;
@@ -17,14 +16,14 @@ class CIlluminationSource {
     this.radius = uniform(0.01, 0.1);
     this.color = [Math.random(), Math.random(), Math.random()];
     this.points = [];
-    this.newSpline(false);
-    this.T = 0;
+    this.currentTime = 0;
     this.maxT = 0;
+    this.newSpline(false);
     this.pos = [0.5, 0.5]; // Default starting position
   }
 
   newSpline(extend = true) {
-    this.T = Date.now();
+    this.currentTime = 0;
     const N = 3;
     let points = generatePoints(N + 1);
     if (extend) {
@@ -54,15 +53,13 @@ class CIlluminationSource {
     })
   }
 
-  onTick() {
-    const now = Date.now();
-    const dt = (now - this.T) / 1000;
-    if (this.maxT < dt) {
-      this.T = now;
+  onTick(deltaT: number) {
+    this.currentTime += deltaT;
+    if (this.maxT < this.currentTime) {
       this.newSpline();
     }
-    const pos = this.getPoint(dt / this.maxT);
-    
+    const pos = this.getPoint(this.currentTime / this.maxT);
+
     // in 0..1
     pos.x = Math.min(Math.max(pos.x, 0), 1);
     pos.y = Math.min(Math.max(pos.y, 0), 1);
@@ -73,11 +70,9 @@ class CIlluminationSource {
   }
 
   onRender(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    this.onTick();
-    
     const pos = [this.pos[0] * width, this.pos[1] * height];
     const color = this.color.map(c => Math.round(c * 255));
-    const R = Math.min(this.radius * width, this.radius * height);    
+    const R = Math.min(this.radius * width, this.radius * height);
     ctx.beginPath();
     ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
     ctx.arc(pos[0], pos[1], R, 0, 2 * Math.PI);
@@ -95,7 +90,7 @@ class CRandomIllumination {
   }
 
   onTick(deltaT: number) {
-    this.sources.forEach(source => source.onTick());
+    this.sources.forEach(source => source.onTick(deltaT));
   }
 
   onRender(ctx: CanvasRenderingContext2D, width: number, height: number) {
