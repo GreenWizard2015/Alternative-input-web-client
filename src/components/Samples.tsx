@@ -178,7 +178,13 @@ class SampleUploadQueue {
   private maxSamplesPerBatch: number;
 
   constructor(endpoint: string = '/api/upload', maxSamplesPerBatch: number = 1000) {
-    this.endpoint = endpoint;
+    // Convert relative URL to absolute URL for Web Worker compatibility
+    // Web Workers require absolute URLs for fetch
+    if (typeof window !== 'undefined') {
+      this.endpoint = new URL(endpoint, window.location.origin).href;
+    } else {
+      this.endpoint = endpoint;
+    }
     this.maxSamplesPerBatch = maxSamplesPerBatch;
   }
 
