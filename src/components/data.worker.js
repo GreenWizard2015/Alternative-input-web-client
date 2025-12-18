@@ -61,10 +61,11 @@ function processQueue() {
   const startTime = Date.now();
   uploadWithRetry(fd, endpoint).then(() => {
     const endTime = Date.now();
-    queue.pop(); // remove the last element from the queue
     self.postMessage({
-      status: 'ok', userId, placeId, count, inQueue: queue.length,
-      duration: endTime - startTime
+      status: 'ok',
+      inQueue: queue.length,
+      duration: endTime - startTime,
+      userId, placeId, count,
     });
   }).catch(error => {
     console.error('Upload failed after retries:', error);
