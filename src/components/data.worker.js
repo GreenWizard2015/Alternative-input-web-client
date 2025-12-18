@@ -53,7 +53,7 @@ function processQueue() {
   isRunning = queue.length > 0;
   if (!isRunning) return;
   const chunk = queue.pop(); // get the last element from the queue
-  const { serializedSamples, endpoint } = chunk;
+  const { serializedSamples, endpoint, userId, placeId, count } = chunk;
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint);
   const fd = new FormData();
   fd.append('chunk', new Blob([serializedSamples], {type: 'application/octet-stream'}));
@@ -91,10 +91,14 @@ self.onmessage = function({ data }) {
   // in hope that it will reduce the memory usage
   for(const groupId in grouped) {
     const samples = grouped[groupId];
+    const { userId, placeId } = samples[0]; // Extract userId and placeId from first sample
     // put to the start of the queue
     queue.push({
       serializedSamples: serialize(samples),
       endpoint,
+      userId,
+      placeId,
+      count: samples.length,
     });
   }
   if(!isRunning) processQueue(); // start processing the queue only if didn't start yet
