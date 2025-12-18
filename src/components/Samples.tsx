@@ -231,7 +231,7 @@ class SampleManager {
   private errorHandlers: Map<string, (error: Error) => void> = new Map();
 
   constructor(config: { maxChunkSize?: number; uploadEndpoint?: string; autoFlushThreshold?: number } = {}) {
-    this.maxChunkSize = config.maxChunkSize ?? 4 * 1024 * 1024;
+    this.maxChunkSize = config.maxChunkSize ?? 90 * 1024 * 1024;
     this.maxSamplesPerBatch = Math.floor(this.maxChunkSize / sampleSize());
     this.autoFlushThreshold = config.autoFlushThreshold ?? 2 * this.maxSamplesPerBatch;
     this.uploadEndpoint = config.uploadEndpoint ?? '/api/upload';
