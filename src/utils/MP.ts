@@ -82,7 +82,7 @@ function _circleROI(pts, { padding = 1.5 }) {
     const dy = pt.y - centerPt.y;
     return Math.max(acc, Math.sqrt(dx * dx + dy * dy));
   }, 0);
-  // if (radius < 1) return null;
+  if (radius < 1) return null;
 
   const R = Math.ceil(radius * padding);
   const A = { x: centerPt.x - R, y: centerPt.y - R };
@@ -146,11 +146,16 @@ export type Sample = {
   goal?: Point,
 }
 
-export function results2sample(results, frame, tmpCanvas, {
-  mode = "circle", padding = 1.25,
-  visibilityThreshold = 0.5, presenceThreshold = 0.5,
-  SIZE = 32,
-}): Sample | null {
+export const DEFAULT_SETTINGS = {
+  mode: 'circle',
+  padding: 1.35,
+  visibilityThreshold: 0.2,
+  presenceThreshold: 0.2,
+  SIZE: 48,
+};
+
+export function results2sample(results, frame, tmpCanvas, settings = DEFAULT_SETTINGS): Sample | null {
+  const { mode, padding, visibilityThreshold, presenceThreshold, SIZE } = settings;
   if (!results) return null;
   if (!results.faceLandmarks) return null;
   if (results.faceLandmarks.length === 0) return null;
@@ -175,10 +180,11 @@ export function results2sample(results, frame, tmpCanvas, {
   if(478 != landmarks.length) {
     throw new Error('Expected 478 points');
   }
+  // Store normalized points (0-1 range) instead of pixel coordinates
   const pointsArray = new Float32Array(478 * 2);
   for (let i = 0; i < 478; i++) {
     const pt = _isValidPoint(landmarks[i], { visibilityThreshold, presenceThreshold }) ?
-      landmarks[i] : { x: -10, y: -10 };
+      landmarks[i] : { x: -1, y: -1 }; // Use -1 for invalid points
 
     pointsArray[i * 2] = pt.x;
     pointsArray[i * 2 + 1] = pt.y;

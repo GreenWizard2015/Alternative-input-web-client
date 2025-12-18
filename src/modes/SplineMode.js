@@ -54,8 +54,9 @@ export class SplineMode extends AppMode {
     }
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender(viewport);
+  onRender(data) {
+    super.onRender(data);
+    const { viewport, canvasCtx } = data;
 
     this.drawTarget({
       canvasCtx, viewport,

@@ -23,13 +23,17 @@ export function serialize(samples: Sample[]) {
   if(1 !== screenIDs.length) {
     throw new Error('Expected one screen ID, got ' + screenIDs.length);
   }
-  const headerSize = 36 + 36 + 36 + 1;
+  const cameraIDs = samples.reduce(accumulateUnique('cameraId'), []);
+  if(1 !== cameraIDs.length) {
+    throw new Error('Expected one camera ID, got ' + cameraIDs.length);
+  }
+  const headerSize = 36 + 36 + 36 + 36 + 1;
   const totalSize = samples.length * sampleSize() + headerSize;
   const buffer = new ArrayBuffer(totalSize);
   const view = new DataView(buffer);
   let offset = 0;
   // write the version of the format
-  const version = 3;
+  const version = 4;
   view.setUint8(offset, version);
   offset += 1;
   // encode the strings to utf-8
@@ -45,11 +49,12 @@ export function serialize(samples: Sample[]) {
     }
   };
   
-  // first write the user ID, place ID and screen ID, which are common to all samples
+  // first write the user ID, place ID, screen ID and camera ID, which are common to all samples
   const sample = samples[0];
   saveString(sample.userId, 'userID');
   saveString(sample.placeId, 'placeID');
   saveString(sample.screenId, 'screenID');
+  saveString(sample.cameraId, 'cameraID');
   const EMPTY_EYE = new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(0);
 
   const saveEye = (eye) => {

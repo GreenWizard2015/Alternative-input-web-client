@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { UUIDed, validate } from "../../components/Samples";
 
 interface UIState {
-  webcamId: string | null;
+  selectedCameraIds: string[]; // new multi-camera support
   userId: string,
   userSamples: number,
   placeId: string,
@@ -13,7 +13,7 @@ interface UIState {
 };
 
 const initialState: UIState = {
-  webcamId: null,
+  selectedCameraIds: [], // new multi-camera support
   userId: '',
   userSamples: 0,
   placeId: '',
@@ -26,8 +26,8 @@ export const UISlice = createSlice({
   name: "UI",
   initialState,
   reducers: {
-    setWebcamId: (state, action: PayloadAction<string | null>) => {
-      state.webcamId = action.payload;
+    setSelectedCameraIds: (state, action: PayloadAction<string[]>) => {
+      state.selectedCameraIds = action.payload;
     },
     setUser: (state, action: PayloadAction<UUIDed>) => {
       state.userId = action.payload.uuid;
@@ -120,8 +120,8 @@ export const UISlice = createSlice({
   },
 });
 
-export const { 
-  setWebcamId, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace,
+export const {
+  setSelectedCameraIds, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace,
   selectDefaultValues
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;

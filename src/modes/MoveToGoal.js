@@ -34,8 +34,9 @@ export class MoveToGoal extends AppMode {
     }
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender(viewport);
+  onRender(data) {
+    super.onRender(data);
+    const { viewport, canvasCtx } = data;
     const style = this._active ? undefined : 'gray';
     this.drawTarget({ viewport, canvasCtx, style });
   }

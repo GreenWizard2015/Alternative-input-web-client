@@ -2,8 +2,38 @@ import { Position } from "../components/SamplesDef";
 import { drawTarget } from "../utils/target";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
+import { DetectionResult } from "../components/FaceDetector";
 
 export type Viewport = { width: number, height: number }
+
+export type FPSData = Record<string, { camera: number; samples: number }>;
+
+export type AppModeOverlayData = {
+  canvasCtx: CanvasRenderingContext2D;
+  viewport: Viewport;
+  activeUploads: number;
+  meanUploadDuration: number;
+  eyesDetected: boolean;
+  eyesByCamera?: Map<string, boolean>;
+  fps?: FPSData;
+};
+
+export type AppModeRenderData = {
+  canvas: HTMLCanvasElement;
+  canvasCtx: CanvasRenderingContext2D;
+  viewport: Viewport;
+  goal: any;
+  user: string;
+  place: string;
+  screenId: string;
+  gameMode: AppMode;
+  activeUploads: number;
+  meanUploadDuration: number;
+  eyesDetected: boolean;
+  eyesByCamera: Map<string, boolean>;
+  fps: FPSData;
+  detections: Map<string, DetectionResult>;
+};
 const TRANSITION_TIME = 100;
 
 function clamp(val: number, min: number, max: number) {
@@ -21,7 +51,7 @@ export class AppMode {
   _background: CBackground = new CBackground();
   _illumination: CRandomIllumination = new CRandomIllumination();
   _overflowed: boolean = false;
-  _eyesDetected: boolean = true;
+  _eyesByCamera: Map<string, boolean> = new Map(); // Per-camera eye detection
 
   constructor() {
     this._paused = true;
@@ -48,25 +78,21 @@ export class AppMode {
     // AppMode controls when this is called based on pause state
   }
 
-  onRender(viewport: Viewport) {
+  onRender(data: AppModeRenderData) {
     // Call doTick and visual effects only when not paused - AppMode manages timing
     const now = Date.now();
     const deltaT = this._paused ? 0 : (now - this._lastTickTime) / 1000; // in seconds
     this._lastTickTime = now;
-    this.doTick(deltaT, viewport);
+    this.doTick(deltaT, data.viewport);
     this._background.onTick(deltaT);
     this._illumination.onTick(deltaT);
   }
 
-  onOverlay(
-    { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesDetected, fps = { camera: 0, samples: 0 } }:
-    {
-      canvasCtx: CanvasRenderingContext2D, viewport: Viewport,
-      activeUploads: number, meanUploadDuration: number,
-      eyesDetected: boolean, fps?: { camera: number, samples: number }
+  onOverlay(data: AppModeOverlayData) {
+    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {} } = data;
+    if (eyesByCamera) {
+      this._eyesByCamera = eyesByCamera;
     }
-  ) {
-    this._eyesDetected = eyesDetected;
     this._background.onRender(canvasCtx, viewport);
     this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
 
@@ -106,7 +132,7 @@ export class AppMode {
       canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
 
       // Show appropriate message based on why we're paused
-      const pauseText = !this._eyesDetected ? 'Eyes not visible' : 'Paused';
+      const pauseText = this._anyEyesDetected() ? 'Paused' : "Eyes not visible";
       this.drawText({
         text: pauseText, viewport, canvasCtx, color: 'white',
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
@@ -115,12 +141,26 @@ export class AppMode {
 
     // Draw FPS in top-left corner
     canvasCtx.fillStyle = 'black';
-    canvasCtx.font = '16px Arial';
-    canvasCtx.fillText(`Camera FPS: ${fps.camera.toFixed(2)} | Samples FPS: ${fps.samples.toFixed(2)}`, 10, 20);
+    canvasCtx.font = '14px monospace';
+
+    // Show FPS for each camera by index
+    let yOffset = 20;
+    let cameraIndex = 0;
+    for (const fpsData of Object.values(fps)) {
+      const fpsText = `Camera ${cameraIndex} | FPS: ${fpsData.camera.toFixed(1)}, Samples: ${fpsData.samples.toFixed(1)}`;
+      canvasCtx.fillText(fpsText, 10, yOffset);
+      yOffset += 18;
+      cameraIndex++;
+    }
+  }
+
+  _anyEyesDetected() {
+    return Array.from(this._eyesByCamera.values()).some(hasEyes => hasEyes);
   }
 
   accept() {
-    return !this._paused && this._eyesDetected;
+    // Multi-camera: accept if game is running AND any camera has eyes visible
+    return !this._paused && this._anyEyesDetected();
   }
 
   static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {
@@ -169,11 +209,10 @@ export class AppMode {
     return this._paused;
   }
 
-  timeSincePaused() {
-    const now = Date.now();
-    return now - this._timeToggledPaused;
+  lastPausedTime() {
+    return this._timeToggledPaused;
   }
-  
+
   getGoal() {
     return this._pos;
   }

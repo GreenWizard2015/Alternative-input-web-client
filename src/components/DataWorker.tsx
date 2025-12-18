@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-let worker;
+let worker: Worker;
 const DataWorker = ({ incrementStats, changeActiveUploads }) => {
   useEffect(() => {
     const newWorker = new Worker(new URL('./data.worker.js', import.meta.url));
@@ -13,10 +13,10 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
         changeActiveUploads({ total: inQueue, duration: null });
         return;
       } else {
-        const { status, userId, placeId, count, inQueue, duration, chunks } = e.data;
+        const { status, userId, placeId, count, inQueue, duration } = e.data;
         if('ok' === status) {
           incrementStats({ userId, placeId, count });
-          changeActiveUploads({ total: inQueue, duration, chunks });
+          changeActiveUploads({ total: inQueue, duration });
         }
       }
     };

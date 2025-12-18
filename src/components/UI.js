@@ -6,7 +6,7 @@ import { setUser, setPlace, removeUser, removePlace, resetUser, resetPlace, sele
 import { connect } from 'react-redux';
 
 function UI({
-  onWebcamChange, goFullscreen, onStart, canStart, fps,
+  onWebcamChange, goFullscreen, onStart, canStart, fps, cameraIds,
   userId, setUser,
   placeId, setPlace,
   users, places,
@@ -101,7 +101,7 @@ function UI({
   } else {
     content = <>
       <div>Webcamera:</div>
-      <WebcamSelector onWebcamChange={onWebcamChange} />
+      <WebcamSelector onWebcamChange={onWebcamChange} selectedCameraIds={cameraIds} />
       <div className='flex w100'>
         User: 
         {/* dropdown */}
@@ -139,7 +139,14 @@ function UI({
   return (
     <>
       <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '14px', color: 'black' }}>
-        Camera FPS: {fps.camera.toFixed(2)} | Samples FPS: {fps.samples.toFixed(2)}
+        {cameraIds?.map((cameraId, index) => {
+          const data = fps[cameraId];
+          return (
+            <div key={cameraId}>
+              Camera {index}: {data?.camera?.toFixed(2) || '0.00'} FPS | Samples: {data?.samples?.toFixed(2) || '0.00'} FPS
+            </div>
+          );
+        })}
       </div>
       {content}
     </>

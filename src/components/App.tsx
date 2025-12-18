@@ -3,8 +3,8 @@ import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "../modes/AppMode";
-import { Frame } from "./FaceDetector";
-import { Sample, storeSample, sendSamples } from "./Samples";
+import { DetectionResult } from "./FaceDetector";
+import { sampleManager, Sample } from "./Samples";
 import { Intro } from "./Intro";
 // redux related imports
 import { connect } from "react-redux";
@@ -15,10 +15,34 @@ import UploadsNotification from "./uploadsNotification";
 import { hash128Hex } from "../utils";
 import GoalsProgress from "./GoalsProgress";
 
+// Utility function to check if eyes are detected in a sample
+function areEyesDetected(sample: any): boolean {
+  if (!sample) return false;
+  const { leftEye, rightEye } = sample;
+  return (leftEye != null) || (rightEye != null);
+}
+
 // DYNAMIC IMPORT of FaceDetector
 const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 
-function onGameTick(data) {
+type TickData = {
+  canvas: HTMLCanvasElement;
+  canvasCtx: CanvasRenderingContext2D;
+  viewport: { left: number; top: number; width: number; height: number };
+  goal: any;
+  user: string;
+  place: string;
+  screenId: string;
+  gameMode: AppMode;
+  activeUploads: number;
+  meanUploadDuration: number;
+  eyesDetected: boolean;
+  eyesByCamera: Map<string, boolean>;
+  fps: Record<string, { camera: number; samples: number }>;
+  detections: Map<string, DetectionResult>;
+};
+
+function onGameTick(data: TickData) {
   const { gameMode } = data;
   gameMode.onOverlay(data);
   gameMode.onRender(data);
@@ -38,81 +62,93 @@ function AppComponent(
   { mode, setMode, userId, placeId, activeUploads, meanUploadDuration }: AppSettings
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastFrame = useRef<Frame | null>(null);
-  const lastFrameTime = useRef<number>(Date.now());
+  const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
+  const eyesByCamera = useRef<Map<string, boolean>>(new Map()); // Per-camera eye detection
   const goalPosition = useRef(null);
+  const prevViewportRef = useRef<{ width: number; height: number; left: number; top: number } | null>(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
-  const [webcamId, setWebcamId] = React.useState<string>("");
+  const [webcamIds, setWebcamIds] = React.useState<string[]>([]);
   // flag to indicate if eyes are detected at least once
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
   const [score, setScore] = React.useState<number|null>(null);
-  const [fps, setFps] = React.useState<{ camera: number, samples: number }>({ camera: 0, samples: 0 });
-  const FRAME_TIMEOUT = 500; // ms - pause if no frame received in this time
-  // placeId should be a combination of placeId and webcamId
-  const fullPlaceId = React.useMemo(
-    () => hash128Hex(placeId + webcamId),
-    [placeId, webcamId]
-  );
+  const [fps, setFps] = React.useState<Record<string, { camera: number, samples: number }>>({});
 
   const [screenId, setScreenId] = React.useState<string>("");
 
-  const onFrame = useCallback(
-    function (frame: Frame) {
-      lastFrame.current = frame;
-      lastFrameTime.current = Date.now();
-      if (canvasRef.current != null && frame.sample != null) {
-        const { time, leftEye, rightEye, points, goal } = frame.sample;
-        const eyesDetected = (leftEye != null) || (rightEye != null);
-        setEyesVisible(eyesVisible || eyesDetected);
-        // exit if not in game mode or game is paused
-        if ((gameMode == null) || gameMode.isPaused()) return;
-        if (!eyesDetected) return; // exit if eyes are not detected
-        if (goalPosition.current == null) return; // exit if goal is not set
+  const onDetect = useCallback(
+    function (frame: DetectionResult) {
+      if (!frame) return;
 
-        const sample: Sample = {
-          time, leftEye, rightEye, points, goal, // sample data
-          userId: userId,
-          placeId: fullPlaceId,
-          screenId
-        };
-        if(3000 < gameMode.timeSincePaused()) { // 3 seconds delay before starting to collect samples
-          const now = Date.now();
-          storeSample({ sample: sample, limit: now - 3000, placeId, userId });
-        }
+      // Store detection result for this camera
+      detectionsByCamera.current.set(frame.cameraId, frame);
+
+      // Track per-camera eye detection
+      if (frame.sample != null) {
+        const eyesDetected = areEyesDetected(frame.sample);
+        eyesByCamera.current.set(frame.cameraId, eyesDetected);
+
+        // Update global flag if any camera has eyes detected at least once
+        setEyesVisible(eyesVisible || eyesDetected);
       }
-    }, [
-      canvasRef, lastFrame, goalPosition, gameMode, userId, fullPlaceId, placeId, screenId
-    ]
+    }, [eyesVisible]
   );
 
-  function onKeyDown(exit) {
-    return (event) => {
+  // Process samples from all cameras in game mode
+  const processCameraSamples = useCallback(() => {
+    if (gameMode == null || gameMode.isPaused()) return;
+    if (goalPosition.current == null) return;
+
+    detectionsByCamera.current.forEach((frame, cameraId) => {
+      if (!frame.sample) return;
+
+      if (!areEyesDetected(frame.sample)) return;
+
+      const { time, leftEye, rightEye, points, goal } = frame.sample;
+
+      const sample = new Sample({
+        time, leftEye, rightEye, points, goal,
+        userId, placeId, screenId,
+        cameraId: hash128Hex(cameraId)
+      });
+      if(gameMode.accept()) {
+        // Store samples in time window: from (paused + 3s) to (now - 3s)
+        // This gives 3-second buffers at start and end of game
+        const minTime = gameMode.lastPausedTime() + 3000;
+        const maxTime = Date.now() - 3000;
+        sampleManager.store(sample, { minTime, maxTime });
+      }
+    });
+    detectionsByCamera.current.clear();
+  }, [gameMode, userId, placeId, screenId]);
+
+  function onKeyDown(exit: () => void) {
+    return (event: React.KeyboardEvent<HTMLCanvasElement>) => {
       const isExit = event.code === 'Escape';
-      if (gameMode) {
-        if (isExit) {
+
+      if (isExit) {
+        if (gameMode) {
           setScore(gameMode.getScore());
           gameMode.onPause();
-          exit();
-          return;
         }
-
-        gameMode.onKeyDown(event);
-      }
-      if (isExit) {
         exit();
         return;
+      }
+
+      if (gameMode) {
+        gameMode.onKeyDown(event as any);
       }
     }
   }
 
   const onTick = useCallback(
-    (data) => {
+    (data: any) => {
       // call on mode change? check it
       switch (mode) {
         case "menu":
           return onMenuTick(data);
         case "game":
           canvasRef.current.focus();
+          processCameraSamples();
           return onGameTick(data);
         case "intro":
           return null; // ignore
@@ -120,8 +156,41 @@ function AppComponent(
           throw new Error("Unknown mode: " + mode);
       }
     },
-    [mode]
+    [mode, processCameraSamples, onMenuTick, onGameTick]
   );
+
+  // Separate effect for viewport tracking and screen ID generation
+  React.useEffect(() => {
+    const trackViewport = () => {
+      const canvasElement = canvasRef.current;
+      if (!canvasElement) return;
+
+      const viewport = {
+        left: canvasElement.offsetLeft,
+        top: canvasElement.offsetTop,
+        width: canvasElement.width,
+        height: canvasElement.height,
+      };
+
+      // Only hash if viewport dimensions changed (avoid unnecessary hashing every frame)
+      const viewportChanged = !prevViewportRef.current ||
+        prevViewportRef.current.width !== viewport.width ||
+        prevViewportRef.current.height !== viewport.height ||
+        prevViewportRef.current.left !== viewport.left ||
+        prevViewportRef.current.top !== viewport.top;
+
+      if (viewportChanged) {
+        prevViewportRef.current = viewport;
+        const newScreenId = hash128Hex(JSON.stringify(viewport));
+        setScreenId(newScreenId);
+      }
+    };
+
+    // Track viewport changes
+    trackViewport();
+    window.addEventListener('resize', trackViewport);
+    return () => window.removeEventListener('resize', trackViewport);
+  }, []);
 
   const animationFrameId = useRef<number>(0);
   React.useEffect(() => {
@@ -145,48 +214,41 @@ function AppComponent(
         width: canvasElement.width,
         height: canvasElement.height,
       };
-      // Compute hash once and use for both state update and immediate use
-      const newScreenId = hash128Hex(JSON.stringify(viewport));
-      setScreenId(prevScreenId => (prevScreenId === newScreenId) ? prevScreenId : newScreenId);
-      const timeSinceLastFrame = Date.now() - lastFrameTime.current;
-      const frameTimedOut = timeSinceLastFrame > FRAME_TIMEOUT;
 
-      // Eyes detected only if: frames are arriving AND sample has eye data
-      let eyesDetected = false;
-      if (!frameTimedOut && lastFrame.current?.sample) {
-        eyesDetected = (lastFrame.current.sample.leftEye != null) || (lastFrame.current.sample.rightEye != null);
-      }
+      // Eyes detected: check if any camera currently has eyes visible
+      // Strategy: if ANY camera has eyes, game proceeds (for multi-camera robustness)
+      let eyesDetected = Array.from(eyesByCamera.current.values()).some(hasEyes => hasEyes);
 
       goalPosition.current = onTick({
         canvas: canvasElement,
         canvasCtx: canvasCtx,
         viewport,
-        frame: lastFrame.current,
         goal: goalPosition.current,
         user: userId,
-        place: fullPlaceId,
-        screenId: newScreenId,
+        place: placeId,
+        screenId,
         gameMode,
         activeUploads,
         meanUploadDuration,
         eyesDetected,
+        eyesByCamera: eyesByCamera.current,
         fps,
+        detections: detectionsByCamera.current,
       });
       animationFrameId.current = requestAnimationFrame(f);
     };
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode, userId, fullPlaceId, activeUploads, meanUploadDuration]);
+  }, [onTick, gameMode, userId, placeId, activeUploads, meanUploadDuration, fps, screenId]);
 
   function onPause() {
     const now = Date.now();
-    sendSamples({
-      limit: now - 3000,
-      clear: true,
-      placeId: placeId,
-      userId: userId
-    }); // send collected samples before exit
+    // Flush samples in time window: from (paused + 3s) to (now - 3s)
+    // This matches the store() window for consistency
+    const minTime = gameMode ? gameMode.lastPausedTime() + 3000 : now - 3000;
+    const maxTime = now - 3000;
+    sampleManager.flushAndClear({ minTime, maxTime });
   }
 
   function startGame(mode: AppMode) {
@@ -196,23 +258,25 @@ function AppComponent(
   }
 
   let content = null;
-  if('intro' === mode) {
+  if (mode === 'intro') {
     content = <Intro onConfirm={() => setMode('menu')} />;
-  }
-  if('menu' === mode) {
+  } else if (mode === 'menu') {
     content = (
       <UI
-        onWebcamChange={setWebcamId}
+        onWebcamChange={setWebcamIds}
         onStart={startGame}
         canStart={eyesVisible}
         fps={fps}
+        cameraIds={webcamIds}
         goFullscreen={() => toggleFullscreen(
           document.getElementById("root") ?? document.body // app root element
         )}
       />
     );
   }
-  if(content != null) { // wrap content in UI
+
+  // Wrap content in UI container with notifications
+  if (content != null) {
     content = (
       <div id="UI">
         <div className="UI-wrapper">
@@ -244,8 +308,10 @@ function AppComponent(
     <>
       <UploadsNotification />
       {content}
-      <FaceDetector deviceId={webcamId}
-        onFrame={onFrame} goal={goalPosition}
+      <FaceDetector
+        cameraIdsStrList={webcamIds.sort().join(',')}
+        onDetect={onDetect}
+        goal={goalPosition}
         onFPS={setFps}
       />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {

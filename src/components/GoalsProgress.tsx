@@ -76,11 +76,10 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
   );
 };
 
-function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
+function GoalsProgress({ userSamples, placeSamples }) {
   // convert to number if it is a string
   userSamples = (typeof userSamples === "string") ? parseInt(userSamples) : userSamples;
   placeSamples = (typeof placeSamples === "string") ? parseInt(placeSamples) : placeSamples;
-  chunksOnServer = (typeof chunksOnServer === "string") ? parseInt(chunksOnServer) : chunksOnServer;
   return (
     <div className="w-100">
       {/* user samples */}
@@ -103,16 +102,6 @@ function GoalsProgress({ userSamples, placeSamples, chunksOnServer }) {
         ]}
         higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
       />
-      {/* chunks on server */}
-      {/* <MultiLevelProgressBar
-        currentValue={placeSamples}
-        levels={[
-          { value: 500, color: "lime", message: "Better than nothing, but still not enough samples for training. Keep going!" },
-          { value: 1000, color: "yellow", message: "There is a chance that the neural network will be able to learn something." },
-          { value: 1500, color: "red", message: "Great! Almost the perfect amount of samples for training." }
-        ]}
-        higherLevelMessage="Good job! We are hit the perfect amount of samples for training. Now we can start training the neural network."
-      /> */}
     </div>
   );
 }
@@ -121,6 +110,5 @@ export default connect(
   (state: RootState) => ({
     userSamples: state.UI.userSamples || 0,
     placeSamples: state.UI.placeSamples || 0,
-    chunksOnServer: state.App.chunksOnServer || 0,
   })
 )(GoalsProgress);

@@ -49,8 +49,9 @@ export class CircleMovingMode extends AppMode {
     }
   }
 
-  onRender({ viewport, canvasCtx }) {
-    super.onRender(viewport);
+  onRender(data) {
+    super.onRender(data);
+    const { viewport, canvasCtx } = data;
 
     // draw it
     this.drawTarget({
