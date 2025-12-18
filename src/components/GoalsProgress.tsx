@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { RootState } from "../store";
 
@@ -77,6 +78,8 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
 };
 
 function GoalsProgress({ userSamples, placeSamples }) {
+  const { t } = useTranslation();
+
   // convert to number if it is a string
   userSamples = (typeof userSamples === "string") ? parseInt(userSamples) : userSamples;
   placeSamples = (typeof placeSamples === "string") ? parseInt(placeSamples) : placeSamples;
@@ -86,21 +89,21 @@ function GoalsProgress({ userSamples, placeSamples }) {
       <MultiLevelProgressBar
         currentValue={userSamples}
         levels={[
-          { value: 50000, color: "lime", message: "Less than the minimum amount of samples for a single user. Keep going!" },
-          { value: 75000, color: "yellow", message: "Good job! The neural network has a chance to learn something about your face." },
-          { value: 100000, color: "red", message: "Great! Almost the perfect amount of samples for training." }
+          { value: 50000, color: "lime", message: t('goalsProgress.userSamples.level1') },
+          { value: 75000, color: "yellow", message: t('goalsProgress.userSamples.level2') },
+          { value: 100000, color: "red", message: t('goalsProgress.userSamples.level3') }
         ]}
-        higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
+        higherLevelMessage={t('goalsProgress.userSamples.completed')}
       />
       {/* place samples */}
       <MultiLevelProgressBar
         currentValue={placeSamples}
         levels={[
-          { value: 15000, color: "lime", message: "Less than the minimum amount of samples for training. Keep going!" },
-          { value: 30000, color: "yellow", message: "Good job! The neural network has a chance to be trained." },
-          { value: 50000, color: "red", message: "Great! Almost the perfect amount of samples for training." }
+          { value: 15000, color: "lime", message: t('goalsProgress.placeSamples.level1') },
+          { value: 30000, color: "yellow", message: t('goalsProgress.placeSamples.level2') },
+          { value: 50000, color: "red", message: t('goalsProgress.placeSamples.level3') }
         ]}
-        higherLevelMessage="Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
+        higherLevelMessage={t('goalsProgress.placeSamples.completed')}
       />
     </div>
   );

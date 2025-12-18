@@ -1,0 +1,135 @@
+{
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "ukrainian": "Українська",
+    "ok": "Ok",
+    "cancel": "Cancel",
+    "close": "Close",
+    "start": "Start",
+    "back": "Back"
+  },
+  "webcam": {
+    "label": "Webcamera:",
+    "noCameras": "No cameras detected. Click Refresh to scan for cameras.",
+    "cameraLabel": "Camera {{index}}",
+    "selected": "{{count}} camera{{plural}} selected"
+  },
+  "menu": {
+    "user": "User:",
+    "place": "Place:",
+    "add": "Add",
+    "remove": "Remove",
+    "reset": "Reset",
+    "help": "Help",
+    "fullscreen": "Fullscreen",
+    "samples": "samples"
+  },
+  "dialogs": {
+    "enterUserName": "Enter user name",
+    "enterUserUUID": "Enter user UUID",
+    "enterPlaceName": "Enter place name",
+    "confirmRemoveUser": "Are you sure you want to remove the user ({{name}})?",
+    "confirmRemovePlace": "Are you sure you want to remove the place ({{name}})?"
+  },
+  "uiHelp": {
+    "title": "UI Help",
+    "text": "Some help text"
+  },
+  "gameStart": {
+    "splineMode": "Spline Mode",
+    "lookAtMode": "Look At Mode",
+    "circleMovingMode": "Circle Moving Mode",
+    "useGamification": "Use gamification (disable only if you can't press the keys (Z, A, S, X).)",
+    "lookAtHelp": "In this mode you should concentrate on the static red circle. Grey circle means inactive mode.",
+    "lookAtPurpose": "This mode intended to stabilize gaze predictions.",
+    "splineHelp": "In this mode you should concentrate on the red circle and ignore others.",
+    "splinePurpose": "This is the main mode of the application. It is intended to adjust gaze predictions in motion.",
+    "circleMovingHelp": "In this mode you should concentrate on the red circle while it moving.",
+    "circleMovingPurpose": "This mode intended to stabilize gaze predictions in motion.",
+    "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.",
+    "augmentations": "Augmentations",
+    "illumination": "I - toggle random illumination",
+    "background": "B - toggle random background",
+    "keyboardShortcuts": {
+      "lookAt": [
+        "Esc - return to main menu",
+        "P / Enter / Space - toggle pause"
+      ],
+      "spline": [
+        "Esc - return to main menu",
+        "P / Enter / Space - toggle pause"
+      ],
+      "circleMoving": [
+        "Arrow Up - increase level of difficulty",
+        "Arrow Down - decrease level of difficulty",
+        "Arrow Left - activate the circle",
+        "Z, A, S, X - press the correct key to activate",
+        "Esc - return to main menu",
+        "P / Enter / Space - toggle pause"
+      ]
+    },
+    "dataCollection": "Data collection is started after the first activation of the circle."
+  },
+  "intro": {
+    "selectLanguage": "Select Language",
+    "privacyNoticeTitle": "Privacy Notice",
+    "privacyNoticeText": "This application does not collect any personal data. Names and titles are used solely for convenience and only unique identifiers are stored.",
+    "dataCollectionInfo": "Data collection should be conducted with a static camera (tablets or mobile devices are not suitable). It is recommended to perform sessions in 10-minute intervals to prevent eye fatigue and maintain focus.",
+    "instructionsTitle": "Instructions",
+    "instructions": [
+      "Ensure that only one person is in the camera's field of view. Your eyes should be visible in the top left corner of the screen to ensure correct setup.",
+      "Follow the red ball on the screen with your gaze. Small circular head movements are allowed, but try not to fix your head. Just move your head as usual in everyday life. Other objects on the screen are for AI augmentation and should be ignored.",
+      "Create a new Place each time you change the position of the webcam, the window's location, or the distance to the screen.",
+      "Create a new User for each person, as well as for the same person with and without glasses.",
+      "Avoid distractions and do not resize the window during the session. If you feel tired or distracted, take a break. The app has a 3-second window during pauses when samples are ignored. Press pause as soon as possible to prevent bad data from entering the system if necessary.",
+      "Do not turn off the app immediately after finishing. It needs time to send the data and will notify you when done.",
+      "Conduct several short sessions throughout the day, lasting 5-15 minutes each. Perform sessions under different lighting conditions. Avoid overly long sessions.",
+      "Primarily use the spline mode (it is the simplest and most effective), but do not forget about the other modes as well."
+    ],
+    "warningTitle": "Warning",
+    "warningText": "This application is data-intensive and requires a high-speed internet connection for optimal performance.",
+    "knownIssuesTitle": "Known Issues",
+    "knownIssues": [
+      "Could be very slow due to the usage AI for face detection. Sadly, this could not be fixed.",
+      "Couldn't run face detection in Safari. Please use Chrome, Edge or Firefox."
+    ],
+    "finalNoteTitle": "Final note",
+    "finalNoteText": "For each user/location/etc., it is crucial to gather a sufficient amount of data. Don't abandon data collection after just a few minutes! You need at least 20,000 frames; otherwise, it will only harm the project.",
+    "confirmButton": "I Understand"
+  },
+  "fps": {
+    "camera": "Camera {{index}}: {{fps}} FPS | Samples: {{samples}} FPS"
+  },
+  "goalsProgress": {
+    "userSamples": {
+      "level1": "Less than the minimum amount of samples for a single user. Keep going!",
+      "level2": "Good job! The neural network has a chance to learn something about your face.",
+      "level3": "Great! Almost the perfect amount of samples for training.",
+      "completed": "Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
+    },
+    "placeSamples": {
+      "level1": "Less than the minimum amount of samples for training. Keep going!",
+      "level2": "Good job! The neural network has a chance to be trained.",
+      "level3": "Great! Almost the perfect amount of samples for training.",
+      "completed": "Good job! The neural network should be happy :) Consider changing the webcam position, wearing glasses, or asking a friend to help with further sample collection."
+    }
+  },
+  "canvas": {
+    "cameraLabel": "Camera {{index}}",
+    "notConnected": "Not connected to the web camera",
+    "targetHelp": "This is how target looks like",
+    "uploadsInProgress": "There is {{count}} uploads in progress. Please wait. Estimated time: {{minutes}}:{{seconds}}",
+    "paused": "Paused",
+    "eyesNotVisible": "Eyes not visible",
+    "fpsMetric": "Camera {{index}} | FPS: {{fps}}, Samples: {{samples}}"
+  },
+  "notifications": {
+    "activeUploads": "Currently there are {{count}} active uploads.",
+    "waitUploads": "Please wait until they are finished.",
+    "webcamProblem": "There are some problems with the webcam or browser.",
+    "eyesNotDetected": "Eyes was not detected yet.",
+    "lastScore": "In your last game you scored {{score}} points.",
+    "leaveWarning": "There are {{count}} active uploads. Are you sure you want to leave the page?"
+  }
+}

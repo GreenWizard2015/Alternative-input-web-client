@@ -1,4 +1,5 @@
 import React, { useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
 import { onMenuTick } from "../modes/onMenuTick";
@@ -61,6 +62,7 @@ type AppSettings = {
 function AppComponent(
   { mode, setMode, userId, placeId, activeUploads, meanUploadDuration }: AppSettings
 ) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
   const eyesByCamera = useRef<Map<string, boolean>>(new Map()); // Per-camera eye detection
@@ -282,19 +284,19 @@ function AppComponent(
         <div className="UI-wrapper">
           {(0 < activeUploads) ? (
             <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
-              Currently there are {activeUploads} active uploads.<br />
-              Please wait until they are finished.
+              {t('notifications.activeUploads', { count: activeUploads })}<br />
+              {t('notifications.waitUploads')}
             </div>
           ) : null}
           {eyesVisible ? null : (
             <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
-              There are some problems with the webcam or browser.<br />
-              Eyes was not detected yet.
+              {t('notifications.webcamProblem')}<br />
+              {t('notifications.eyesNotDetected')}
             </div>
           )}
           {score != null ? (
             <div className="w-100 mx-auto text-center">
-              In your last game you scored {score.toFixed(2)} points.
+              {t('notifications.lastScore', { score: score.toFixed(2) })}
             </div>
           ) : null}
           <GoalsProgress />

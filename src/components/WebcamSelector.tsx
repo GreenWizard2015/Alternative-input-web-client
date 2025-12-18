@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface WebcamSelectorProps {
   onWebcamChange: (selectedIds: string[]) => void;
@@ -6,6 +7,7 @@ interface WebcamSelectorProps {
 }
 
 function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelectorProps) {
+  const { t } = useTranslation();
   const [webcams, setWebcams] = useState<MediaDeviceInfo[]>([]);
   const [selectedWebcams, setSelectedWebcams] = useState<string[]>(selectedCameraIds);
 
@@ -51,7 +53,7 @@ function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelect
     <div className="webcam-selector">
       <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '4px' }}>
         {webcams.length === 0 ? (
-          <div style={{ color: '#999' }}>No cameras detected. Click Refresh to scan for cameras.</div>
+          <div style={{ color: '#999' }}>{t('webcam.noCameras')}</div>
         ) : (
           webcams.map(webcam => (
             <div key={webcam.deviceId} style={{ marginBottom: '8px' }}>
@@ -62,14 +64,14 @@ function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelect
                   onChange={() => handleWebcamToggle(webcam.deviceId)}
                   style={{ marginRight: '8px' }}
                 />
-                <span>{webcam.label || `Camera ${webcams.indexOf(webcam) + 1}`}</span>
+                <span>{webcam.label || t('webcam.cameraLabel', { index: webcams.indexOf(webcam) + 1 })}</span>
               </label>
             </div>
           ))
         )}
       </div>
       <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-        {selectedWebcams.length} camera{selectedWebcams.length !== 1 ? 's' : ''} selected
+        {t('webcam.selected', { count: selectedWebcams.length, plural: selectedWebcams.length !== 1 ? 's' : '' })}
       </div>
     </div>
   );

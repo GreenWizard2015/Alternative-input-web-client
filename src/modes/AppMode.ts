@@ -1,3 +1,4 @@
+import i18n from "../i18n";
 import { Position } from "../components/SamplesDef";
 import { drawTarget } from "../utils/target";
 import CBackground from "./CBackground";
@@ -112,8 +113,8 @@ export class AppMode {
       const estimatedTime = activeUploads * meanUploadDuration / 1000;
       const minutes = Math.floor(estimatedTime / 60).toString().padStart(2, '0');
       const seconds = Math.floor(estimatedTime % 60).toString().padStart(2, '0');
-      const text = `There is ${activeUploads} uploads in progress. Please wait. ` + 
-        `Estimated time: ${minutes}:${seconds}`;
+      const { t } = i18n;
+      const text = t('canvas.uploadsInProgress', { count: activeUploads, minutes, seconds });
       this.drawText({
         text,
         viewport, canvasCtx, color: 'white',
@@ -132,7 +133,8 @@ export class AppMode {
       canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
 
       // Show appropriate message based on why we're paused
-      const pauseText = this._anyEyesDetected() ? 'Paused' : "Eyes not visible";
+      const { t } = i18n;
+      const pauseText = this._anyEyesDetected() ? t('canvas.paused') : t('canvas.eyesNotVisible');
       this.drawText({
         text: pauseText, viewport, canvasCtx, color: 'white',
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
@@ -144,10 +146,11 @@ export class AppMode {
     canvasCtx.font = '14px monospace';
 
     // Show FPS for each camera by index
+    const { t } = i18n;
     let yOffset = 20;
     let cameraIndex = 0;
     for (const fpsData of Object.values(fps)) {
-      const fpsText = `Camera ${cameraIndex} | FPS: ${fpsData.camera.toFixed(1)}, Samples: ${fpsData.samples.toFixed(1)}`;
+      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), samples: fpsData.samples.toFixed(1) });
       canvasCtx.fillText(fpsText, 10, yOffset);
       yOffset += 18;
       cameraIndex++;

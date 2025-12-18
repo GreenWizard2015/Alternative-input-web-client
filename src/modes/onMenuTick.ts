@@ -1,3 +1,4 @@
+import i18n from "../i18n";
 import { Position } from "../components/SamplesDef";
 import { grayscale2image, decodeLandmarks } from "../utils/MP";
 import { drawTarget } from "../utils/target";
@@ -12,6 +13,7 @@ type MenuTickData = {
 export function onMenuTick({
   viewport, canvasCtx, detections
 }: MenuTickData) {
+  const { t } = i18n;
   // Draw all camera frames in grid layout
   if (detections && detections.size > 0) {
     const camerasCount = detections.size;
@@ -38,7 +40,7 @@ export function onMenuTick({
       // Draw camera index label
       canvasCtx.fillStyle = '#00ff00';
       canvasCtx.font = '14px monospace';
-      canvasCtx.fillText(`Camera ${index}`, x + 10, y + 25);
+      canvasCtx.fillText(t('canvas.cameraLabel', { index }), x + 10, y + 25);
 
       // Draw landmarks for this camera (normalized 0-1 range)
       if (detection.sample && detection.sample.points) {
@@ -104,7 +106,7 @@ export function onMenuTick({
     // No cameras connected
     canvasCtx.fillStyle = "black";
     canvasCtx.font = "36px Arial";
-    canvasCtx.fillText("Not connected to the web camera", 10, 50);
+    canvasCtx.fillText(t('canvas.notConnected'), 10, 50);
     return null;
   }
 
@@ -119,7 +121,7 @@ export function onMenuTick({
   // TEXT "This is how target looks like"
   canvasCtx.fillStyle = "red";
   canvasCtx.font = "21px Arial";
-  canvasCtx.fillText("This is how target looks like", targetPos.x - 120, targetPos.y - 70);
+  canvasCtx.fillText(t('canvas.targetHelp'), targetPos.x - 120, targetPos.y - 70);
   // rectangle around the target
   canvasCtx.setLineDash([]);
   canvasCtx.strokeStyle = "red";

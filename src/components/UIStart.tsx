@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import MiniGameController from '../modes/MiniGameController';
 import NullController from '../modes/NullController';
 import { AppMode } from '../modes/AppMode';
@@ -40,31 +41,32 @@ interface UIStartProps {
 }
 
 export default function UIStart({ onStart }: UIStartProps) {
+  const { t } = useTranslation();
   const [helpMode, setHelpMode] = useState<string>('');
   const augmentations: ReactNode = useMemo(() => (
     <div className="ui-augmentations">
       <div className="mx-auto">
-        <b>Augmentations</b>
+        <b>{t('gameStart.augmentations')}</b>
       </div>
       <ul>
-        <li>I - toggle random illumination</li>
-        <li>B - toggle random background</li>
+        <li>{t('gameStart.illumination')}</li>
+        <li>{t('gameStart.background')}</li>
       </ul>
     </div>
-  ), []);
+  ), [t]);
   const back: ReactNode = useMemo(() => (
-    <button className='ms-2' onClick={() => setHelpMode('')}>Back</button>
-  ), []);
+    <button className='ms-2' onClick={() => setHelpMode('')}>{t('common.back')}</button>
+  ), [t]);
   const [useGamification, setUseGamification] = useState<boolean>(true);
   const gamificationNote: ReactNode = React.useMemo(() => {
     if (!useGamification) return null;
 
     return (
       <div style={{ color: 'red' }}>
-        This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.
+        {t('gameStart.gamificationWarning')}
       </div>
     );
-  }, [useGamification]);
+  }, [useGamification, t]);
   const [controller, setController] = useState<MiniGameController | NullController>(new MiniGameController());
   React.useEffect(() => {
     if (useGamification) {
@@ -93,16 +95,17 @@ export default function UIStart({ onStart }: UIStartProps) {
     case 'lookAt':
       return (
         <div className="ui-help">
-          <h1>LookAt mode</h1>
-          <p>In this mode you should concentrate on the static red circle. Grey circle means inactive mode.</p>
-          <p>This mode intended to stabilize gaze predictions.</p>
+          <h1>{t('gameStart.lookAtMode')}</h1>
+          <p>{t('gameStart.lookAtHelp')}</p>
+          <p>{t('gameStart.lookAtPurpose')}</p>
           {gamificationNote}
           <ul>
-            <li>Esc - return to main menu</li>
-            <li>P / Enter / Space - toggle pause</li>
+            {(t('gameStart.keyboardShortcuts.lookAt', { returnObjects: true }) as string[]).map((shortcut, index) => (
+              <li key={index}>{shortcut}</li>
+            ))}
           </ul>
           {augmentations}
-          <button onClick={handleStartLookAt}>Start</button>
+          <button onClick={handleStartLookAt}>{t('common.start')}</button>
           {back}
         </div>
       )
@@ -110,16 +113,17 @@ export default function UIStart({ onStart }: UIStartProps) {
     case 'spline':
       return (
         <div className="ui-help">
-          <h1>Spline mode</h1>
-          <p>In this mode you should concentrate on the red circle and ignore others.</p>
-          <p>This is the main mode of the application. It is intended to adjust gaze predictions in motion.</p>
+          <h1>{t('gameStart.splineMode')}</h1>
+          <p>{t('gameStart.splineHelp')}</p>
+          <p>{t('gameStart.splinePurpose')}</p>
           {gamificationNote}
           <ul>
-            <li>Esc - return to main menu</li>
-            <li>P / Enter / Space - toggle pause</li>
+            {(t('gameStart.keyboardShortcuts.spline', { returnObjects: true }) as string[]).map((shortcut, index) => (
+              <li key={index}>{shortcut}</li>
+            ))}
           </ul>
           {augmentations}
-          <button onClick={handleStartSpline}>Start</button>
+          <button onClick={handleStartSpline}>{t('common.start')}</button>
           {back}
         </div>
       )
@@ -127,26 +131,20 @@ export default function UIStart({ onStart }: UIStartProps) {
     case 'circleMoving':
       return (
         <div className="ui-help">
-          <h1>Circle moving mode</h1>
-          <p>In this mode you should concentrate on the red circle while it moving.</p>
-          <p>This mode intended to stabilize gaze predictions in motion.</p>
+          <h1>{t('gameStart.circleMovingMode')}</h1>
+          <p>{t('gameStart.circleMovingHelp')}</p>
+          <p>{t('gameStart.circleMovingPurpose')}</p>
           {gamificationNote}
           <div style={{ color: 'red' }}>
-            Data collection is started after the first activation of the circle.
+            {t('gameStart.dataCollection')}
           </div>
           <ul>
-            <li>Arrow Up - increase level of difficulty</li>
-            <li>Arrow Down - decrease level of difficulty</li>
-            {useGamification ? (
-              <li>Z, A, S, X - press the correct key to activate</li>
-            ) : (
-              <li>Arrow Left - activate the circle</li>
-            )}
-            <li>Esc - return to main menu</li>
-            <li>P / Enter / Space - toggle pause</li>
+            {(t('gameStart.keyboardShortcuts.circleMoving', { returnObjects: true }) as string[]).map((shortcut, index) => (
+              <li key={index}>{shortcut}</li>
+            ))}
           </ul>
           {augmentations}
-          <button onClick={handleStartCircleMoving}>Start</button>
+          <button onClick={handleStartCircleMoving}>{t('common.start')}</button>
           {back}
         </div>
       )
@@ -154,15 +152,15 @@ export default function UIStart({ onStart }: UIStartProps) {
     default:
       return (
         <div className="ui-start">
-          <button onClick={() => setHelpMode('spline')}>Spline Mode</button>
-          <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
+          <button onClick={() => setHelpMode('spline')}>{t('gameStart.splineMode')}</button>
+          <button onClick={() => setHelpMode('lookAt')}>{t('gameStart.lookAtMode')}</button>
           <button
             onClick={() => setHelpMode('circleMoving')}
-          >Circle Moving Mode</button>
+          >{t('gameStart.circleMovingMode')}</button>
           <div>
             <label>
               <input type="checkbox" checked={useGamification} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUseGamification(e.target.checked)} />
-              Use gamification (disable <b>only</b> if you can't press the keys (Z, A, S, X).)
+              {t('gameStart.useGamification')}
             </label>
           </div>
         </div>

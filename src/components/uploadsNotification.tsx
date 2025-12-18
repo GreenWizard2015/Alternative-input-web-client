@@ -1,5 +1,6 @@
 // uploadsNotification component
 import { useEffect, useRef } from 'react';
+import i18n from '../i18n';
 import { connect } from 'react-redux';
 import { RootState } from '../store';
 
@@ -13,8 +14,9 @@ function UploadsNotification({ activeUploads }) {
   useEffect(() => {
     function handleBeforeUnload(event) {
       if (activeUploadsRef.current > 0) {
+        const { t } = i18n;
         const answer = window.confirm(
-          `There are ${activeUploadsRef.current} active uploads. Are you sure you want to leave the page?`,
+          t('notifications.leaveWarning', { count: activeUploadsRef.current }),
         );
 
         if (!answer) {
