@@ -19,6 +19,10 @@ class NullController {
   sign() {
     return '';
   }
+
+  isDummy() {
+    return true;
+  }
 }
 
 export default NullController;

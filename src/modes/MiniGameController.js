@@ -57,6 +57,10 @@ class MiniGameController {
   sign() {
     return this._Signs[this._currentSign];
   }
+
+  isDummy() {
+    return false;
+  }
 }
 
 export default MiniGameController;

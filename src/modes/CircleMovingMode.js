@@ -69,6 +69,11 @@ export class CircleMovingMode extends AppMode {
       this._currentTime = 0; // reset timer
     }
 
+    if (this._controller.isDummy() && event.code === 'ArrowLeft') {
+      this._active = true;
+      this._currentTime = 0; // reset timer
+    }
+
     if (event.code === 'ArrowUp') {
       this._level = Math.min(this._maxLevel, this._level + 1);
       this._reset();

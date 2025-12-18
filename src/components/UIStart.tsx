@@ -137,6 +137,11 @@ export default function UIStart({ onStart }: UIStartProps) {
           <ul>
             <li>Arrow Up - increase level of difficulty</li>
             <li>Arrow Down - decrease level of difficulty</li>
+            {useGamification ? (
+              <li>Z, A, S, X - press the correct key to activate</li>
+            ) : (
+              <li>Arrow Left - activate the circle</li>
+            )}
             <li>Esc - return to main menu</li>
             <li>P / Enter / Space - toggle pause</li>
           </ul>
@@ -153,7 +158,6 @@ export default function UIStart({ onStart }: UIStartProps) {
           <button onClick={() => setHelpMode('lookAt')}>Look At Mode</button>
           <button
             onClick={() => setHelpMode('circleMoving')}
-            disabled={!useGamification}
           >Circle Moving Mode</button>
           <div>
             <label>
