@@ -4,7 +4,7 @@ import { drawTarget } from "../utils/target";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 import { DetectionResult } from "../components/FaceDetector";
-
+import { hash128Hex } from "../utils";
 export type Viewport = { width: number, height: number }
 
 export type FPSData = Record<string, { camera: number; samples: number }>;
@@ -151,7 +151,8 @@ export class AppMode {
     let yOffset = 20;
     let cameraIndex = 0;
     for (const [cameraId, fpsData] of Object.entries(fps)) {
-      const collectedCount = collectedSampleCounts[cameraId] || 0;
+      const cameraIdHash = hash128Hex(cameraId); // we store a hash
+      const collectedCount = collectedSampleCounts[cameraIdHash] || 0;
       const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), samples: fpsData.samples.toFixed(1), collected: collectedCount });
       canvasCtx.fillText(fpsText, 10, yOffset);
       yOffset += 18;
