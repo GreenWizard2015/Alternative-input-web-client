@@ -122,7 +122,7 @@
     "uploadsInProgress": "Йде {{count}} завантажень. Будь ласка, чекайте. Орієнтовний час: {{minutes}}:{{seconds}}",
     "paused": "Пауза",
     "eyesNotVisible": "Очі не видно",
-    "fpsMetric": "Камера {{index}} | FPS: {{fps}}, Зразки: {{samples}}"
+    "fpsMetric": "Камера {{index}} | FPS: {{fps}}, Зразки: {{samples}}, Зібрано: {{collected}}"
   },
   "notifications": {
     "activeUploads": "Наразі йде {{count}} активних завантажень.",

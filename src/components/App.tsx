@@ -42,6 +42,7 @@ type TickData = {
   eyesByCamera: Map<string, boolean>;
   fps: Record<string, { camera: number; samples: number }>;
   detections: Map<string, DetectionResult>;
+  collectedSampleCounts: Record<string, number>;
 };
 
 function onGameTick(data: TickData) {
@@ -130,6 +131,7 @@ function AppComponent(
 
       if (isExit) {
         if (gameMode) {
+          onPause(); // save all samples
           setScore(gameMode.getScore());
           gameMode.onPause();
         }
@@ -237,6 +239,7 @@ function AppComponent(
         eyesByCamera: eyesByCamera.current,
         fps,
         detections: detectionsByCamera.current,
+        collectedSampleCounts: sampleManager.getPerCameraSampleCounts(),
       });
       animationFrameId.current = requestAnimationFrame(f);
     };

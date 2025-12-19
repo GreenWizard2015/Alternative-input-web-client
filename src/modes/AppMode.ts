@@ -17,6 +17,7 @@ export type AppModeOverlayData = {
   eyesDetected: boolean;
   eyesByCamera?: Map<string, boolean>;
   fps?: FPSData;
+  collectedSampleCounts?: Record<string, number>;
 };
 
 export type AppModeRenderData = {
@@ -90,7 +91,7 @@ export class AppMode {
   }
 
   onOverlay(data: AppModeOverlayData) {
-    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {} } = data;
+    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {}, collectedSampleCounts = {} } = data;
     if (eyesByCamera) {
       this._eyesByCamera = eyesByCamera;
     }
@@ -149,8 +150,9 @@ export class AppMode {
     const { t } = i18n;
     let yOffset = 20;
     let cameraIndex = 0;
-    for (const fpsData of Object.values(fps)) {
-      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), samples: fpsData.samples.toFixed(1) });
+    for (const [cameraId, fpsData] of Object.entries(fps)) {
+      const collectedCount = collectedSampleCounts[cameraId] || 0;
+      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), samples: fpsData.samples.toFixed(1), collected: collectedCount });
       canvasCtx.fillText(fpsText, 10, yOffset);
       yOffset += 18;
       cameraIndex++;

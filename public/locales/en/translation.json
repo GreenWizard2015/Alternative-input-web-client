@@ -122,7 +122,7 @@
     "uploadsInProgress": "There is {{count}} uploads in progress. Please wait. Estimated time: {{minutes}}:{{seconds}}",
     "paused": "Paused",
     "eyesNotVisible": "Eyes not visible",
-    "fpsMetric": "Camera {{index}} | FPS: {{fps}}, Samples: {{samples}}"
+    "fpsMetric": "Camera {{index}} | FPS: {{fps}}, Samples: {{samples}}, Collected: {{collected}}"
   },
   "notifications": {
     "activeUploads": "Currently there are {{count}} active uploads.",

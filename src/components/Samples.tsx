@@ -321,6 +321,20 @@ class SampleManager {
     };
   }
 
+  getPerCameraSampleCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const bucket of this.buffer.getAllBuckets()) {
+      // Bucket key format: "userId|placeId|screenId|cameraId"
+      // We need to extract the cameraId (last part)
+      const samples = bucket.getSamples();
+      if (samples.length > 0) {
+        const cameraId = samples[0].cameraId;
+        counts[cameraId] = bucket.getCount();
+      }
+    }
+    return counts;
+  }
+
   clear(): void {
     this.buffer.clear();
   }
