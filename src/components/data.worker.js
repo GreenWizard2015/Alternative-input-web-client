@@ -21,9 +21,11 @@
 //   @param chunks - Number of chunks received by server
 //   @param inQueue - Items still waiting to be processed
 //
-// - { status: 'error', error: string }
+// - { status: 'error', error: string, code: number|null, isVercelBlocking: boolean }
 //   Sent when upload fails after retries
 //   @param error - Error message describing what went wrong
+//   @param code - HTTP error code (e.g., 403)
+//   @param isVercelBlocking - True if error code is 403 (Vercel blocking)
 
 const { serialize } = require('./SerializeSamples');
 let queue = [];
@@ -38,12 +40,30 @@ async function uploadWithRetry(fd, endpoint, maxRetries = 3) {
         body: fd
       });
       if (response.ok) return response.json();
-      throw new Error(`HTTP error! status: ${response.status}`);
+
+      // Handle 403 Forbidden (Vercel blocking)
+      if (response.status === 403) {
+        console.warn('Received 403 error from Vercel, sleeping for 1 minute before retry...');
+        const error = new Error(`HTTP error! status: ${response.status}`);
+        error.code = 403;
+        throw error;
+      }
+
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      error.code = response.status;
+      throw error;
     } catch (e) {
-      if (i === maxRetries - 1) throw e;
-      // Exponential backoff: 1s, 2s, 4s
-      const delayMs = Math.pow(2, i) * 1000;
-      await new Promise(r => setTimeout(r, delayMs));
+      // Handle 403 errors with longer delay
+      if (e.code === 403) {
+        if (i === maxRetries - 1) throw e;
+        console.log('Waiting 1 minute before retrying due to 403 Forbidden...');
+        await new Promise(r => setTimeout(r, 60000)); // 1 minute
+      } else {
+        if (i === maxRetries - 1) throw e;
+        // Exponential backoff: 1s, 2s, 4s
+        const delayMs = Math.pow(2, i) * 1000;
+        await new Promise(r => setTimeout(r, delayMs));
+      }
     }
   }
 }
@@ -69,7 +89,12 @@ function processQueue() {
     });
   }).catch(error => {
     console.error('Upload failed after retries:', error);
-    self.postMessage({ status: 'error', error: error.message });
+    self.postMessage({
+      status: 'error',
+      error: error.message,
+      code: error.code || null,
+      isVercelBlocking: error.code === 403
+    });
     queue.push(chunk); // put the chunk back to the queue
   }).finally(() => {
     processQueue(); // process next chunk no matter what

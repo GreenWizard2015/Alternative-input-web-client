@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 let worker: Worker;
-const DataWorker = ({ incrementStats, changeActiveUploads }) => {
+const DataWorker = ({ incrementStats, changeActiveUploads, onError }) => {
   useEffect(() => {
     const newWorker = new Worker(new URL('./data.worker.js', import.meta.url));
     worker = newWorker;
@@ -11,6 +11,18 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
       if('start' === e.data.status) {
         const { inQueue } = e.data;
         changeActiveUploads({ total: inQueue, duration: null });
+        return;
+      } else if('error' === e.data.status) {
+        const { error, code, isVercelBlocking } = e.data;
+        // Dispatch error event to UI
+        const errorEvent = new CustomEvent('workerError', {
+          detail: { message: error, code, isVercelBlocking }
+        });
+        window.dispatchEvent(errorEvent);
+
+        if(onError) {
+          onError({ message: error, code, isVercelBlocking });
+        }
         return;
       } else {
         const { status, userId, placeId, count, inQueue, duration } = e.data;
@@ -24,7 +36,7 @@ const DataWorker = ({ incrementStats, changeActiveUploads }) => {
     return () => {
       newWorker.terminate();
     };
-  }, [incrementStats, changeActiveUploads]);
+  }, [incrementStats, changeActiveUploads, onError]);
   return null;
 };
 

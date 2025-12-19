@@ -13,6 +13,7 @@ import { setMode } from "../store/slices/App";
 import { RootState } from "../store";
 import dynamic from "next/dynamic";
 import UploadsNotification from "./uploadsNotification";
+import ErrorNotification from "./errorNotification";
 import { hash128Hex } from "../utils";
 import GoalsProgress from "./GoalsProgress";
 
@@ -309,6 +310,7 @@ function AppComponent(
   return (
     <>
       <UploadsNotification />
+      <ErrorNotification />
       {content}
       <FaceDetector
         cameraIdsStrList={webcamIds.sort().join(',')}
