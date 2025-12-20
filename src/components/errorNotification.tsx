@@ -6,7 +6,6 @@ import { RootState } from '../store';
 interface ErrorMessage {
   message: string;
   code?: number;
-  isVercelBlocking?: boolean;
   id?: string;
 }
 
@@ -22,11 +21,10 @@ function ErrorNotification() {
 
       setErrors(prev => [...prev, errorWithId]);
 
-      // Auto-remove error after 8 seconds (or 15 seconds for Vercel blocking)
-      const timeout = error.isVercelBlocking ? 15000 : 8000;
+      // Auto-remove error after 8 seconds
       setTimeout(() => {
         setErrors(prev => prev.filter(e => e.id !== errorId));
-      }, timeout);
+      }, 8000);
     };
 
     window.addEventListener('workerError', handleWorkerError as EventListener);
@@ -56,7 +54,7 @@ function ErrorNotification() {
           style={{
             padding: '12px 16px',
             marginBottom: '10px',
-            backgroundColor: error.isVercelBlocking ? '#ff6b6b' : '#dc3545',
+            backgroundColor: '#dc3545',
             color: 'white',
             borderRadius: '4px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -64,21 +62,9 @@ function ErrorNotification() {
             lineHeight: '1.4',
           }}
         >
-          {error.isVercelBlocking ? (
-            <>
-              <strong>Vercel is blocking requests (Error 403)</strong>
-              <br />
-              <small>Waiting 1 minute before retry...</small>
-              <br />
-              {error.message}
-            </>
-          ) : (
-            <>
-              <strong>Upload Error {error.code ? `(${error.code})` : ''}</strong>
-              <br />
-              {error.message}
-            </>
-          )}
+          <strong>Upload Error {error.code ? `(${error.code})` : ''}</strong>
+          <br />
+          {error.message}
         </div>
       ))}
     </div>

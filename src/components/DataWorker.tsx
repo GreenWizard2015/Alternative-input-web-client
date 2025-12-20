@@ -13,15 +13,15 @@ const DataWorker = ({ incrementStats, changeActiveUploads, onError }) => {
         changeActiveUploads({ total: inQueue, duration: null });
         return;
       } else if('error' === e.data.status) {
-        const { error, code, isVercelBlocking } = e.data;
+        const { error, code } = e.data;
         // Dispatch error event to UI
         const errorEvent = new CustomEvent('workerError', {
-          detail: { message: error, code, isVercelBlocking }
+          detail: { message: error, code }
         });
         window.dispatchEvent(errorEvent);
 
         if(onError) {
-          onError({ message: error, code, isVercelBlocking });
+          onError({ message: error, code });
         }
         return;
       } else {

@@ -21,11 +21,10 @@
 //   @param chunks - Number of chunks received by server
 //   @param inQueue - Items still waiting to be processed
 //
-// - { status: 'error', error: string, code: number|null, isVercelBlocking: boolean }
+// - { status: 'error', error: string, code: number|null }
 //   Sent when upload fails after retries
 //   @param error - Error message describing what went wrong
 //   @param code - HTTP error code (e.g., 403)
-//   @param isVercelBlocking - True if error code is 403 (Vercel blocking)
 
 const { serialize } = require('./SerializeSamples');
 let queue = [];
@@ -92,8 +91,7 @@ function processQueue() {
     self.postMessage({
       status: 'error',
       error: error.message,
-      code: error.code || null,
-      isVercelBlocking: error.code === 403
+      code: error.code || null
     });
     queue.push(chunk); // put the chunk back to the queue
   }).finally(() => {

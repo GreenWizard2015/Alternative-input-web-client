@@ -44,14 +44,6 @@ describe('SampleBuffer', () => {
     expect(allBuckets).toHaveLength(2);
   });
 
-  it('should calculate utilization', () => {
-    for (let i = 0; i < 50; i++) {
-      buffer.addSample(createMockSample());
-    }
-    const utilization = buffer.getUtilization(100);
-    expect(utilization).toBe(50);
-  });
-
   it('should detect full buckets', () => {
     // Add 2 samples to same bucket (same camera)
     buffer.addSample(createMockSample({ cameraId: 'camera1' }));

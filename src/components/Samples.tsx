@@ -142,11 +142,6 @@ class SampleBuffer {
     this.totalCount = 0;
   }
 
-  getUtilization(maxSamplesPerBatch: number): number {
-    const total = this.getTotalSampleCount();
-    return Math.round((total / maxSamplesPerBatch) * 100);
-  }
-
   dropSamplesBeforeTime(minTime: number): number {
     let droppedCount = 0;
     for (const bucket of this.buckets.values()) {
@@ -177,7 +172,7 @@ class SampleUploadQueue {
   private endpoint: string;
   private maxSamplesPerBatch: number;
 
-  constructor(endpoint: string = '/api/upload', maxSamplesPerBatch: number = 1000) {
+  constructor(endpoint: string, maxSamplesPerBatch: number = 1000) {
     // Convert relative URL to absolute URL for Web Worker compatibility
     // Web Workers require absolute URLs for fetch
     if (typeof window !== 'undefined') {
@@ -234,7 +229,7 @@ class SampleManager {
     this.maxChunkSize = config.maxChunkSize ?? 90 * 1024 * 1024;
     this.maxSamplesPerBatch = Math.floor(this.maxChunkSize / sampleSize());
     this.autoFlushThreshold = config.autoFlushThreshold ?? 2 * this.maxSamplesPerBatch;
-    this.uploadEndpoint = config.uploadEndpoint ?? '/api/upload';
+    this.uploadEndpoint = config.uploadEndpoint ?? '/handle_upload.php';
     this.buffer = new SampleBuffer();
     this.uploadQueue = new SampleUploadQueue(this.uploadEndpoint, this.maxSamplesPerBatch);
   }
@@ -317,7 +312,6 @@ class SampleManager {
     return {
       totalSamples: total,
       bucketCount: this.buffer.getBucketCount(),
-      bufferUtilization: this.buffer.getUtilization(this.maxSamplesPerBatch),
     };
   }
 

@@ -185,12 +185,12 @@ describe('Samples Integration', () => {
     const now = Date.now();
 
     for (let i = 0; i < 50; i++) {
-      sampleManager.store(createMockSample(), { minTime: now - 3000, maxTime: now });
+      const result = sampleManager.store(createMockSample(), { minTime: now - 3000, maxTime: now });
+      expect(result.success).toBe(true);
     }
 
     const stats = sampleManager.getStats();
-    expect(stats.bufferUtilization).toBeGreaterThan(0);
-    expect(stats.bufferUtilization).toBeLessThanOrEqual(100);
+    expect(stats.totalSamples).toBe(50);
   });
 
   it('should handle getBuffer accessor', () => {

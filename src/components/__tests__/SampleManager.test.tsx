@@ -86,7 +86,6 @@ describe('SampleManager', () => {
     const stats = manager.getStats();
     expect(stats.totalSamples).toBeGreaterThanOrEqual(2);
     expect(stats.bucketCount).toBeGreaterThanOrEqual(1);
-    expect(stats.bufferUtilization).toBeGreaterThanOrEqual(0);
   });
 
   it('should clear all samples', () => {
