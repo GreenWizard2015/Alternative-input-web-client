@@ -1,17 +1,17 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toggleFullscreen } from "../utils/canvas";
 import UI from "./UI";
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "../modes/AppMode";
 import { DetectionResult } from "./FaceDetector";
+import FaceDetector from "./FaceDetector";
 import { sampleManager, Sample } from "./Samples";
 import { Intro } from "./Intro";
 // redux related imports
 import { connect } from "react-redux";
 import { setMode } from "../store/slices/App";
 import { RootState } from "../store";
-import dynamic from "next/dynamic";
 import UploadsNotification from "./uploadsNotification";
 import ErrorNotification from "./errorNotification";
 import { hash128Hex } from "../utils";
@@ -24,8 +24,6 @@ function areEyesDetected(sample: any): boolean {
   return (leftEye != null) || (rightEye != null);
 }
 
-// DYNAMIC IMPORT of FaceDetector
-const FaceDetector = dynamic(() => import('./FaceDetector'), { ssr: false });
 
 type TickData = {
   canvas: HTMLCanvasElement;
@@ -125,6 +123,35 @@ function AppComponent(
     detectionsByCamera.current.clear();
   }, [gameMode, userId, placeId, screenId]);
 
+  // Memoize onWebcamChange callback to prevent infinite loops
+  const onWebcamChange = useCallback((ids: string[]) => {
+    setWebcamIds(ids);
+  }, []);
+
+  // Log camera changes for debugging
+  useEffect(() => {
+    if (webcamIds.length > 0) {
+      console.log('[App] Camera IDs updated:', webcamIds);
+    }
+  }, [webcamIds]);
+
+  // Clean up detections for disabled cameras
+  useEffect(() => {
+    // Remove detections from cameras that are no longer selected
+    detectionsByCamera.current.forEach((_, cameraId) => {
+      if (!webcamIds.includes(cameraId)) {
+        detectionsByCamera.current.delete(cameraId);
+      }
+    });
+
+    // Remove eye detection tracking for cameras that are no longer selected
+    eyesByCamera.current.forEach((_, cameraId) => {
+      if (!webcamIds.includes(cameraId)) {
+        eyesByCamera.current.delete(cameraId);
+      }
+    });
+  }, [webcamIds]);
+
   function onKeyDown(exit: () => void) {
     return (event: React.KeyboardEvent<HTMLCanvasElement>) => {
       const isExit = event.code === 'Escape';
@@ -161,7 +188,7 @@ function AppComponent(
           throw new Error("Unknown mode: " + mode);
       }
     },
-    [mode, processCameraSamples, onMenuTick, onGameTick]
+    [mode, processCameraSamples]
   );
 
   // Separate effect for viewport tracking and screen ID generation
@@ -269,7 +296,7 @@ function AppComponent(
   } else if (mode === 'menu') {
     content = (
       <UI
-        onWebcamChange={setWebcamIds}
+        onWebcamChange={onWebcamChange}
         onStart={startGame}
         canStart={eyesVisible}
         fps={fps}
@@ -316,7 +343,7 @@ function AppComponent(
       <ErrorNotification />
       {content}
       <FaceDetector
-        cameraIdsStrList={webcamIds.sort().join(',')}
+        cameraIdsStrList={webcamIds.length > 0 ? webcamIds.sort().join(',') : ''}
         onDetect={onDetect}
         goal={goalPosition}
         onFPS={setFps}

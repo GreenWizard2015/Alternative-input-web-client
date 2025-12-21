@@ -177,7 +177,7 @@ export function results2sample(results, frame, tmpCanvas, settings = DEFAULT_SET
     { mode, padding, SIZE, image: frame }
   );
 
-  if(478 != landmarks.length) {
+  if(478 !== landmarks.length) {
     throw new Error('Expected 478 points');
   }
   // Store normalized points (0-1 range) instead of pixel coordinates

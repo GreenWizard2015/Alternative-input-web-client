@@ -25,7 +25,7 @@ function UI({
 
   React.useEffect(() => {
     selectDefaultValues();
-  }, []);
+  }, [selectDefaultValues]);
 
   const removeUser = React.useCallback(() => {
     // confirm dialog

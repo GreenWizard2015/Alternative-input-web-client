@@ -1,5 +1,5 @@
 /* eslint-env worker */
-/* eslint no-restricted-globals: 0 */  // Disables no-restricted-globals lint error for this file
+/* eslint-disable no-restricted-globals */  // Worker code needs access to 'self'
 
 // Data Upload Worker - handles sample serialization and uploading to backend
 //

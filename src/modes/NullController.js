@@ -1,7 +1,4 @@
 class NullController {
-  constructor() {
-  }
-  
   onKeyDown(event) {
   }
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 // Single Camera Worker - handles face detection and sample generation
 //
 // MESSAGES RECEIVED:

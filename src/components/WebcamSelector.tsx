@@ -37,17 +37,31 @@ function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelect
   }
 
   function handleRefresh() {
+    console.log('[WebcamSelector] handleRefresh called, current selectedWebcams:', selectedWebcams);
     navigator.mediaDevices.enumerateDevices().then(devices => {
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('[WebcamSelector] Found video devices:', videoDevices.map(d => ({
+        deviceId: d.deviceId,
+        label: d.label,
+        groupId: d.groupId
+      })));
       setWebcams(videoDevices);
       // Auto-select first camera if none selected and cameras are available
-      if (0 < videoDevices.length && selectedWebcams.length === 0) {
-        setSelectedWebcams([videoDevices[0].deviceId]);
-      }
+      // if (0 < videoDevices.length && selectedWebcams.length === 0) {
+      //   console.log('[WebcamSelector] Auto-selecting first camera:', videoDevices[0].deviceId);
+      //   setSelectedWebcams([videoDevices[0].deviceId]);
+      // } else {
+      //   console.log('[WebcamSelector] Not auto-selecting. videoDevices.length:', videoDevices.length, 'selectedWebcams.length:', selectedWebcams.length);
+      // }
+    }).catch(err => {
+      console.error('[WebcamSelector] Failed to enumerate devices:', err);
     });
   }
 
-  useEffect(handleRefresh, []); // call handleRefresh on mount
+  useEffect(() => {
+    console.log('[WebcamSelector] useEffect triggered, selectedWebcams.length:', selectedWebcams.length);
+    handleRefresh();
+  }, [selectedWebcams.length]); // call handleRefresh on mount and when selection changes
 
   return (
     <div className="webcam-selector">

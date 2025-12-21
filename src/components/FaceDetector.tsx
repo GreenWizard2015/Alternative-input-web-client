@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
-import Webcam from 'react-webcam';
+import { useEffect, useRef } from 'react';
 import { DEFAULT_SETTINGS } from '../utils/MP';
 
 const DETECTOR_SETTINGS = {
@@ -8,6 +7,9 @@ const DETECTOR_SETTINGS = {
   minDetectionConfidence: 0.2,
   minTrackingConfidence: 0.2,
 };
+
+const CAPTURE_INTERVAL = 20;
+const READINESS_TIMEOUT = 3000;
 
 export type DetectionResult = {
   cameraId: string;
@@ -25,220 +27,201 @@ type FaceDetectorProps = {
 } & Partial<typeof DETECTOR_SETTINGS>;
 
 export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrList, goal }: FaceDetectorProps) {
-  // Per-camera FPS tracking
-  const framesCount = useRef<Map<string, number>>(new Map());
-  const samplesCount = useRef<Map<string, number>>(new Map());
-  const lastTime = useRef(Date.now());
+  const videoRefs = useRef<Map<string, HTMLVideoElement | null>>(new Map());
+  const workersRef = useRef<Map<string, Worker>>(new Map());
+  const fpsRef = useRef<Map<string, { frames: number; samples: number; lastTime: number }>>(new Map());
 
+  // Set up workers and stream capture
   useEffect(() => {
-    // Initialize counters for all cameras
-    cameraIdsStrList.split(",").forEach(cameraId => {
-      if (!framesCount.current.has(cameraId)) {
-        framesCount.current.set(cameraId, 0);
-      }
-      if (!samplesCount.current.has(cameraId)) {
-        samplesCount.current.set(cameraId, 0);
-      }
-    });
-  }, [cameraIdsStrList]);
+    const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
+    if (cameraIds.length === 0) return;
 
-  useEffect(() => {
-    if (!onFPS) return;
+    const workers = workersRef.current;
+    const streams = new Map<string, MediaStream>();
+    let timerId: NodeJS.Timeout | null = null;
+    let isCapturing = false;
 
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const duration = now - lastTime.current;
-      const fpsData: Record<string, { camera: number; samples: number }> = {};
-
-      cameraIdsStrList.split(",").forEach(cameraId => {
-        const cameraFps = (framesCount.current.get(cameraId) || 0) / duration * 1000;
-        const samplesFps = (samplesCount.current.get(cameraId) || 0) / duration * 1000;
-        fpsData[cameraId] = { camera: cameraFps, samples: samplesFps };
-        console.log(`[FPS] ${cameraId}: ${cameraFps.toFixed(1)} camera fps, ${samplesFps.toFixed(1)} samples fps`);
-        framesCount.current.set(cameraId, 0);
-        samplesCount.current.set(cameraId, 0);
+    // Clean up removed cameras' workers
+    Array.from(workers.keys())
+      .filter(id => !cameraIds.includes(id))
+      .forEach(id => {
+        workers.get(id)?.postMessage({ type: 'stop' });
+        workers.get(id)?.terminate();
+        workers.delete(id);
       });
 
-      onFPS(fpsData);
-      lastTime.current = now;
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [onFPS, cameraIdsStrList]);
-
-  const webcamRefs = useRef<Map<string, Webcam | null>>(new Map());
-  const callbackRef = useRef<((result: DetectionResult) => void) | null>(null);
-  const workersRef = useRef<Map<string, Worker>>(new Map());
-
-  useEffect(() => {
-    callbackRef.current = onDetect;
-  }, [onDetect]);
-
-  // Set up worker for each camera
-  useEffect(() => {
-    // Clean up old workers for cameras that are no longer selected
-    const oldCameraIds = Array.from(workersRef.current.keys());
-    for (const cameraId of oldCameraIds) {
-      if (!cameraIdsStrList.includes(cameraId)) {
-        const worker = workersRef.current.get(cameraId);
-        if (worker) {
-          worker.postMessage({ type: 'stop' });
-          worker.terminate();
-          workersRef.current.delete(cameraId);
-        }
-      }
-    }
-
-    // Set up new workers for newly selected cameras
-    cameraIdsStrList.split(",").forEach(cameraId => {
-      if (!workersRef.current.has(cameraId)) {
+    // Initialize new workers
+    cameraIds.forEach(cameraId => {
+      if (!workers.has(cameraId)) {
         const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
-        workersRef.current.set(cameraId, worker);
+        workers.set(cameraId, worker);
 
-        // Handle detection results from worker
         worker.onmessage = (e) => {
-          if (e.data.type === 'detected') {
-            const { sample } = e.data;
+          if (e.data.type === 'detected' && onDetect) {
+            const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: Date.now() };
+            fps.samples++;
+            fpsRef.current.set(cameraId, fps);
 
-            if (sample && callbackRef.current) {
-              const newFrameCount = (framesCount.current.get(cameraId) || 0) + 1;
-              const newSampleCount = (samplesCount.current.get(cameraId) || 0) + 1;
-              framesCount.current.set(cameraId, newFrameCount);
-              samplesCount.current.set(cameraId, newSampleCount);
-
-              callbackRef.current({
-                cameraId,
-                sample,
-                settings: DETECTOR_SETTINGS,
-              });
-            } else {
-              console.warn(`[${cameraId}] Detected but no sample or no callback`);
-            }
+            onDetect({
+              cameraId,
+              sample: e.data.sample,
+              settings: DETECTOR_SETTINGS,
+            });
           }
         };
 
-        // Initialize worker with camera ID
-        console.log(`[Worker] Initializing worker for camera ${cameraId}`);
         worker.postMessage({ type: 'init', id: cameraId });
       }
     });
-
-    return () => {
-      // On unmount, clean up all workers
-      workersRef.current.forEach((worker) => {
-        worker.postMessage({ type: 'stop' });
-        worker.terminate();
-      });
-      workersRef.current.clear();
-    };
-  }, [cameraIdsStrList]);
-
-  // Set up native MediaDevices streams and batched frame capture
-  useEffect(() => {
-    const cameraIds = cameraIdsStrList.split(",");
-    let timerId: NodeJS.Timeout | null = null;
-    let isCapturing = false;
-    const streams = new Map<string, MediaStream>(); // cameraId -> MediaStream
-    const CAPTURE_INTERVAL = 50; // Frame capture interval
 
     // Initialize camera streams
     const initializeStreams = async () => {
       for (const cameraId of cameraIds) {
         try {
+          const video = videoRefs.current.get(cameraId);
+          if (!video) continue;
+
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { deviceId: { exact: cameraId } }
           });
-          streams.set(cameraId, stream);
 
-          // Attach to video element for frame capture
-          const video = webcamRefs.current.get(cameraId)?.video;
-          if (video) {
-            video.srcObject = stream;
-            video.play().catch(err => console.error(`[${cameraId}] Play error:`, err));
-          }
+          streams.set(cameraId, stream);
+          video.srcObject = stream;
+          await video.play().catch(() => {});
+
+          // Wait for video to be ready
+          await new Promise<void>((resolve) => {
+            let done = false;
+            const timer = setInterval(() => {
+              if (!done && video.readyState >= video.HAVE_ENOUGH_DATA) {
+                done = true;
+                clearInterval(timer);
+                resolve();
+              }
+            }, 50);
+            setTimeout(() => {
+              if (!done) {
+                done = true;
+                clearInterval(timer);
+                resolve();
+              }
+            }, READINESS_TIMEOUT);
+          });
         } catch (error) {
-          console.error(`[${cameraId}] Failed to get media stream:`, error);
+          console.error(`[${cameraId}] Failed to initialize stream`);
         }
       }
     };
 
-    // Batch capture frames from all cameras
+    // Capture frames from cameras
     const captureFrames = async () => {
       if (isCapturing) {
-        timerId = setTimeout(captureFrames, 0);
+        timerId = setTimeout(captureFrames, CAPTURE_INTERVAL);
         return;
       }
 
       isCapturing = true;
-      const framesToSend: Array<{ cameraId: string; frame: ImageBitmap; time: number }> = [];
+      const frames: Array<{ cameraId: string; frame: ImageBitmap; time: number }> = [];
 
-      for (const [cameraId, stream] of streams) {
-        // Get video track from stream
-        const videoTrack = stream.getVideoTracks()[0];
-        if (!videoTrack || !videoTrack.readyState || videoTrack.readyState !== 'live') {
-          continue;
-        }
+      for (const [cameraId] of streams) {
+        const video = videoRefs.current.get(cameraId);
+        if (!video?.videoWidth || video.readyState < video.HAVE_ENOUGH_DATA) continue;
 
         try {
-          const video = webcamRefs.current.get(cameraId)?.video;
-          if (!video || (video.readyState !== video.HAVE_ENOUGH_DATA)) {
-            continue;
-          }
-
-          const now = Date.now();
           const frame = await createImageBitmap(video);
-          framesToSend.push({ cameraId, frame, time: now });
+          frames.push({ cameraId, frame, time: Date.now() });
+
+          // Update FPS counter
+          const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: Date.now() };
+          fps.frames++;
+          fpsRef.current.set(cameraId, fps);
         } catch (error) {
-          console.error(`[${cameraId}] Frame capture error:`, error);
+          // Silently skip frame capture errors
         }
       }
 
-      // Send all captured frames to their respective workers
-      if (framesToSend.length > 0) {
-        console.log(`[Capture] Sending ${framesToSend.length} frames: ${framesToSend.map(f => f.cameraId).join(', ')}`);
-      }
-      for (const { cameraId, frame, time } of framesToSend) {
-        const worker = workersRef.current.get(cameraId);
-        if (worker) {
-          worker.postMessage({ type: 'frame', frame, time, goal: goal.current }, [frame]);
-        }
-      }
-
+      // Send frames to workers
+      frames.forEach(({ cameraId, frame, time }) => {
+        workers.get(cameraId)?.postMessage(
+          { type: 'frame', frame, time, goal: goal.current },
+          [frame]
+        );
+      });
 
       isCapturing = false;
       timerId = setTimeout(captureFrames, CAPTURE_INTERVAL);
     };
 
-    // Initialize streams and start capture
+    // Report FPS
+    let fpsTimer: NodeJS.Timeout | null = null;
+    if (onFPS) {
+      fpsTimer = setInterval(() => {
+        const now = Date.now();
+        const fpsData: Record<string, { camera: number; samples: number }> = {};
+
+        cameraIds.forEach(cameraId => {
+          const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: now };
+          const duration = (now - fps.lastTime) / 1000;
+          fpsData[cameraId] = {
+            camera: fps.frames / duration,
+            samples: fps.samples / duration,
+          };
+          fps.frames = 0;
+          fps.samples = 0;
+          fps.lastTime = now;
+        });
+
+        onFPS(fpsData);
+      }, 1500);
+    }
+
+    // Start initialization
     initializeStreams().then(() => {
-      console.log(`[Capture] Initialized ${streams.size} camera streams`);
       if (streams.size > 0) {
         captureFrames();
       }
     });
 
     return () => {
-      if (timerId !== null) {
-        clearTimeout(timerId);
-      }
-
-      // Clean up streams
-      streams.forEach(stream => {
-        stream.getTracks().forEach(track => track.stop());
+      if (timerId) clearTimeout(timerId);
+      if (fpsTimer) clearInterval(fpsTimer);
+      streams.forEach(stream => stream.getTracks().forEach(t => t.stop()));
+      workers.forEach(w => {
+        w.postMessage({ type: 'stop' });
+        w.terminate();
       });
-      streams.clear();
+      workers.clear();
     };
-  }, [cameraIdsStrList]);
+  }, [cameraIdsStrList, goal, onDetect, onFPS]);
+
+  const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
+
+  // Don't render if no cameras selected
+  if (cameraIds.length === 0) {
+    return null;
+  }
 
   return (
     <>
-      {cameraIdsStrList.split(",").map(cameraId => (
-        <Webcam
+      {cameraIds.map(cameraId => (
+        <video
           key={cameraId}
-          ref={(ref) => {
-            webcamRefs.current.set(cameraId, ref);
+          ref={(el) => {
+            if (el) {
+              videoRefs.current.set(cameraId, el);
+            }
           }}
-          style={{ display: 'none' }}
-          videoConstraints={{ deviceId: { exact: cameraId } }}
+          // Hide video element off-screen but allow buffering
+          style={{
+            position: 'absolute',
+            left: '-10000px',
+            width: '1px',
+            height: '1px',
+          }}
+          // Autoplay allows browser to start buffering immediately
+          autoPlay
+          playsInline
+          muted
         />
       ))}
     </>

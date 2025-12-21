@@ -2,6 +2,7 @@
   "name": "alternative-input-web-client",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/tasks-vision": "^0.10.13",
@@ -14,20 +15,22 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/react-redux": "^7.1.33",
+    "ajv": "^8.17.1",
     "bootstrap": "^5.3.3",
     "cubic-spline": "^3.0.3",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "murmur-128": "^1.0.0",
-    "next": "^16.0.8",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.3",
     "react-dom": "^19.0.0",
     "react-i18next": "^16.5.0",
     "react-redux": "^9.1.2",
+    "react-scripts": "5.0.1",
     "react-webcam": "^7.0.1",
     "redux-persist": "^6.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
@@ -35,11 +38,28 @@
     "ts-jest": "^29.1.1"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "start": "react-scripts start",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
