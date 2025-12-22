@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { DEFAULT_SETTINGS } from '../utils/MP';
+import { Sample } from "./Samples";
+
+// @ts-ignore - worker-loader transforms this into a Worker constructor
+import FaceDetectorWorker from './FaceDetector.worker.ts';
 
 const DETECTOR_SETTINGS = {
   ...DEFAULT_SETTINGS,
@@ -8,12 +12,12 @@ const DETECTOR_SETTINGS = {
   minTrackingConfidence: 0.2,
 };
 
-const CAPTURE_INTERVAL = 20;
+const CAPTURE_INTERVAL = 1000 / 30;
 const READINESS_TIMEOUT = 3000;
 
 export type DetectionResult = {
   cameraId: string;
-  sample: any;
+  sample: Sample;
   settings: typeof DEFAULT_SETTINGS;
 };
 
@@ -53,7 +57,7 @@ export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrLis
     // Initialize new workers
     cameraIds.forEach(cameraId => {
       if (!workers.has(cameraId)) {
-        const worker = new Worker(new URL('./FaceDetector.worker.js', import.meta.url));
+        const worker = new FaceDetectorWorker();
         workers.set(cameraId, worker);
 
         worker.onmessage = (e) => {

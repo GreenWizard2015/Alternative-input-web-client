@@ -25,12 +25,12 @@ import { results2sample, DEFAULT_SETTINGS } from "../utils/MP";
 let frameQueue = [];
 let isProcessing = false;
 let faceLandmarker = null;
-let cameraId = null;
 let offscreenCanvas = null;
 
 // Initialize face detection
 const initFaceLandmarker = async () => {
   if (faceLandmarker) return;
+
   // Initialize OffscreenCanvas for sample processing
   offscreenCanvas = new OffscreenCanvas(1, 1);
 
@@ -73,7 +73,6 @@ const processQueue = async () => {
       self.postMessage({type: 'detected', sample});
     }
   } catch (error) {
-    console.error(`Detection failed:`, error);
     frame.close();
   }
 
@@ -81,12 +80,10 @@ const processQueue = async () => {
 };
 
 self.onmessage = async function({ data }) {
-  const { type, id, frame, time, goal } = data;
+  const { type, frame, time, goal } = data;
 
   if (type === 'init') {
-    cameraId = id;
     await initFaceLandmarker();
-    console.log(`Worker for camera ${cameraId} initialized`);
     return;
   }
 

@@ -16,6 +16,7 @@ import UploadsNotification from "./uploadsNotification";
 import ErrorNotification from "./errorNotification";
 import { hash128Hex } from "../utils";
 import GoalsProgress from "./GoalsProgress";
+import DataWorker from "./DataWorker";
 
 // Utility function to check if eyes are detected in a sample
 function areEyesDetected(sample: any): boolean {
@@ -45,9 +46,7 @@ type TickData = {
 
 function onGameTick(data: TickData) {
   const { gameMode } = data;
-  gameMode.onOverlay(data);
-  gameMode.onRender(data);
-  return gameMode.accept() ? gameMode.getGoal() : null;
+  return gameMode.process(data);
 }
 
 type AppSettings = {
@@ -89,43 +88,51 @@ function AppComponent(
         const eyesDetected = areEyesDetected(frame.sample);
         eyesByCamera.current.set(frame.cameraId, eyesDetected);
 
-        // Update global flag if any camera has eyes detected at least once
-        setEyesVisible(eyesVisible || eyesDetected);
+        // Update global flag if any camera has eyes detected
+        const anyEyesDetected = Array.from(eyesByCamera.current.values()).some(hasEyes => hasEyes);
+        setEyesVisible(anyEyesDetected);
+
+        if (gameMode == null || gameMode.isPaused()) return;
+        if (goalPosition.current == null) return;
+
+        if (!areEyesDetected(frame.sample)) return;
+
+        const { time, leftEye, rightEye, points, goal } = frame.sample;
+
+        const sample = new Sample({
+          time, leftEye, rightEye, points, goal,
+          userId, placeId, screenId,
+          cameraId: hash128Hex(frame.cameraId)
+        });
+        if(gameMode.accept()) {
+          // Store samples in time window: from (paused + 3s) to (now - 3s)
+          // This gives 3-second buffers at start and end of game
+          const minTime = gameMode.lastPausedTime() + 3000;
+          const maxTime = Date.now() - 3000;
+          sampleManager.store(sample, { minTime, maxTime });
+        }
       }
-    }, [eyesVisible]
+    }, [gameMode, placeId, screenId, userId]
   );
-
-  // Process samples from all cameras in game mode
-  const processCameraSamples = useCallback(() => {
-    if (gameMode == null || gameMode.isPaused()) return;
-    if (goalPosition.current == null) return;
-
-    detectionsByCamera.current.forEach((frame, cameraId) => {
-      if (!frame.sample) return;
-
-      if (!areEyesDetected(frame.sample)) return;
-
-      const { time, leftEye, rightEye, points, goal } = frame.sample;
-
-      const sample = new Sample({
-        time, leftEye, rightEye, points, goal,
-        userId, placeId, screenId,
-        cameraId: hash128Hex(cameraId)
-      });
-      if(gameMode.accept()) {
-        // Store samples in time window: from (paused + 3s) to (now - 3s)
-        // This gives 3-second buffers at start and end of game
-        const minTime = gameMode.lastPausedTime() + 3000;
-        const maxTime = Date.now() - 3000;
-        sampleManager.store(sample, { minTime, maxTime });
-      }
-    });
-    detectionsByCamera.current.clear();
-  }, [gameMode, userId, placeId, screenId]);
 
   // Memoize onWebcamChange callback to prevent infinite loops
   const onWebcamChange = useCallback((ids: string[]) => {
     setWebcamIds(ids);
+  }, []);
+
+  // Request camera permissions on app start
+  useEffect(() => {
+    const requestCameraPermissions = async () => {
+      try {
+        // Request camera access - this will prompt user for permission
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Stop the stream immediately since we just need to request permission
+        stream.getTracks().forEach(track => track.stop());
+      } catch (error) {
+        console.error('Failed to request camera permissions:', error);
+      }
+    };
+    requestCameraPermissions();
   }, []);
 
   // Log camera changes for debugging
@@ -180,7 +187,6 @@ function AppComponent(
           return onMenuTick(data);
         case "game":
           canvasRef.current.focus();
-          processCameraSamples();
           return onGameTick(data);
         case "intro":
           return null; // ignore
@@ -188,7 +194,7 @@ function AppComponent(
           throw new Error("Unknown mode: " + mode);
       }
     },
-    [mode, processCameraSamples]
+    [mode]
   );
 
   // Separate effect for viewport tracking and screen ID generation
@@ -275,20 +281,20 @@ function AppComponent(
     return () => { cancelAnimationFrame(animationFrameId.current); };
   }, [onTick, gameMode, userId, placeId, activeUploads, meanUploadDuration, fps, screenId]);
 
-  function onPause() {
+  const onPause = useCallback(() => {
     const now = Date.now();
-    // Flush samples in time window: from (paused + 3s) to (now - 3s)
+    // Flush samples in time window: from 0 to (now - 3s)
     // This matches the store() window for consistency
-    const minTime = gameMode ? gameMode.lastPausedTime() + 3000 : now - 3000;
+    const minTime = 0;
     const maxTime = now - 3000;
     sampleManager.flushAndClear({ minTime, maxTime });
-  }
+  }, [gameMode]);
 
-  function startGame(mode: AppMode) {
+  const startGame = useCallback((mode: AppMode) => {
     setMode("game");
     setGameMode(mode);
     mode.onPause = onPause;
-  }
+  }, [onPause]);
 
   let content = null;
   if (mode === 'intro') {
@@ -341,6 +347,7 @@ function AppComponent(
     <>
       <UploadsNotification />
       <ErrorNotification />
+      <DataWorker />
       {content}
       <FaceDetector
         cameraIdsStrList={webcamIds.length > 0 ? webcamIds.sort().join(',') : ''}

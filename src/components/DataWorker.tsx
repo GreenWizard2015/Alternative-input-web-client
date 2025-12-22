@@ -1,12 +1,31 @@
 import { useEffect } from 'react';
+import { connect } from 'react-redux';
 
-let worker: Worker;
-const DataWorker = ({ incrementStats, changeActiveUploads, onError }) => {
+// @ts-ignore - worker-loader transforms this into a Worker constructor
+import DataWorkerModule from './data.worker.ts';
+
+// Lazy load to avoid circular dependency
+const getActions = () => {
+  const { incrementStats } = require('../store/slices/UI');
+  const { changeActiveUploads } = require('../store/slices/App');
+  return { incrementStats, changeActiveUploads };
+};
+
+let worker: any;
+
+type DataWorkerProps = {
+  incrementStats: any;
+  changeActiveUploads: any;
+  onError?: (error: any) => void;
+};
+
+const DataWorkerComponent = ({ incrementStats, changeActiveUploads, onError }: DataWorkerProps) => {
   useEffect(() => {
-    const newWorker = new Worker(new URL('./data.worker.js', import.meta.url));
+    const newWorker = new DataWorkerModule();
     worker = newWorker;
+    console.log(worker);
 
-    newWorker.onmessage = function(e) {
+    newWorker.onmessage = function(e: MessageEvent<any>) {
       console.log('Message received from worker', e.data);
       if('start' === e.data.status) {
         const { inQueue } = e.data;
@@ -39,6 +58,16 @@ const DataWorker = ({ incrementStats, changeActiveUploads, onError }) => {
   }, [incrementStats, changeActiveUploads, onError]);
   return null;
 };
+
+const mapDispatchToProps = () => {
+  const { incrementStats, changeActiveUploads } = getActions();
+  return {
+    incrementStats,
+    changeActiveUploads
+  };
+};
+
+const DataWorker = connect(null, mapDispatchToProps)(DataWorkerComponent);
 
 export default DataWorker;
 export { worker };

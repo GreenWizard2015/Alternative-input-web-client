@@ -26,12 +26,29 @@
 //   @param error - Error message describing what went wrong
 //   @param code - HTTP error code (e.g., 403)
 
-const { serialize } = require('./SerializeSamples');
-let queue = [];
+import { serialize } from './SerializeSamples';
+import type { Sample } from './SamplesDef';
+
+type QueueItem = {
+  serializedSamples: ArrayBuffer;
+  endpoint: string;
+  userId: string;
+  placeId: string;
+  count: number;
+};
+
+type UploadMessage = {
+  samples: Sample[];
+  endpoint: string;
+};
+
+type ErrorWithCode = Error & { code?: number };
+
+let queue: QueueItem[] = [];
 let isRunning = false;
 
 // Retry upload with exponential backoff for transient failures
-async function uploadWithRetry(fd, endpoint, maxRetries = 3) {
+async function uploadWithRetry(fd: FormData, endpoint: string, maxRetries = 3): Promise<any> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(endpoint, {
@@ -40,27 +57,45 @@ async function uploadWithRetry(fd, endpoint, maxRetries = 3) {
       });
       if (response.ok) return response.json();
 
-      const error = new Error(`HTTP error! status: ${response.status}`);
+      // Handle 403 Forbidden (Vercel blocking)
+      if (response.status === 403) {
+        console.warn('Received 403 error from Vercel, sleeping for 1 minute before retry...');
+        const error = new Error(`HTTP error! status: ${response.status}`) as ErrorWithCode;
+        error.code = 403;
+        throw error;
+      }
+
+      const error = new Error(`HTTP error! status: ${response.status}`) as ErrorWithCode;
       error.code = response.status;
       throw error;
     } catch (e) {
-      if (i === maxRetries - 1) throw e;
-      // Exponential backoff: 1s, 2s, 4s
-      const delayMs = Math.pow(2, i) * 1000;
-      await new Promise(r => setTimeout(r, delayMs));
+      const error = e as ErrorWithCode;
+      // Handle 403 errors with longer delay
+      if (error.code === 403) {
+        if (i === maxRetries - 1) throw e;
+        console.log('Waiting 1 minute before retrying due to 403 Forbidden...');
+        await new Promise(r => setTimeout(r, 60000)); // 1 minute
+      } else {
+        if (i === maxRetries - 1) throw e;
+        // Exponential backoff: 1s, 2s, 4s
+        const delayMs = Math.pow(2, i) * 1000;
+        await new Promise(r => setTimeout(r, delayMs));
+      }
     }
   }
 }
 
-function processQueue() {
+function processQueue(): void {
   self.postMessage({ status: 'start', inQueue: queue.length });
   isRunning = queue.length > 0;
   if (!isRunning) return;
   const chunk = queue.pop(); // get the last element from the queue
+  if (!chunk) return;
+
   const { serializedSamples, endpoint, userId, placeId, count } = chunk;
   console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint);
   const fd = new FormData();
-  fd.append('chunk', new Blob([serializedSamples], {type: 'application/octet-stream'}));
+  fd.append('chunk', new Blob([new Uint8Array(serializedSamples)], {type: 'application/octet-stream'}));
 
   const startTime = Date.now();
   uploadWithRetry(fd, endpoint).then(() => {
@@ -71,7 +106,7 @@ function processQueue() {
       duration: endTime - startTime,
       userId, placeId, count,
     });
-  }).catch(error => {
+  }).catch((error: ErrorWithCode) => {
     console.error('Upload failed after retries:', error);
     self.postMessage({
       status: 'error',
@@ -84,10 +119,10 @@ function processQueue() {
   });
 }
 
-self.onmessage = function({ data }) {
-  const { samples, endpoint } = data;
+self.onmessage = function(event: MessageEvent<UploadMessage>) {
+  const { samples, endpoint } = event.data;
   // samples could have different ids, so we need to serialize them separately
-  const grouped = samples.reduce((acc, sample) => {
+  const grouped = samples.reduce((acc: Record<string, any[]>, sample) => {
     const { userId, placeId, screenId, cameraId } = sample;
     // Use pipe-separated format consistent with Sample.bucket() method
     const key = [userId, placeId, screenId, cameraId].join('|');
@@ -99,16 +134,16 @@ self.onmessage = function({ data }) {
   // serialize the samples before pushing them to the queue
   // in hope that it will reduce the memory usage
   for(const groupId in grouped) {
-    const samples = grouped[groupId];
-    const { userId, placeId } = samples[0]; // Extract userId and placeId from first sample
+    const groupedSamples = grouped[groupId];
+    const { userId, placeId } = groupedSamples[0]; // Extract userId and placeId from first sample
     // put to the start of the queue
     queue.push({
-      serializedSamples: serialize(samples),
+      serializedSamples: serialize(groupedSamples),
       endpoint,
       userId,
       placeId,
-      count: samples.length,
+      count: groupedSamples.length,
     });
   }
   if(!isRunning) processQueue(); // start processing the queue only if didn't start yet
-}
+};

@@ -1,6 +1,7 @@
 import i18n from "../i18n";
 import { Position } from "../components/SamplesDef";
 import { drawTarget } from "../utils/target";
+import { grayscale2image } from "../utils/MP";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 import { DetectionResult } from "../components/FaceDetector";
@@ -18,6 +19,7 @@ export type AppModeOverlayData = {
   eyesByCamera?: Map<string, boolean>;
   fps?: FPSData;
   collectedSampleCounts?: Record<string, number>;
+  detections?: Map<string, DetectionResult>;
 };
 
 export type AppModeRenderData = {
@@ -80,23 +82,35 @@ export class AppMode {
     // AppMode controls when this is called based on pause state
   }
 
+  process(data: AppModeRenderData): Position | null {
+    this.onRender(data);
+    this.onOverlay(data);
+    return this.accept() ? this.getGoal() : null;
+  }
+
   onRender(data: AppModeRenderData) {
     // Call doTick and visual effects only when not paused - AppMode manages timing
+    const { canvasCtx, viewport, detections } = data;
     const now = Date.now();
     const deltaT = this._paused ? 0 : (now - this._lastTickTime) / 1000; // in seconds
     this._lastTickTime = now;
     this.doTick(deltaT, data.viewport);
     this._background.onTick(deltaT);
     this._illumination.onTick(deltaT);
+    this._background.onRender(canvasCtx, viewport);
+    this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
+
+    // Draw metrics (FPS, eyes, goals) on top
+    const fps = (data as any).fps || {};
+    const collectedSampleCounts = (data as any).collectedSampleCounts || {};
+    this.drawMetrics(canvasCtx, fps, collectedSampleCounts, detections);
   }
 
   onOverlay(data: AppModeOverlayData) {
-    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {}, collectedSampleCounts = {} } = data;
+    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {}, collectedSampleCounts = {}, detections } = data;
     if (eyesByCamera) {
       this._eyesByCamera = eyesByCamera;
     }
-    this._background.onRender(canvasCtx, viewport);
-    this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
 
     const isOverflowed = MAX_UPLOADS < activeUploads;
     if(this._overflowed && (0 === activeUploads)) { // Reset
@@ -135,13 +149,30 @@ export class AppMode {
 
       // Show appropriate message based on why we're paused
       const { t } = i18n;
-      const pauseText = this._anyEyesDetected() ? t('canvas.paused') : t('canvas.eyesNotVisible');
+      const pauseText = t('canvas.paused');
       this.drawText({
         text: pauseText, viewport, canvasCtx, color: 'white',
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
       });
+    } else {
+      if(!this._anyEyesDetected()) {
+        const { t } = i18n;
+        this.drawText({
+          text: t('canvas.eyesNotVisible'), viewport, canvasCtx, color: 'white',
+          style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
+        });
+      }
     }
 
+    this.drawMetrics(canvasCtx, fps, collectedSampleCounts, detections);
+  }
+
+  private drawMetrics(
+    canvasCtx: CanvasRenderingContext2D,
+    fps: FPSData,
+    collectedSampleCounts: Record<string, number>,
+    detections: Map<string, DetectionResult> | undefined
+  ) {
     // Draw FPS in top-left corner
     canvasCtx.fillStyle = 'black';
     canvasCtx.font = '14px monospace';
@@ -158,6 +189,49 @@ export class AppMode {
       yOffset += 18;
       cameraIndex++;
     }
+
+    // Draw eye crops for all cameras
+    if (detections && detections.size > 0) {
+      let eyeIndex = 0;
+      const eyeX = 10;
+      const eyeStartY = yOffset + 20; // Below FPS display
+
+      detections.forEach((detection: any) => {
+        if (detection.sample && detection.settings) {
+          const { SIZE } = detection.settings;
+          const eyeY = eyeStartY + (SIZE + 10) * eyeIndex;
+
+          // Draw left eye
+          if (detection.sample.leftEye) {
+            const leftEyeImage = grayscale2image(detection.sample.leftEye, SIZE);
+            canvasCtx.putImageData(leftEyeImage, eyeX, eyeY);
+          }
+
+          // Draw right eye next to left eye
+          if (detection.sample.rightEye) {
+            const rightEyeImage = grayscale2image(detection.sample.rightEye, SIZE);
+            canvasCtx.putImageData(rightEyeImage, eyeX + SIZE + 5, eyeY);
+          }
+
+          // Draw camera label above eyes
+          if (detection.sample.leftEye || detection.sample.rightEye) {
+            canvasCtx.fillStyle = '#ffffff';
+            canvasCtx.font = '12px monospace';
+            canvasCtx.fillText(`Camera ${eyeIndex}`, eyeX, eyeY - 5);
+          }
+
+          if (detection.sample.goal) {
+            const goal = detection.sample.goal;
+            // Draw goal label
+            canvasCtx.fillStyle = '#ffff00';
+            canvasCtx.font = '12px monospace';
+            canvasCtx.fillText(`Goal: ${goal.x}, ${goal.y}`, eyeX, eyeY);
+          }
+
+          eyeIndex++;
+        }
+      });
+    }
   }
 
   _anyEyesDetected() {
@@ -170,7 +244,7 @@ export class AppMode {
   }
 
   static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {
-    return {
+    return { 
       x: position.x * viewport.width,
       y: position.y * viewport.height
     }
@@ -220,7 +294,7 @@ export class AppMode {
   }
 
   getGoal() {
-    return this._pos;
+    return {...this._pos};
   }
 
   getScore() {
