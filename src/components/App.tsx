@@ -288,13 +288,13 @@ function AppComponent(
     const minTime = 0;
     const maxTime = now - 3000;
     sampleManager.flushAndClear({ minTime, maxTime });
-  }, [gameMode]);
+  }, []);
 
   const startGame = useCallback((mode: AppMode) => {
     setMode("game");
     setGameMode(mode);
     mode.onPause = onPause;
-  }, [onPause]);
+  }, [onPause, setMode]);
 
   let content = null;
   if (mode === 'intro') {
