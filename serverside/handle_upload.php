@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
-
 $saveEndpoint = '';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -35,9 +34,13 @@ try {
     $fileData = file_get_contents($file['tmp_name']);
     error_log("Received file data: " . strlen($fileData));
 
+    // Create multipart form-data to send file properly
+    $cFile = new CURLFile($file['tmp_name'], $file['type'], 'chunk');
+    $postData = ['chunk' => $cFile];
+
     $ch = curl_init($saveEndpoint);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, ['chunk' => $fileData]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $response = curl_exec($ch);

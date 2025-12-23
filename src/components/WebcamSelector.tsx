@@ -49,12 +49,12 @@ function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelect
         })));
         setWebcams(videoDevices);
         // Auto-select first camera if none selected and cameras are available
-        // if (0 < videoDevices.length && selectedWebcams.length === 0) {
-        //   console.log('[WebcamSelector] Auto-selecting first camera:', videoDevices[0].deviceId);
-        //   setSelectedWebcams([videoDevices[0].deviceId]);
-        // } else {
-        //   console.log('[WebcamSelector] Not auto-selecting. videoDevices.length:', videoDevices.length, 'selectedWebcams.length:', selectedWebcams.length);
-        // }
+        if (0 < videoDevices.length && selectedWebcams.length === 0) {
+          console.log('[WebcamSelector] Auto-selecting first camera:', videoDevices[0].deviceId);
+          setSelectedWebcams([videoDevices[0].deviceId]);
+        } else {
+          console.log('[WebcamSelector] Not auto-selecting. videoDevices.length:', videoDevices.length, 'selectedWebcams.length:', selectedWebcams.length);
+        }
       }).catch(err => {
         console.error('[WebcamSelector] Failed to enumerate devices:', err);
       });
