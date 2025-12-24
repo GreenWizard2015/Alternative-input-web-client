@@ -16,7 +16,6 @@ export type AppModeOverlayData = {
   activeUploads: number;
   meanUploadDuration: number;
   eyesDetected: boolean;
-  eyesByCamera?: Map<string, boolean>;
   fps?: FPSData;
   collectedSampleCounts?: Record<string, number>;
   detections?: Map<string, DetectionResult>;
@@ -34,7 +33,6 @@ export type AppModeRenderData = {
   activeUploads: number;
   meanUploadDuration: number;
   eyesDetected: boolean;
-  eyesByCamera: Map<string, boolean>;
   fps: FPSData;
   detections: Map<string, DetectionResult>;
 };
@@ -55,7 +53,7 @@ export class AppMode {
   _background: CBackground = new CBackground();
   _illumination: CRandomIllumination = new CRandomIllumination();
   _overflowed: boolean = false;
-  _eyesByCamera: Map<string, boolean> = new Map(); // Per-camera eye detection
+  _eyesDetected: boolean = false;
 
   constructor() {
     this._paused = true;
@@ -90,7 +88,8 @@ export class AppMode {
 
   onRender(data: AppModeRenderData) {
     // Call doTick and visual effects only when not paused - AppMode manages timing
-    const { canvasCtx, viewport, detections } = data;
+    const { canvasCtx, viewport, detections, eyesDetected } = data;
+    this._eyesDetected = eyesDetected;
     const now = Date.now();
     const deltaT = this._paused ? 0 : (now - this._lastTickTime) / 1000; // in seconds
     this._lastTickTime = now;
@@ -107,10 +106,7 @@ export class AppMode {
   }
 
   onOverlay(data: AppModeOverlayData) {
-    const { canvasCtx, viewport, activeUploads, meanUploadDuration, eyesByCamera, fps = {}, collectedSampleCounts = {}, detections } = data;
-    if (eyesByCamera) {
-      this._eyesByCamera = eyesByCamera;
-    }
+    const { canvasCtx, viewport, activeUploads, meanUploadDuration, fps = {}, collectedSampleCounts = {}, detections } = data;
 
     const isOverflowed = MAX_UPLOADS < activeUploads;
     if(this._overflowed && (0 === activeUploads)) { // Reset
@@ -155,7 +151,7 @@ export class AppMode {
         style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
       });
     } else {
-      if(!this._anyEyesDetected()) {
+      if(!this._eyesDetected) {
         const { t } = i18n;
         this.drawText({
           text: t('canvas.eyesNotVisible'), viewport, canvasCtx, color: 'white',
@@ -196,7 +192,7 @@ export class AppMode {
       const eyeX = 10;
       const eyeStartY = yOffset + 20; // Below FPS display
 
-      detections.forEach((detection: any) => {
+      detections.forEach((detection: DetectionResult) => {
         if (detection.sample && detection.settings) {
           const { SIZE } = detection.settings;
           const eyeY = eyeStartY + (SIZE + 10) * eyeIndex;
@@ -234,13 +230,10 @@ export class AppMode {
     }
   }
 
-  _anyEyesDetected() {
-    return Array.from(this._eyesByCamera.values()).some(hasEyes => hasEyes);
-  }
-
   accept() {
-    // Multi-camera: accept if game is running AND any camera has eyes visible
-    return !this._paused && this._anyEyesDetected();
+    // Accept if game is running AND eyes are detected
+    // Frame could be null, if so then eyes not detected
+    return !this._paused && this._eyesDetected;
   }
 
   static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {

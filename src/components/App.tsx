@@ -18,14 +18,6 @@ import { hash128Hex } from "../utils";
 import GoalsProgress from "./GoalsProgress";
 import DataWorker from "./DataWorker";
 
-// Utility function to check if eyes are detected in a sample
-function areEyesDetected(sample: any): boolean {
-  if (!sample) return false;
-  const { leftEye, rightEye } = sample;
-  return (leftEye != null) || (rightEye != null);
-}
-
-
 type TickData = {
   canvas: HTMLCanvasElement;
   canvasCtx: CanvasRenderingContext2D;
@@ -38,7 +30,6 @@ type TickData = {
   activeUploads: number;
   meanUploadDuration: number;
   eyesDetected: boolean;
-  eyesByCamera: Map<string, boolean>;
   fps: Record<string, { camera: number; samples: number }>;
   detections: Map<string, DetectionResult>;
   collectedSampleCounts: Record<string, number>;
@@ -64,7 +55,6 @@ function AppComponent(
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
-  const eyesByCamera = useRef<Map<string, boolean>>(new Map()); // Per-camera eye detection
   const goalPosition = useRef(null);
   const prevViewportRef = useRef<{ width: number; height: number; left: number; top: number } | null>(null);
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
@@ -78,39 +68,38 @@ function AppComponent(
 
   const onDetect = useCallback(
     function (frame: DetectionResult) {
-      if (!frame) return;
-
-      // Store detection result for this camera
+      // Store detection result for this camera (including frames with null sample)
+      // Null sample indicates face detected but no eyes - treat as eyes not detected
       detectionsByCamera.current.set(frame.cameraId, frame);
 
-      // Track per-camera eye detection
-      if (frame.sample != null) {
-        const eyesDetected = areEyesDetected(frame.sample);
-        eyesByCamera.current.set(frame.cameraId, eyesDetected);
+      // Update global flag based on whether any camera has eyes detected
+      const anyEyesDetected = Array.from(detectionsByCamera.current.values()).some(
+        detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
+      );
+      setEyesVisible(anyEyesDetected);
 
-        // Update global flag if any camera has eyes detected
-        const anyEyesDetected = Array.from(eyesByCamera.current.values()).some(hasEyes => hasEyes);
-        setEyesVisible(anyEyesDetected);
+      // If frame.sample is null, eyes not detected - stop processing this frame
+      if (frame.sample == null) return;
 
-        if (gameMode == null || gameMode.isPaused()) return;
-        if (goalPosition.current == null) return;
+      if (gameMode == null || gameMode.isPaused()) return;
+      if (goalPosition.current == null) return;
 
-        if (!areEyesDetected(frame.sample)) return;
+      // Only process sample if eyes are detected (at least one eye)
+      if (!(frame.sample.leftEye != null || frame.sample.rightEye != null)) return;
 
-        const { time, leftEye, rightEye, points, goal } = frame.sample;
+      const { time, leftEye, rightEye, points, goal } = frame.sample;
 
-        const sample = new Sample({
-          time, leftEye, rightEye, points, goal,
-          userId, placeId, screenId,
-          cameraId: hash128Hex(frame.cameraId)
-        });
-        if(gameMode.accept()) {
-          // Store samples in time window: from (paused + 3s) to (now - 3s)
-          // This gives 3-second buffers at start and end of game
-          const minTime = gameMode.lastPausedTime() + 3000;
-          const maxTime = Date.now() - 3000;
-          sampleManager.store(sample, { minTime, maxTime });
-        }
+      const sample = new Sample({
+        time, leftEye, rightEye, points, goal,
+        userId, placeId, screenId,
+        cameraId: hash128Hex(frame.cameraId)
+      });
+      if(gameMode.accept()) {
+        // Store samples in time window: from (paused + 3s) to (now - 3s)
+        // This gives 3-second buffers at start and end of game
+        const minTime = gameMode.lastPausedTime() + 3000;
+        const maxTime = Date.now() - 3000;
+        sampleManager.store(sample, { minTime, maxTime });
       }
     }, [gameMode, placeId, screenId, userId]
   );
@@ -148,13 +137,6 @@ function AppComponent(
     detectionsByCamera.current.forEach((_, cameraId) => {
       if (!webcamIds.includes(cameraId)) {
         detectionsByCamera.current.delete(cameraId);
-      }
-    });
-
-    // Remove eye detection tracking for cameras that are no longer selected
-    eyesByCamera.current.forEach((_, cameraId) => {
-      if (!webcamIds.includes(cameraId)) {
-        eyesByCamera.current.delete(cameraId);
       }
     });
   }, [webcamIds]);
@@ -255,7 +237,10 @@ function AppComponent(
 
       // Eyes detected: check if any camera currently has eyes visible
       // Strategy: if ANY camera has eyes, game proceeds (for multi-camera robustness)
-      let eyesDetected = Array.from(eyesByCamera.current.values()).some(hasEyes => hasEyes);
+      // Treat null frame as eyes not detected
+      let eyesDetected = Array.from(detectionsByCamera.current.values()).some(
+        detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
+      );
 
       goalPosition.current = onTick({
         canvas: canvasElement,
@@ -269,7 +254,6 @@ function AppComponent(
         activeUploads,
         meanUploadDuration,
         eyesDetected,
-        eyesByCamera: eyesByCamera.current,
         fps,
         detections: detectionsByCamera.current,
         collectedSampleCounts: sampleManager.getPerCameraSampleCounts(),

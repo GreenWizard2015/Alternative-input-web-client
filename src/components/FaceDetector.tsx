@@ -17,7 +17,7 @@ const READINESS_TIMEOUT = 3000;
 
 export type DetectionResult = {
   cameraId: string;
-  sample: Sample;
+  sample: Sample | null;
   settings: typeof DEFAULT_SETTINGS;
 };
 

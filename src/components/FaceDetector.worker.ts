@@ -69,9 +69,8 @@ const processQueue = async () => {
     if(sample) {
       sample.goal = goal;
       sample.time = time;
-
-      self.postMessage({type: 'detected', sample});
     }
+    self.postMessage({type: 'detected', sample});
   } catch (error) {
     frame.close();
   }
