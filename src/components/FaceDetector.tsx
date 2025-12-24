@@ -156,29 +156,6 @@ export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrLis
       timerId = setTimeout(captureFrames, CAPTURE_INTERVAL);
     };
 
-    // Report FPS
-    let fpsTimer: NodeJS.Timeout | null = null;
-    if (onFPS) {
-      fpsTimer = setInterval(() => {
-        const now = Date.now();
-        const fpsData: Record<string, { camera: number; samples: number }> = {};
-
-        cameraIds.forEach(cameraId => {
-          const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: now };
-          const duration = (now - fps.lastTime) / 1000;
-          fpsData[cameraId] = {
-            camera: fps.frames / duration,
-            samples: fps.samples / duration,
-          };
-          fps.frames = 0;
-          fps.samples = 0;
-          fps.lastTime = now;
-        });
-
-        onFPS(fpsData);
-      }, 1500);
-    }
-
     // Start initialization
     initializeStreams().then(() => {
       if (streams.size > 0) {
@@ -188,7 +165,6 @@ export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrLis
 
     return () => {
       if (timerId) clearTimeout(timerId);
-      if (fpsTimer) clearInterval(fpsTimer);
       streams.forEach(stream => stream.getTracks().forEach(t => t.stop()));
       workers.forEach(w => {
         w.postMessage({ type: 'stop' });
@@ -196,7 +172,34 @@ export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrLis
       });
       workers.clear();
     };
-  }, [cameraIdsStrList, goal, onDetect, onFPS]);
+  }, [cameraIdsStrList, goal, onDetect]);
+
+  // Report FPS
+  useEffect(() => {
+    const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
+    if (!onFPS || cameraIds.length === 0) return;
+
+    const fpsTimer = setInterval(() => {
+      const now = Date.now();
+      const fpsData: Record<string, { camera: number; samples: number }> = {};
+
+      cameraIds.forEach(cameraId => {
+        const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: now };
+        const duration = (now - fps.lastTime) / 1000;
+        fpsData[cameraId] = {
+          camera: fps.frames / duration,
+          samples: fps.samples / duration,
+        };
+        fps.frames = 0;
+        fps.samples = 0;
+        fps.lastTime = now;
+      });
+
+      onFPS(fpsData);
+    }, 1500);
+
+    return () => clearInterval(fpsTimer);
+  }, [cameraIdsStrList, onFPS]);
 
   const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
 
