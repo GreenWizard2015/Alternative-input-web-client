@@ -2,6 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { RootState } from "../store";
+import { fromJSON } from "../store/json";
+import type { UUIDed } from "../shared/Sample";
 
 // Utility function to clip values
 function clip(value, min, max) {
@@ -77,12 +79,18 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
   );
 };
 
-function GoalsProgress({ userSamples, placeSamples }) {
+function GoalsProgress({ places }: { places: UUIDed[] }) {
   const { t } = useTranslation();
 
-  // convert to number if it is a string
-  userSamples = (typeof userSamples === "string") ? parseInt(userSamples) : userSamples;
-  placeSamples = (typeof placeSamples === "string") ? parseInt(placeSamples) : placeSamples;
+  // Calculate userSamples as the sum of all user samples
+  const userSamples = (places || []).reduce((total: number, place: UUIDed) => {
+    return total + (place.samples || 0);
+  }, 0);
+
+  // Calculate placeSamples as the sum of all place samples
+  const placeSamples = (places || []).reduce((total: number, place: UUIDed) => {
+    return total + (place.samples || 0);
+  }, 0);
   return (
     <div className="w-100">
       {/* user samples */}
@@ -110,8 +118,15 @@ function GoalsProgress({ userSamples, placeSamples }) {
 }
 
 export default connect(
-  (state: RootState) => ({
-    userSamples: state.UI.userSamples || 0,
-    placeSamples: state.UI.placeSamples || 0,
-  })
+  (state: RootState) => {
+    // Parse places list from JSON string
+    const places = fromJSON<UUIDed[]>(
+      state.UI.places || '[]',
+      []
+    );
+
+    return {
+      places: places,
+    };
+  }
 )(GoalsProgress);

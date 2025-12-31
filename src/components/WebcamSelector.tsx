@@ -1,93 +1,124 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
+import type { RootState } from '../store';
+import { toggleCameraSelection, initializeCameras } from '../store/slices/App';
+import { selectCameras, selectSelectedCameras } from '../store/selectors';
+import CameraPlaceSelector from './CameraPlaceSelector';
+import type { CameraEntity } from '../types/camera';
 
 interface WebcamSelectorProps {
-  onWebcamChange: (selectedIds: string[]) => void;
-  selectedCameraIds?: string[];
+  cameras: Record<string, CameraEntity>;
+  selectedCameras: CameraEntity[];
+  fallbackPlaceId?: string;
+  doInitializeCameras: (devices: Array<{ deviceId: string; label: string }>) => void;
+  doToggleCameraSelection: (cameraId: string) => void;
+  onAddPlace: (cameraId: string) => void;
 }
 
-function WebcamSelector({ onWebcamChange, selectedCameraIds = [] }: WebcamSelectorProps) {
+function WebcamSelector({
+  cameras,
+  selectedCameras,
+  fallbackPlaceId = '',
+  doInitializeCameras,
+  doToggleCameraSelection,
+  onAddPlace,
+}: WebcamSelectorProps) {
   const { t } = useTranslation();
   const [webcams, setWebcams] = useState<MediaDeviceInfo[]>([]);
-  const [selectedWebcams, setSelectedWebcams] = useState<string[]>(selectedCameraIds);
+  const initializeRef = useRef(false);
 
-  // Sync external selectedCameraIds prop changes
   useEffect(() => {
-    if (selectedCameraIds && selectedCameraIds.length > 0) {
-      setSelectedWebcams(selectedCameraIds);
+    // Only initialize once, on mount
+    if (initializeRef.current) {
+      return;
     }
-  }, [selectedCameraIds]);
 
-  // call onWebcamChange when the selected webcams change
-  useEffect(
-    () => onWebcamChange(selectedWebcams),
-    [selectedWebcams, onWebcamChange]
-  );
+    // Mark as initialized IMMEDIATELY to prevent re-running in Strict Mode
+    initializeRef.current = true;
 
-  function handleWebcamToggle(deviceId: string) {
-    setSelectedWebcams(prev => {
-      if (prev.includes(deviceId)) {
-        // Remove if already selected
-        return prev.filter(id => id !== deviceId);
-      } else {
-        // Add if not selected
-        return [...prev, deviceId];
-      }
-    });
-  }
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('[WebcamSelector] Found video devices:', videoDevices.length);
+      setWebcams(videoDevices);
 
-  useEffect(() => {
-    console.log('[WebcamSelector] useEffect triggered, selectedWebcams.length:', selectedWebcams.length);
-    function handleRefresh() {
-      console.log('[WebcamSelector] handleRefresh called, current selectedWebcams:', selectedWebcams);
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        console.log('[WebcamSelector] Found video devices:', videoDevices.map(d => ({
+      // Initialize cameras in Redux
+      doInitializeCameras(
+        videoDevices.map(d => ({
           deviceId: d.deviceId,
           label: d.label,
-          groupId: d.groupId
-        })));
-        setWebcams(videoDevices);
-        // Auto-select first camera if none selected and cameras are available
-        if (0 < videoDevices.length && selectedWebcams.length === 0) {
-          console.log('[WebcamSelector] Auto-selecting first camera:', videoDevices[0].deviceId);
-          setSelectedWebcams([videoDevices[0].deviceId]);
-        } else {
-          console.log('[WebcamSelector] Not auto-selecting. videoDevices.length:', videoDevices.length, 'selectedWebcams.length:', selectedWebcams.length);
-        }
-      }).catch(err => {
-        console.error('[WebcamSelector] Failed to enumerate devices:', err);
-      });
+        }))
+      );
+    }).catch((err: Error) => {
+      console.error('[WebcamSelector] Failed to enumerate devices:', err);
+    });
+  }, [doInitializeCameras]);
+
+  // Auto-select first camera if none are selected
+  useEffect(() => {
+    if (selectedCameras.length === 0 && webcams.length > 0) {
+      const firstDeviceId = webcams[0].deviceId;
+      const firstCamera = cameras[firstDeviceId];
+      if (firstCamera && !firstCamera.isSelected) {
+        console.log('[WebcamSelector] Auto-selecting first camera:', firstDeviceId);
+        doToggleCameraSelection(firstDeviceId);
+      }
     }
-    handleRefresh();
-  }, [selectedWebcams.length, selectedWebcams]); // call handleRefresh on mount and when selection changes
+  }, [selectedCameras, webcams, cameras, doToggleCameraSelection]);
 
   return (
     <div className="webcam-selector">
-      <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '4px' }}>
+      <div className="webcam-selector-list">
         {webcams.length === 0 ? (
-          <div style={{ color: '#999' }}>{t('webcam.noCameras')}</div>
+          <div className="webcam-selector-empty">{t('webcam.noCameras')}</div>
         ) : (
-          webcams.map(webcam => (
-            <div key={webcam.deviceId} style={{ marginBottom: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedWebcams.includes(webcam.deviceId)}
-                  onChange={() => handleWebcamToggle(webcam.deviceId)}
-                  style={{ marginRight: '8px' }}
-                />
-                <span>{webcam.label || t('webcam.cameraLabel', { index: webcams.indexOf(webcam) + 1 })}</span>
-              </label>
-            </div>
-          ))
+          webcams.map((webcam, index) => {
+            // Get camera config from cameras object
+            const camera = cameras[webcam.deviceId];
+            const isSelected = camera?.isSelected || false;
+            const cameraPlaceId = camera?.placeId || fallbackPlaceId;
+
+            return (
+              <div key={webcam.deviceId} className="webcam-selector-item">
+                <label className="webcam-selector-label">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => doToggleCameraSelection(webcam.deviceId)}
+                  />
+                  <span className={`webcam-selector-label-text${isSelected ? ' selected' : ''}`}>
+                    {webcam.label || t('webcam.cameraLabel', { index: index + 1 })}
+                  </span>
+                </label>
+
+                {isSelected && (
+                  <div className="webcam-selector-place-wrapper">
+                    <CameraPlaceSelector
+                      cameraId={webcam.deviceId}
+                      selectedPlaceId={cameraPlaceId}
+                      onAddPlace={onAddPlace}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
-      <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-        {t('webcam.selected', { count: selectedWebcams.length, plural: selectedWebcams.length !== 1 ? 's' : '' })}
+      <div className="webcam-selector-stats">
+        {t('webcam.selected', { count: selectedCameras.length, plural: selectedCameras.length !== 1 ? 's' : '' })}
       </div>
     </div>
   );
 }
 
-export default WebcamSelector;
+export default connect(
+  (state: RootState) => ({
+    cameras: selectCameras(state),
+    selectedCameras: selectSelectedCameras(state),
+  }),
+  {
+    doInitializeCameras: initializeCameras,
+    doToggleCameraSelection: toggleCameraSelection,
+  }
+)(WebcamSelector);

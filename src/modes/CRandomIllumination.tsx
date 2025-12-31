@@ -82,11 +82,9 @@ class CIlluminationSource {
 
 class CRandomIllumination {
   sources: CIlluminationSource[];
-  enabled: boolean;
 
   constructor(sourcesN: number = 32) {
     this.sources = Array.from({ length: sourcesN }, () => new CIlluminationSource());
-    this.enabled = true;
   }
 
   onTick(deltaT: number) {
@@ -94,14 +92,11 @@ class CRandomIllumination {
   }
 
   onRender(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    if (!this.enabled) return;
     this.sources.forEach(source => source.onRender(ctx, width, height));
   }
 
   onEvent(event: KeyboardEvent) {
-    if (event.key === 'i') {
-      this.enabled = !this.enabled;
-    }
+    // No keyboard controls - always enabled
   }
 }
 

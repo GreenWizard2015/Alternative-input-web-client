@@ -1,10 +1,8 @@
 class CBackground {
-  private _backgroundDynamic: boolean;
   private _colors: number[][];
   private _currentTime: number = 0;
 
   constructor() {
-    this._backgroundDynamic = true;
     // Example colors similar to the Colors.asList from Python
     this._colors = [
       [0, 0, 0],       // Black
@@ -136,11 +134,8 @@ class CBackground {
   }
 
   onRender(canvasCtx, viewport) {
-    let bg = [192, 192, 192]; // Default color (Silver)
-    if (this._backgroundDynamic) {
-      const colorIndex = Math.floor(this._currentTime / 15.0) % this._colors.length;
-      bg = this._colors[colorIndex];
-    }
+    const colorIndex = Math.floor(this._currentTime / 15.0) % this._colors.length;
+    const bg = this._colors[colorIndex];
 
     // Apply brightness to the background color
     const [r, g, b] = bg;
@@ -156,11 +151,7 @@ class CBackground {
   }
 
   onEvent(event) {
-    if (event.type !== 'keydown') return;
-    // Toggle background dynamic (B)
-    if (event.key === 'b') {
-      this._backgroundDynamic = !this._backgroundDynamic;
-    }
+    // No keyboard controls - always enabled
   }
 
   clamp(value, min, max) {

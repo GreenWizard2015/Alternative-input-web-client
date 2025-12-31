@@ -136,3 +136,88 @@ body {
 select {
   min-width: 15rem;
 }
+
+/* FPS Display */
+.fps-display-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 14px;
+  color: black;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.fps-display-item {
+  margin-bottom: 4px;
+  color: red;
+}
+
+/* WebcamSelector */
+.webcam-selector-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.webcam-selector-empty {
+  color: #999;
+}
+
+.webcam-selector-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.webcam-selector-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.webcam-selector-label input {
+  margin-right: 8px;
+}
+
+.webcam-selector-label-text {
+  font-weight: normal;
+}
+
+.webcam-selector-label-text.selected {
+  font-weight: bold;
+}
+
+.webcam-selector-place-wrapper {
+  margin-top: 6px;
+}
+
+.webcam-selector-stats {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* CameraPlaceSelector */
+.camera-place-selector {
+  margin-bottom: 10px;
+  border-left: 3px solid #ccc;
+  padding-left: 10px;
+}
+
+.camera-place-selector-label {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* Hidden video elements for camera streams */
+.hidden-video {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+}

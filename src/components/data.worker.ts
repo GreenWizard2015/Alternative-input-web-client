@@ -1,36 +1,35 @@
 /* eslint-env worker */
 /* eslint-disable no-restricted-globals */  // Worker code needs access to 'self'
 
-// Data Upload Worker - handles sample serialization and uploading to backend
-//
-// MESSAGES RECEIVED:
-// - { samples: array, endpoint: string }
-//   Receives an array of samples grouped by userId, placeId, screenId, cameraId
-//   Groups samples by their identifiers and serializes them for upload
-//   @param samples - Array of sample objects with userId, placeId, screenId, cameraId
-//   @param endpoint - Backend endpoint URL where samples will be posted
-//
-// MESSAGES SENT:
-// - { status: 'start', inQueue: number }
-//   Sent when processing queue begins
-//   @param inQueue - Number of items remaining in the queue
-//
-// - { status: 'ok', userId: string, placeId: string, count: number, inQueue: number, duration: number, chunks: number }
-//   Sent after successful upload
-//   @param duration - Time taken for the upload (ms)
-//   @param chunks - Number of chunks received by server
-//   @param inQueue - Items still waiting to be processed
-//
-// - { status: 'error', error: string, code: number|null }
-//   Sent when upload fails after retries
-//   @param error - Error message describing what went wrong
-//   @param code - HTTP error code (e.g., 403)
-
-import { serialize } from './SerializeSamples';
-import type { Sample } from './SamplesDef';
+/**
+ * data.worker.ts - Sample upload worker (simplified for pre-serialized buffers)
+ *
+ * PHASE 2C: Simplified to handle pre-serialized buffers from FaceDetector workers
+ *
+ * MESSAGES RECEIVED:
+ * - { samples: ArrayBuffer, userId: string, placeId: string, endpoint: string, count: number }
+ *   Receives pre-serialized sample buffer ready for upload
+ *   @param samples - Pre-serialized ArrayBuffer (from FaceDetectorWorker.serialize())
+ *   @param userId - User ID for tracking
+ *   @param placeId - Place ID for tracking
+ *   @param endpoint - Backend endpoint URL
+ *   @param count - Number of samples in this batch
+ *
+ * MESSAGES SENT:
+ * - { status: 'start', inQueue: number }
+ *   Sent when processing queue begins
+ *
+ * - { status: 'ok', userId: string, placeId: string, count: number, inQueue: number, duration: number }
+ *   Sent after successful upload
+ *   @param duration - Time taken for the upload (ms)
+ *   @param inQueue - Items still waiting to be processed
+ *
+ * - { status: 'error', error: string, code: number|null }
+ *   Sent when upload fails after retries
+ */
 
 type QueueItem = {
-  serializedSamples: ArrayBuffer;
+  serializedBuffer: ArrayBuffer;
   endpoint: string;
   userId: string;
   placeId: string;
@@ -38,8 +37,11 @@ type QueueItem = {
 };
 
 type UploadMessage = {
-  samples: Sample[];
+  samples: ArrayBuffer;
   endpoint: string;
+  userId: string;
+  placeId: string;
+  count: number;
 };
 
 type ErrorWithCode = Error & { code?: number };
@@ -47,8 +49,14 @@ type ErrorWithCode = Error & { code?: number };
 let queue: QueueItem[] = [];
 let isRunning = false;
 
-// Retry upload with exponential backoff for transient failures
-async function uploadWithRetry(fd: FormData, endpoint: string, maxRetries = 3): Promise<any> {
+/**
+ * Upload with exponential backoff for transient failures
+ */
+async function uploadWithRetry(
+  fd: FormData,
+  endpoint: string,
+  maxRetries = 3
+): Promise<any> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(endpoint, {
@@ -85,65 +93,74 @@ async function uploadWithRetry(fd: FormData, endpoint: string, maxRetries = 3): 
   }
 }
 
+/**
+ * Process next item in queue
+ */
 function processQueue(): void {
   self.postMessage({ status: 'start', inQueue: queue.length });
   isRunning = queue.length > 0;
   if (!isRunning) return;
-  const chunk = queue.pop(); // get the last element from the queue
-  if (!chunk) return;
 
-  const { serializedSamples, endpoint, userId, placeId, count } = chunk;
-  console.log('Sending', serializedSamples.byteLength, 'bytes to', endpoint);
+  const item = queue.shift(); // Get first item (FIFO)
+  if (!item) return;
+
+  const { serializedBuffer, endpoint, userId, placeId, count } = item;
+  console.log('Sending', serializedBuffer.byteLength, 'bytes to', endpoint);
+
+  // Create FormData with serialized buffer
   const fd = new FormData();
-  fd.append('chunk', new Blob([new Uint8Array(serializedSamples)], {type: 'application/octet-stream'}));
+  fd.append('chunk', new Blob([new Uint8Array(serializedBuffer)], {
+    type: 'application/octet-stream'
+  }));
 
   const startTime = Date.now();
-  uploadWithRetry(fd, endpoint).then(() => {
-    const endTime = Date.now();
-    self.postMessage({
-      status: 'ok',
-      inQueue: queue.length,
-      duration: endTime - startTime,
-      userId, placeId, count,
+  uploadWithRetry(fd, endpoint)
+    .then(() => {
+      const endTime = Date.now();
+      self.postMessage({
+        status: 'ok',
+        inQueue: queue.length,
+        duration: endTime - startTime,
+        userId,
+        placeId,
+        count,
+      });
+    })
+    .catch((error: ErrorWithCode) => {
+      console.error('Upload failed after retries:', error);
+      self.postMessage({
+        status: 'error',
+        error: error.message,
+        code: error.code || null
+      });
+      // Put item back at front of queue for retry
+      queue.unshift(item);
+    })
+    .finally(() => {
+      // Process next item
+      processQueue();
     });
-  }).catch((error: ErrorWithCode) => {
-    console.error('Upload failed after retries:', error);
-    self.postMessage({
-      status: 'error',
-      error: error.message,
-      code: error.code || null
-    });
-    queue.push(chunk); // put the chunk back to the queue
-  }).finally(() => {
-    processQueue(); // process next chunk no matter what
-  });
 }
 
+/**
+ * Handle messages from FaceDetectorWorkerManager
+ *
+ * Expects pre-serialized ArrayBuffer (no grouping/serialization needed)
+ */
 self.onmessage = function(event: MessageEvent<UploadMessage>) {
-  const { samples, endpoint } = event.data;
-  // samples could have different ids, so we need to serialize them separately
-  const grouped = samples.reduce((acc: Record<string, any[]>, sample) => {
-    const { userId, placeId, screenId, cameraId } = sample;
-    // Use pipe-separated format consistent with Sample.bucket() method
-    const key = [userId, placeId, screenId, cameraId].join('|');
+  const { samples, endpoint, userId, placeId, count } = event.data;
 
-    if (!(key in acc)) acc[key] = [];
-    acc[key].push(sample);
-    return acc;
-  }, {});
-  // serialize the samples before pushing them to the queue
-  // in hope that it will reduce the memory usage
-  for(const groupId in grouped) {
-    const groupedSamples = grouped[groupId];
-    const { userId, placeId } = groupedSamples[0]; // Extract userId and placeId from first sample
-    // put to the start of the queue
-    queue.push({
-      serializedSamples: serialize(groupedSamples),
-      endpoint,
-      userId,
-      placeId,
-      count: groupedSamples.length,
-    });
+  // Simply queue the pre-serialized buffer
+  queue.push({
+    serializedBuffer: samples,
+    endpoint,
+    userId,
+    placeId,
+    count,
+  });
+
+  // Start processing if not already running
+  if (!isRunning) {
+    processQueue();
   }
-  if(!isRunning) processQueue(); // start processing the queue only if didn't start yet
 };

@@ -43,17 +43,6 @@ interface UIStartProps {
 export default function UIStart({ onStart }: UIStartProps) {
   const { t } = useTranslation();
   const [helpMode, setHelpMode] = useState<string>('');
-  const augmentations: ReactNode = useMemo(() => (
-    <div className="ui-augmentations">
-      <div className="mx-auto">
-        <b>{t('gameStart.augmentations')}</b>
-      </div>
-      <ul>
-        <li>{t('gameStart.illumination')}</li>
-        <li>{t('gameStart.background')}</li>
-      </ul>
-    </div>
-  ), [t]);
   const back: ReactNode = useMemo(() => (
     <button className='ms-2' onClick={() => setHelpMode('')}>{t('common.back')}</button>
   ), [t]);
@@ -104,7 +93,6 @@ export default function UIStart({ onStart }: UIStartProps) {
               <li key={index}>{shortcut}</li>
             ))}
           </ul>
-          {augmentations}
           <button onClick={handleStartLookAt}>{t('common.start')}</button>
           {back}
         </div>
@@ -122,7 +110,6 @@ export default function UIStart({ onStart }: UIStartProps) {
               <li key={index}>{shortcut}</li>
             ))}
           </ul>
-          {augmentations}
           <button onClick={handleStartSpline}>{t('common.start')}</button>
           {back}
         </div>
@@ -143,7 +130,6 @@ export default function UIStart({ onStart }: UIStartProps) {
               <li key={index}>{shortcut}</li>
             ))}
           </ul>
-          {augmentations}
           <button onClick={handleStartCircleMoving}>{t('common.start')}</button>
           {back}
         </div>

@@ -1,13 +1,23 @@
 import i18n from "../i18n";
-import { Position } from "../components/SamplesDef";
 import { grayscale2image, decodeLandmarks } from "../utils/MP";
 import { drawTarget } from "../utils/target";
 import { DetectionResult } from "../components/FaceDetector";
+import type { Position } from "../shared/Sample";
+import type { AppMode } from "./AppMode";
 
 type MenuTickData = {
-  viewport: { width: number; height: number };
+  canvas: HTMLCanvasElement;
   canvasCtx: CanvasRenderingContext2D;
+  viewport: { left: number; top: number; width: number; height: number };
+  goal: Position | null;
+  user: string;
+  screenId: string;
+  gameMode: AppMode | null;
+  activeUploads: number;
+  meanUploadDuration: number;
+  eyesDetected: boolean;
   detections: Map<string, DetectionResult>;
+  collectedSampleCounts: Record<string, number>;
 };
 
 export function onMenuTick({
@@ -23,7 +33,7 @@ export function onMenuTick({
     const cellHeight = viewport.height / rows;
 
     let index = 0;
-    detections.forEach((detection: any) => {
+    detections.forEach((detection: DetectionResult) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
       const x = col * cellWidth;

@@ -1,4 +1,4 @@
-import { Position } from "../components/SamplesDef";
+import type { Position } from "../shared/Sample";
 
 export function drawTarget(
   { position, radius=10, canvasCtx, style, sign }:

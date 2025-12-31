@@ -1,128 +1,148 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UUIDed, validate } from "../../components/Samples";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import type { UUIDed } from "../../shared/Sample";
+import { SampleValidation } from "../../shared/SampleValidation";
+import { toJSON, fromJSON } from "../json";
+import { cleanupPlaceFromCameras } from "./App";
 
 interface UIState {
-  selectedCameraIds: string[]; // new multi-camera support
   userId: string,
-  userSamples: number,
-  placeId: string,
-  placeSamples: number,
 
-  users: UUIDed[];
-  places: UUIDed[];
+  // Stored as JSON strings - parse only when needed
+  users: string;              // JSON string of UUIDed[]
+  places: string;             // JSON string of UUIDed[]
 };
 
 const initialState: UIState = {
-  selectedCameraIds: [], // new multi-camera support
   userId: '',
-  userSamples: 0,
-  placeId: '',
-  placeSamples: 0,
-  users: [],
-  places: [],
+  users: JSON.stringify([]),           // JSON string
+  places: JSON.stringify([]),          // JSON string
 };
+
+// Thunk action to remove place and cleanup cameras that reference it
+export const removePlace = createAsyncThunk(
+  'UI/removePlace',
+  async (placeId: string, { dispatch }) => {
+    // Cleanup camera references first
+    dispatch(cleanupPlaceFromCameras(placeId));
+    // Return placeId for reducer to remove from list
+    return placeId;
+  }
+);
+
 // PERSISTED slice
 export const UISlice = createSlice({
   name: "UI",
   initialState,
   reducers: {
-    setSelectedCameraIds: (state, action: PayloadAction<string[]>) => {
-      state.selectedCameraIds = action.payload;
-    },
     setUser: (state, action: PayloadAction<UUIDed>) => {
       state.userId = action.payload.uuid;
-      // add user to list if not already there
-      if (!state.users.find(u => u.name === action.payload.name)) {
-        state.users.push(action.payload);
+      // Parse users from JSON, add if not already there, serialize back
+      const users: UUIDed[] = fromJSON(state.users);
+      if (!users.find(u => u.name === action.payload.name)) {
+        users.push(action.payload);
       }
-      state.users = state.users.filter(validate);
-      state.userSamples = state.users.find(u => u.uuid === state.userId)?.samples || 0;
+      const filtered = users.filter(u => SampleValidation.validateUUIDed(u));
+      state.users = toJSON(filtered);
     },
     setPlace: (state, action: PayloadAction<UUIDed>) => {
-      state.placeId = action.payload.uuid;
-      // add place to list if not already there
-      if (action.payload && !state.places.find(p => p.name === action.payload.name)) {
-        state.places.push(action.payload);
+      // Just manage the places list - placeId is purely per-camera
+      const places: UUIDed[] = fromJSON(state.places);
+      if (action.payload && !places.find(p => p.name === action.payload.name)) {
+        places.push(action.payload);
       }
-      state.places = state.places.filter(validate);
-      state.placeSamples = state.places.find(p => p.uuid === state.placeId)?.samples || 0;
+      const filtered = places.filter(p => SampleValidation.validateUUIDed(p));
+      state.places = toJSON(filtered);
     },
     incrementStats: (state, action) => {
-      const { userId, placeId, count } = action.payload;      
-      const places = state.places.map(p => {
+      const { userId, placeId, count } = action.payload;
+      // Parse JSON, update, serialize back
+      let places: UUIDed[] = fromJSON(state.places);
+      let users: UUIDed[] = fromJSON(state.users);
+
+      places = places.map(p => {
         if (p.uuid === placeId) {
           if(typeof p.samples !== 'number') {
             p.samples = 0;
           }
           const newSamples = p.samples + count;
-          state.placeSamples = newSamples;
           return { ...p, samples: newSamples };
         }
         return p;
       });
-      const users = state.users.map(u => {
+      users = users.map(u => {
         if (u.uuid === userId) {
           if(typeof u.samples !== 'number') {
             u.samples = 0;
           }
           const newSamples = u.samples + count;
-          state.userSamples = newSamples;
           return { ...u, samples: newSamples };
         }
         return u;
       });
 
-      state.places = places;
-      state.users = users;
+      state.places = toJSON(places);
+      state.users = toJSON(users);
     },
     removeUser: (state, action: PayloadAction<{ uuid: string }>) => {
-      state.users = state.users.filter(u => u.uuid !== action.payload.uuid);
+      const users: UUIDed[] = fromJSON(state.users);
+      state.users = toJSON(users.filter(u => u.uuid !== action.payload.uuid));
       state.userId = '';
     },
-    removePlace: (state, action: PayloadAction<{ uuid: string }>) => {
-      state.places = state.places.filter(p => p.uuid !== action.payload.uuid);
-      state.placeId = '';
-    },
-    // reset samples for current user and place
+    // reset samples for current user
     resetUser: (state) => {
-      state.users = state.users.map(u => {
+      const users: UUIDed[] = fromJSON(state.users);
+      state.users = toJSON(users.map(u => {
         if (u.uuid === state.userId) {
           return { ...u, samples: 0 };
         }
         return u;
-      });
+      }));
     },
-    resetPlace: (state) => {
-      state.places = state.places.map(p => {
-        if (p.uuid === state.placeId) {
+    resetPlace: (state, action: PayloadAction<{ uuid: string }>) => {
+      // Reset samples for a specific place
+      const places: UUIDed[] = fromJSON(state.places);
+      state.places = toJSON(places.map(p => {
+        if (p.uuid === action.payload.uuid) {
           return { ...p, samples: 0 };
         }
         return p;
-      });
+      }));
     },
 
     selectDefaultValues: (state) => {
-      if (state.users.length > 0) {
-        const user = state.users.find(u => u.uuid === state.userId);
+      const users: UUIDed[] = fromJSON(state.users);
+      const places: UUIDed[] = fromJSON(state.places);
+
+      if (users.length > 0) {
+        const user = users.find(u => u.uuid === state.userId);
         if (undefined === user) { // if user not found, select first user
-          state.userId = state.users[0].uuid;
+          state.userId = users[0].uuid;
         }
-        state.users = state.users.filter(validate);
+        state.users = toJSON(users.filter(u => SampleValidation.validateUUIDed(u)));
       }
-      if (state.places.length > 0) {
-        const place = state.places.find(p => p.uuid === state.placeId);
-        if (undefined === place) { // if place not found, select first place
-          state.placeId = state.places[0].uuid;
-        }
-        state.places = state.places.filter(validate);
+      if (places.length > 0) {
+        state.places = toJSON(places.filter(p => SampleValidation.validateUUIDed(p)));
       }
-    }
+    },
+
+  },
+  extraReducers: (builder) => {
+    builder.addCase(removePlace.fulfilled, (state, action) => {
+      const placeId = action.payload;
+      const places: UUIDed[] = fromJSON(state.places);
+      state.places = toJSON(places.filter(p => p.uuid !== placeId));
+    });
   },
 });
 
 export const {
-  setSelectedCameraIds, setUser, setPlace, removeUser, removePlace, resetUser, resetPlace,
-  selectDefaultValues
+  setUser,
+  setPlace,
+  removeUser,
+  resetUser,
+  resetPlace,
+  selectDefaultValues,
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;
+// removePlace is exported as a thunk (see above)
 export default UISlice;

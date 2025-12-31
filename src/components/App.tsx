@@ -1,68 +1,70 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { connect } from "react-redux";
 import { toggleFullscreen } from "../utils/canvas";
+import { hash128Hex } from "../utils";
 import UI from "./UI";
 import { onMenuTick } from "../modes/onMenuTick";
 import { AppMode } from "../modes/AppMode";
-import { DetectionResult } from "./FaceDetector";
-import FaceDetector from "./FaceDetector";
-import { sampleManager, Sample } from "./Samples";
+import FaceDetector, { DetectionResult } from "./FaceDetector";
 import { Intro } from "./Intro";
-// redux related imports
-import { connect } from "react-redux";
-import { setMode } from "../store/slices/App";
-import { RootState } from "../store";
+import { AggregatedStats } from "./FaceDetectorWorkerManager";
 import UploadsNotification from "./uploadsNotification";
 import ErrorNotification from "./errorNotification";
-import { hash128Hex } from "../utils";
 import GoalsProgress from "./GoalsProgress";
-import DataWorker from "./DataWorker";
+import FPSDisplay from "./FPSDisplay";
+import { setMode } from "../store/slices/App";
+import { selectAppProps, selectSortedDeviceIds } from "../store/selectors";
+import type { RootState } from "../store";
+import type { Position } from "../shared/Sample";
+import type { CameraEntity } from "../types/camera";
 
 type TickData = {
   canvas: HTMLCanvasElement;
   canvasCtx: CanvasRenderingContext2D;
   viewport: { left: number; top: number; width: number; height: number };
-  goal: any;
+  goal: Position | null;
   user: string;
-  place: string;
   screenId: string;
-  gameMode: AppMode;
+  gameMode: AppMode | null;
   activeUploads: number;
   meanUploadDuration: number;
   eyesDetected: boolean;
-  fps: Record<string, { camera: number; samples: number }>;
   detections: Map<string, DetectionResult>;
   collectedSampleCounts: Record<string, number>;
 };
 
 function onGameTick(data: TickData) {
-  const { gameMode } = data;
-  return gameMode.process(data);
+  return data.gameMode!.process(data);
 }
 
 type AppSettings = {
   mode: string,
   setMode: (mode: string) => void,
   userId: string,
-  placeId: string,
   activeUploads: number,
   meanUploadDuration: number,
+  selectedCameras: CameraEntity[], // Memoized selected cameras from Redux
+  sortedDeviceIds: string[], // Sorted device IDs of selected cameras
+  currentUser?: any, // Current user object
+  users?: any[], // Users array
 };
 
 function AppComponent(
-  { mode, setMode, userId, placeId, activeUploads, meanUploadDuration }: AppSettings
+  { mode, setMode, userId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
 ) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
-  const goalPosition = useRef(null);
+  const goalPosition = useRef<Position | null>(null);
   const prevViewportRef = useRef<{ width: number; height: number; left: number; top: number } | null>(null);
+  const collectedSampleCountsRef = useRef<Record<string, number>>({});
+  const tickStateRef = useRef({ userId, activeUploads, meanUploadDuration, screenId: '' });
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
-  const [webcamIds, setWebcamIds] = React.useState<string[]>([]);
   // flag to indicate if eyes are detected at least once
   const [eyesVisible, setEyesVisible] = React.useState<boolean>(false);
-  const [score, setScore] = React.useState<number|null>(null);
-  const [fps, setFps] = React.useState<Record<string, { camera: number, samples: number }>>({});
+  const [score, setScore] = React.useState<number | null>(null);
+  const [workerStats, setWorkerStats] = React.useState<AggregatedStats | null>(null);
 
   const [screenId, setScreenId] = React.useState<string>("");
 
@@ -71,43 +73,13 @@ function AppComponent(
       // Store detection result for this camera (including frames with null sample)
       // Null sample indicates face detected but no eyes - treat as eyes not detected
       detectionsByCamera.current.set(frame.cameraId, frame);
-
-      // Update global flag based on whether any camera has eyes detected
-      const anyEyesDetected = Array.from(detectionsByCamera.current.values()).some(
-        detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
-      );
-      setEyesVisible(anyEyesDetected);
-
-      // If frame.sample is null, eyes not detected - stop processing this frame
-      if (frame.sample == null) return;
-
-      if (gameMode == null || gameMode.isPaused()) return;
-      if (goalPosition.current == null) return;
-
-      // Only process sample if eyes are detected (at least one eye)
-      if (!(frame.sample.leftEye != null || frame.sample.rightEye != null)) return;
-
-      const { time, leftEye, rightEye, points, goal } = frame.sample;
-
-      const sample = new Sample({
-        time, leftEye, rightEye, points, goal,
-        userId, placeId, screenId,
-        cameraId: hash128Hex(frame.cameraId)
-      });
-      if(gameMode.accept()) {
-        // Store samples in time window: from (paused + 3s) to (now - 3s)
-        // This gives 3-second buffers at start and end of game
-        const minTime = gameMode.lastPausedTime() + 3000;
-        const maxTime = Date.now() - 3000;
-        sampleManager.store(sample, { minTime, maxTime });
-      }
-    }, [gameMode, placeId, screenId, userId]
+    }, []
   );
 
-  // Memoize onWebcamChange callback to prevent infinite loops
-  const onWebcamChange = useCallback((ids: string[]) => {
-    setWebcamIds(ids);
-  }, []);
+  // Update tick state ref when any tick-related prop changes
+  useEffect(() => {
+    tickStateRef.current = { userId, activeUploads, meanUploadDuration, screenId };
+  }, [userId, activeUploads, meanUploadDuration, screenId]);
 
   // Request camera permissions on app start
   useEffect(() => {
@@ -126,20 +98,24 @@ function AppComponent(
 
   // Log camera changes for debugging
   useEffect(() => {
-    if (webcamIds.length > 0) {
-      console.log('[App] Camera IDs updated:', webcamIds);
+    const selectedCameraIds = selectedCameras.map(c => c.deviceId);
+    console.log('[App] Camera list effect ran - selectedCameraIds:', selectedCameraIds);
+    if (selectedCameraIds.length > 0) {
+      console.log('[App] Selected cameras updated:', selectedCameraIds);
     }
-  }, [webcamIds]);
+  }, [selectedCameras]);
 
   // Clean up detections for disabled cameras
   useEffect(() => {
+    console.log('[App] Camera cleanup effect ran - removing detections for:', sortedDeviceIds);
     // Remove detections from cameras that are no longer selected
     detectionsByCamera.current.forEach((_, cameraId) => {
-      if (!webcamIds.includes(cameraId)) {
+      if (!sortedDeviceIds.includes(cameraId)) {
+        console.log('[App] Removing detection for disabled camera:', cameraId);
         detectionsByCamera.current.delete(cameraId);
       }
     });
-  }, [webcamIds]);
+  }, [sortedDeviceIds]);
 
   function onKeyDown(exit: () => void) {
     return (event: React.KeyboardEvent<HTMLCanvasElement>) => {
@@ -162,16 +138,15 @@ function AppComponent(
   }
 
   const onTick = useCallback(
-    (data: any) => {
-      // call on mode change? check it
+    (data: TickData): Position | null => {
       switch (mode) {
         case "menu":
           return onMenuTick(data);
         case "game":
-          canvasRef.current.focus();
+          canvasRef.current?.focus();
           return onGameTick(data);
         case "intro":
-          return null; // ignore
+          return null;
         default:
           throw new Error("Unknown mode: " + mode);
       }
@@ -214,6 +189,7 @@ function AppComponent(
 
   const animationFrameId = useRef<number>(0);
   React.useEffect(() => {
+    console.log("x");
     const f = () => {
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
@@ -238,7 +214,7 @@ function AppComponent(
       // Eyes detected: check if any camera currently has eyes visible
       // Strategy: if ANY camera has eyes, game proceeds (for multi-camera robustness)
       // Treat null frame as eyes not detected
-      let eyesDetected = Array.from(detectionsByCamera.current.values()).some(
+      const eyesDetected = Array.from(detectionsByCamera.current.values()).some(
         detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
       );
 
@@ -246,32 +222,49 @@ function AppComponent(
         canvas: canvasElement,
         canvasCtx: canvasCtx,
         viewport,
-        goal: goalPosition.current,
-        user: userId,
-        place: placeId,
-        screenId,
         gameMode,
-        activeUploads,
-        meanUploadDuration,
         eyesDetected,
-        fps,
+        goal: goalPosition.current,
+        user: tickStateRef.current.userId,
+        screenId: tickStateRef.current.screenId,
+        activeUploads: tickStateRef.current.activeUploads,
+        meanUploadDuration: tickStateRef.current.meanUploadDuration,
         detections: detectionsByCamera.current,
-        collectedSampleCounts: sampleManager.getPerCameraSampleCounts(),
+        collectedSampleCounts: collectedSampleCountsRef.current,
       });
       animationFrameId.current = requestAnimationFrame(f);
     };
     animationFrameId.current = requestAnimationFrame(f);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode, userId, placeId, activeUploads, meanUploadDuration, fps, screenId]);
+  }, [onTick, gameMode]);
+
+  // Track eye detection from detection results
+  useEffect(() => {
+    // Check if any detection has eyes visible
+    let anyEyesDetected = false;
+    for (const detection of detectionsByCamera.current.values()) {
+      if (detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)) {
+        anyEyesDetected = true;
+        break;
+      }
+    }
+    setEyesVisible(anyEyesDetected);
+  }, [workerStats]);
+
+  // Update collected sample counts from worker stats
+  useEffect(() => {
+    collectedSampleCountsRef.current = {};
+    if (workerStats && workerStats.size > 0) {
+      for (const [cameraId, stats] of workerStats.entries()) {
+        collectedSampleCountsRef.current[cameraId] = stats.samplesTotal;
+      }
+    }
+  }, [workerStats]);
 
   const onPause = useCallback(() => {
-    const now = Date.now();
-    // Flush samples in time window: from 0 to (now - 3s)
-    // This matches the store() window for consistency
-    const minTime = 0;
-    const maxTime = now - 3000;
-    sampleManager.flushAndClear({ minTime, maxTime });
+    // FaceDetector component handles sample flushing internally
+    // When game pauses, the component will flush samples automatically
   }, []);
 
   const startGame = useCallback((mode: AppMode) => {
@@ -280,17 +273,21 @@ function AppComponent(
     mode.onPause = onPause;
   }, [onPause, setMode]);
 
+  // Check if all selected cameras have places assigned
+  const allCamerasHavePlaces = selectedCameras.length > 0 &&
+    selectedCameras.every(cam => cam.placeId && cam.placeId.length > 0);
+
+  // Start button enabled: eyes detected, user selected, and all cameras have places
+  const canStart = eyesVisible && userId.length > 0 && allCamerasHavePlaces;
+
   let content = null;
   if (mode === 'intro') {
     content = <Intro onConfirm={() => setMode('menu')} />;
   } else if (mode === 'menu') {
     content = (
       <UI
-        onWebcamChange={onWebcamChange}
         onStart={startGame}
-        canStart={eyesVisible}
-        fps={fps}
-        cameraIds={webcamIds}
+        canStart={canStart}
         goFullscreen={() => toggleFullscreen(
           document.getElementById("root") ?? document.body // app root element
         )}
@@ -331,13 +328,16 @@ function AppComponent(
     <>
       <UploadsNotification />
       <ErrorNotification />
-      <DataWorker />
       {content}
+      <FPSDisplay fps={workerStats} />
       <FaceDetector
-        cameraIdsStrList={webcamIds.length > 0 ? webcamIds.sort().join(',') : ''}
-        onDetect={onDetect}
         goal={goalPosition}
-        onFPS={setFps}
+        screenId={screenId}
+        onDetect={onDetect}
+        onStatsUpdate={setWorkerStats}
+        isPaused={gameMode?.isPaused() ?? true}
+        accept={gameMode?.accept() ?? false}
+        sendingFPS={mode === 'game' ? 5 : -1}
       />
       <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
         setMode('menu');
@@ -348,11 +348,8 @@ function AppComponent(
 
 export default connect(
   (state: RootState) => ({
-    mode: state.App.mode,
-    userId: state.UI.userId,
-    placeId: state.UI.placeId,
-    activeUploads: state.App.activeUploads,
-    meanUploadDuration: state.App.meanUploadDuration,
+    ...selectAppProps(state),
+    sortedDeviceIds: selectSortedDeviceIds(state),
   }),
   { setMode }
 )(AppComponent);

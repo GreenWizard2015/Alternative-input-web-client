@@ -18,6 +18,7 @@
   "menu": {
     "user": "User:",
     "place": "Place:",
+    "notSelected": "Not selected",
     "add": "Add",
     "remove": "Remove",
     "reset": "Reset",
@@ -29,8 +30,10 @@
     "enterUserName": "Enter user name",
     "enterUserUUID": "Enter user UUID",
     "enterPlaceName": "Enter place name",
-    "confirmRemoveUser": "Are you sure you want to remove the user ({{name}})?",
-    "confirmRemovePlace": "Are you sure you want to remove the place ({{name}})?"
+    "confirmRemoveUser": "Are you sure you want to remove the user \"{{name}}\"?",
+    "confirmRemovePlace": "Are you sure you want to remove the place \"{{name}}\"?",
+    "confirmResetUser": "Are you sure you want to reset samples for user \"{{name}}\"?",
+    "confirmResetPlace": "Are you sure you want to reset samples for place \"{{name}}\"?"
   },
   "uiHelp": {
     "title": "UI Help",
@@ -48,9 +51,6 @@
     "circleMovingHelp": "In this mode you should concentrate on the red circle while it moving.",
     "circleMovingPurpose": "This mode intended to stabilize gaze predictions in motion.",
     "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.",
-    "augmentations": "Augmentations",
-    "illumination": "I - toggle random illumination",
-    "background": "B - toggle random background",
     "keyboardShortcuts": {
       "lookAt": [
         "Esc - return to main menu",
@@ -99,7 +99,7 @@
     "confirmButton": "I Understand"
   },
   "fps": {
-    "camera": "Camera {{index}}: {{fps}} FPS | Samples: {{samples}} FPS"
+    "camera": "Camera {{index}}: Capture {{captureFps}} | Processing {{processingFps}}{{samples}}"
   },
   "goalsProgress": {
     "userSamples": {

@@ -1,9 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { connect } from 'react-redux';
 import { DEFAULT_SETTINGS } from '../utils/MP';
-import { Sample } from "./Samples";
+import { Sample, type Position } from "../shared/Sample";
+import FaceDetectorWorkerManager, { ManagerConfig } from './FaceDetectorWorkerManager';
+import { hash128Hex } from '../utils';
+import DataWorker from './DataWorker';
+import { selectUserId, selectSelectedCameras, selectSortedDeviceIds } from '../store/selectors';
+import type { CameraEntity } from '../types/camera';
+import {
+  initializeStreams,
+  useFpsTracking,
+  createCameraFrameCapture,
+  type CameraCaptureDeps,
+} from './FaceDetectorHelpers';
 
-// @ts-ignore - worker-loader transforms this into a Worker constructor
-import FaceDetectorWorker from './FaceDetector.worker.ts';
+// ============================================================================
+// Constants
+// ============================================================================
 
 const DETECTOR_SETTINGS = {
   ...DEFAULT_SETTINGS,
@@ -12,8 +25,9 @@ const DETECTOR_SETTINGS = {
   minTrackingConfidence: 0.2,
 };
 
-const CAPTURE_INTERVAL = 1000 / 30;
-const READINESS_TIMEOUT = 3000;
+// ============================================================================
+// Types
+// ============================================================================
 
 export type DetectionResult = {
   cameraId: string;
@@ -24,208 +38,155 @@ export type DetectionResult = {
 export type Frame = DetectionResult;
 
 type FaceDetectorProps = {
-  onDetect: (result: DetectionResult) => void;
-  onFPS?: (fps: Record<string, { camera: number; samples: number }>) => void;
-  cameraIdsStrList: string;
-  goal: React.MutableRefObject<any>;
+  selectedCameras: CameraEntity[];
+  sortedDeviceIds: string[];
+  goal: { current: Position | null };
+  userId: string;
+  screenId: string;
+  onDetect?: (result: DetectionResult) => void;
+  onStatsUpdate?: (stats: any) => void;
+  isPaused?: boolean;
+  accept?: boolean;
+  sendingFPS?: number;
 } & Partial<typeof DETECTOR_SETTINGS>;
 
-export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrList, goal }: FaceDetectorProps) {
-  const videoRefs = useRef<Map<string, HTMLVideoElement | null>>(new Map());
-  const workersRef = useRef<Map<string, Worker>>(new Map());
-  const fpsRef = useRef<Map<string, { frames: number; samples: number; lastTime: number }>>(new Map());
+function FaceDetectorComponent({
+  selectedCameras,
+  sortedDeviceIds,
+  goal,
+  userId,
+  screenId,
+  onDetect,
+  onStatsUpdate,
+  isPaused = false,
+  accept = true,
+  sendingFPS = 30,
+}: FaceDetectorProps) {
+  const videosRef = useRef(new Map<string, HTMLVideoElement | null>());
+  const managerRef = useRef<FaceDetectorWorkerManager | null>(null);
 
-  // Set up workers and stream capture
+  // Track FPS locally for input devices
+  const { fpsRef, finalFpsRef } = useFpsTracking(sortedDeviceIds);
+
+  // Initialize manager (runs once)
   useEffect(() => {
-    const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
-    if (cameraIds.length === 0) return;
+    console.log('[FaceDetector] Initialize manager effect');
+    if (!managerRef.current) {
+      const config: ManagerConfig = {
+        userId,
+        screenId,
+        maxChunkSize: 4 * 1024 * 1024,
+        accept,
+        isPaused,
+        sendingFPS,
+      };
 
-    const workers = workersRef.current;
-    const streams = new Map<string, MediaStream>();
-    let timerId: NodeJS.Timeout | null = null;
-    let isCapturing = false;
+      console.log('[FaceDetector] Creating new FaceDetectorWorkerManager with config:', { userId, screenId, isPaused, accept, sendingFPS });
+      managerRef.current = new FaceDetectorWorkerManager(config);
+      managerRef.current.setCallbacks(onDetect, onStatsUpdate);
+      managerRef.current.setFpsRef(finalFpsRef);
+    }
+  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate]);
 
-    // Clean up removed cameras' workers
-    Array.from(workers.keys())
-      .filter(id => !cameraIds.includes(id))
-      .forEach(id => {
-        workers.get(id)?.postMessage({ type: 'stop' });
-        workers.get(id)?.terminate();
-        workers.delete(id);
-      });
+  // Keep fpsRef in sync with manager
+  useEffect(() => {
+    if (managerRef.current) {
+      managerRef.current.setFpsRef(finalFpsRef);
+    }
+  }, []);
 
-    // Initialize new workers
-    cameraIds.forEach(cameraId => {
-      if (!workers.has(cameraId)) {
-        const worker = new FaceDetectorWorker();
-        workers.set(cameraId, worker);
+  // Update config when settings change
+  useEffect(() => {
+    console.log('[FaceDetector] Config update effect - userId:', userId, 'screenId:', screenId, 'selectedCameras:', selectedCameras);
+    if (!managerRef.current) return;
 
-        worker.onmessage = (e) => {
-          if (e.data.type === 'detected' && onDetect) {
-            const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: Date.now() };
-            fps.samples++;
-            fpsRef.current.set(cameraId, fps);
+    // Update global config first
+    managerRef.current.updateConfig({
+      userId,
+      screenId,
+      accept,
+      isPaused,
+      sendingFPS,
+    });
 
-            onDetect({
-              cameraId,
-              sample: e.data.sample,
-              settings: DETECTOR_SETTINGS,
-            });
-          }
+    // Update per-camera configs if they exist
+    if (selectedCameras.length > 0) {
+      const cameraConfigMap: Record<string, { placeId: string }> = {};
+      for (const camera of selectedCameras) {
+        const hashedCameraId = hash128Hex(camera.deviceId);
+        cameraConfigMap[hashedCameraId] = {
+          placeId: camera.placeId || '',
+        };
+      }
+      managerRef.current.updateCameraConfigs(cameraConfigMap);
+    }
+
+    console.log('[FaceDetector] Config updated for manager');
+    managerRef.current.setCallbacks(onDetect, onStatsUpdate);
+  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, selectedCameras]);
+
+  // Set up streams and frame capture
+  useEffect(() => {
+    console.log('[FaceDetector] Stream setup effect - cameraIds:', sortedDeviceIds);
+    if (sortedDeviceIds.length === 0 || !managerRef.current) {
+      console.log('[FaceDetector] Skipping stream setup: no cameras or manager not ready');
+      return;
+    }
+
+    const manager = managerRef.current;
+    const captureIntervals = new Map<string, NodeJS.Timeout>();
+    let streams: Map<string, MediaStream> = new Map<string, MediaStream>();
+
+    (async () => {
+      console.log('[FaceDetector] Initializing streams for cameras:', sortedDeviceIds);
+      streams = await initializeStreams(sortedDeviceIds, videosRef.current, manager);
+      console.log('[FaceDetector] Streams initialized, starting capture for', streams.size, 'cameras');
+      // Start per-camera frame capture
+      for (const [normalizedCameraId] of streams) {
+        const fpsData = fpsRef.current.get(normalizedCameraId) || { frames: 0, lastTime: Date.now() };
+        fpsRef.current.set(normalizedCameraId, fpsData);
+
+        const cameraDeps: CameraCaptureDeps = {
+          video: videosRef.current.get(normalizedCameraId),
+          fpsData: fpsRef.current.get(normalizedCameraId),
+          manager,
         };
 
-        worker.postMessage({ type: 'init', id: cameraId });
+        console.log('[FaceDetector] Starting frame capture for camera:', normalizedCameraId);
+        const intervalId = createCameraFrameCapture(normalizedCameraId, cameraDeps, goal);
+        captureIntervals.set(normalizedCameraId, intervalId);
       }
-    });
-
-    // Initialize camera streams
-    const initializeStreams = async () => {
-      for (const cameraId of cameraIds) {
-        try {
-          const video = videoRefs.current.get(cameraId);
-          if (!video) continue;
-
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: cameraId } }
-          });
-
-          streams.set(cameraId, stream);
-          video.srcObject = stream;
-          await video.play().catch(() => {});
-
-          // Wait for video to be ready
-          await new Promise<void>((resolve) => {
-            let done = false;
-            const timer = setInterval(() => {
-              if (!done && video.readyState >= video.HAVE_ENOUGH_DATA) {
-                done = true;
-                clearInterval(timer);
-                resolve();
-              }
-            }, 50);
-            setTimeout(() => {
-              if (!done) {
-                done = true;
-                clearInterval(timer);
-                resolve();
-              }
-            }, READINESS_TIMEOUT);
-          });
-        } catch (error) {
-          console.error(`[${cameraId}] Failed to initialize stream`);
-        }
-      }
-    };
-
-    // Capture frames from cameras
-    const captureFrames = async () => {
-      if (isCapturing) {
-        timerId = setTimeout(captureFrames, CAPTURE_INTERVAL);
-        return;
-      }
-
-      isCapturing = true;
-      const frames: Array<{ cameraId: string; frame: ImageBitmap; time: number }> = [];
-
-      for (const [cameraId] of streams) {
-        const video = videoRefs.current.get(cameraId);
-        if (!video?.videoWidth || video.readyState < video.HAVE_ENOUGH_DATA) continue;
-
-        try {
-          const frame = await createImageBitmap(video);
-          frames.push({ cameraId, frame, time: Date.now() });
-
-          // Update FPS counter
-          const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: Date.now() };
-          fps.frames++;
-          fpsRef.current.set(cameraId, fps);
-        } catch (error) {
-          // Silently skip frame capture errors
-        }
-      }
-
-      // Send frames to workers
-      frames.forEach(({ cameraId, frame, time }) => {
-        workers.get(cameraId)?.postMessage(
-          { type: 'frame', frame, time, goal: goal.current },
-          [frame]
-        );
-      });
-
-      isCapturing = false;
-      timerId = setTimeout(captureFrames, CAPTURE_INTERVAL);
-    };
-
-    // Start initialization
-    initializeStreams().then(() => {
-      if (streams.size > 0) {
-        captureFrames();
-      }
-    });
+    })();
 
     return () => {
-      if (timerId) clearTimeout(timerId);
-      streams.forEach(stream => stream.getTracks().forEach(t => t.stop()));
-      workers.forEach(w => {
-        w.postMessage({ type: 'stop' });
-        w.terminate();
-      });
-      workers.clear();
+      console.log('[FaceDetector] Cleaning up streams and capture intervals');
+      captureIntervals.forEach((intervalId) => clearInterval(intervalId));
+      streams.forEach((stream: MediaStream) => stream.getTracks().forEach((t: MediaStreamTrack) => t.stop()));
     };
-  }, [cameraIdsStrList, goal, onDetect]);
+  }, [sortedDeviceIds, goal, fpsRef]);
 
-  // Report FPS
-  useEffect(() => {
-    const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
-    if (!onFPS || cameraIds.length === 0) return;
+  const handleDataWorkerReady = useCallback((worker: Worker) => {
+    if (managerRef.current) {
+      managerRef.current.setDataWorker(worker);
+    }
+  }, []);
 
-    const fpsTimer = setInterval(() => {
-      const now = Date.now();
-      const fpsData: Record<string, { camera: number; samples: number }> = {};
-
-      cameraIds.forEach(cameraId => {
-        const fps = fpsRef.current.get(cameraId) || { frames: 0, samples: 0, lastTime: now };
-        const duration = (now - fps.lastTime) / 1000;
-        fpsData[cameraId] = {
-          camera: fps.frames / duration,
-          samples: fps.samples / duration,
-        };
-        fps.frames = 0;
-        fps.samples = 0;
-        fps.lastTime = now;
-      });
-
-      onFPS(fpsData);
-    }, 1500);
-
-    return () => clearInterval(fpsTimer);
-  }, [cameraIdsStrList, onFPS]);
-
-  const cameraIds = cameraIdsStrList.split(",").filter(id => id.length > 0);
-
-  // Don't render if no cameras selected
-  if (cameraIds.length === 0) {
+  if (sortedDeviceIds.length === 0) {
     return null;
   }
 
   return (
     <>
-      {cameraIds.map(cameraId => (
+      <DataWorker onWorkerReady={handleDataWorkerReady} />
+      {sortedDeviceIds.map((cameraId: string) => (
         <video
           key={cameraId}
           ref={(el) => {
             if (el) {
-              videoRefs.current.set(cameraId, el);
+              videosRef.current.set(hash128Hex(cameraId), el);
             }
           }}
-          // Hide video element off-screen but allow buffering
-          style={{
-            position: 'absolute',
-            left: '-10000px',
-            width: '1px',
-            height: '1px',
-          }}
-          // Autoplay allows browser to start buffering immediately
+          className="hidden-video"
           autoPlay
           playsInline
           muted
@@ -234,3 +195,20 @@ export default function FaceDetectorComponent({ onDetect, onFPS, cameraIdsStrLis
     </>
   );
 }
+
+// Redux mapStateToProps: Extract userId, selectedCameras, and sortedDeviceIds from Redux store
+// Uses memoized selectors for optimal performance
+const mapStateToProps = (state: any) => {
+  const userId = selectUserId(state);
+  const selectedCameras = selectSelectedCameras(state);
+  const sortedDeviceIds = selectSortedDeviceIds(state);
+
+  return {
+    userId,
+    selectedCameras,
+    sortedDeviceIds,
+  };
+};
+
+// Export the Redux-connected component
+export default connect(mapStateToProps)(FaceDetectorComponent);

@@ -34,7 +34,15 @@ function buildAppStore(): { reducers: any; state: RootStateType } {
   return { reducers, state: stateX as RootStateType };
 }
 
-const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Create store ONCE at module level, not on every render
+let storeInstance: ReturnType<typeof configureStore> | null = null;
+let persistorInstance: ReturnType<typeof persistStore> | null = null;
+
+function getOrCreateStore() {
+  if (storeInstance) {
+    return { store: storeInstance, persistor: persistorInstance! };
+  }
+
   const { reducers, state } = buildAppStore();
   const rootReducers = combineReducers<RootState>(reducers);
   const persistReducerFn = persistReducer(
@@ -47,7 +55,7 @@ const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     rootReducers
   );
 
-  const store = configureStore({
+  storeInstance = configureStore({
     reducer: persistReducerFn,
     preloadedState: state,
     middleware: (getDefaultMiddleware) =>
@@ -58,7 +66,13 @@ const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       })
   });
 
-  const persistor = persistStore(store);
+  persistorInstance = persistStore(storeInstance);
+
+  return { store: storeInstance, persistor: persistorInstance };
+}
+
+const AppStore: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { store, persistor } = getOrCreateStore();
 
   return (
     <Provider store={store}>

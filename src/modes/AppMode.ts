@@ -1,14 +1,13 @@
 import i18n from "../i18n";
-import { Position } from "../components/SamplesDef";
 import { drawTarget } from "../utils/target";
 import { grayscale2image } from "../utils/MP";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 import { DetectionResult } from "../components/FaceDetector";
-import { hash128Hex } from "../utils";
+import type { Position } from "../shared/Sample";
+import type { FPSData } from "../types/fps";
+export type { FPSData };
 export type Viewport = { width: number, height: number }
-
-export type FPSData = Record<string, { camera: number; samples: number }>;
 
 export type AppModeOverlayData = {
   canvasCtx: CanvasRenderingContext2D;
@@ -27,13 +26,12 @@ export type AppModeRenderData = {
   viewport: Viewport;
   goal: any;
   user: string;
-  place: string;
   screenId: string;
   gameMode: AppMode;
   activeUploads: number;
   meanUploadDuration: number;
   eyesDetected: boolean;
-  fps: FPSData;
+  fps?: FPSData;
   detections: Map<string, DetectionResult>;
 };
 const TRANSITION_TIME = 100;
@@ -178,9 +176,9 @@ export class AppMode {
     let yOffset = 20;
     let cameraIndex = 0;
     for (const [cameraId, fpsData] of Object.entries(fps)) {
-      const cameraIdHash = hash128Hex(cameraId); // we store a hash
-      const collectedCount = collectedSampleCounts[cameraIdHash] || 0;
-      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), samples: fpsData.samples.toFixed(1), collected: collectedCount });
+      // cameraId is already normalized (hashed), don't hash again
+      const collectedCount = collectedSampleCounts[cameraId] || 0;
+      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), collected: collectedCount });
       canvasCtx.fillText(fpsText, 10, yOffset);
       yOffset += 18;
       cameraIndex++;

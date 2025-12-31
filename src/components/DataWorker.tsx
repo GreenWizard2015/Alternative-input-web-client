@@ -11,19 +11,20 @@ const getActions = () => {
   return { incrementStats, changeActiveUploads };
 };
 
-let worker: any;
-
 type DataWorkerProps = {
   incrementStats: any;
   changeActiveUploads: any;
-  onError?: (error: any) => void;
+  onWorkerReady?: (worker: Worker) => void;
 };
 
-const DataWorkerComponent = ({ incrementStats, changeActiveUploads, onError }: DataWorkerProps) => {
+const DataWorkerComponent = ({ incrementStats, changeActiveUploads, onWorkerReady }: DataWorkerProps) => {
   useEffect(() => {
     const newWorker = new DataWorkerModule();
-    worker = newWorker;
-    console.log(worker);
+
+    // Notify parent that worker is ready
+    if (onWorkerReady) {
+      onWorkerReady(newWorker);
+    }
 
     newWorker.onmessage = function(e: MessageEvent<any>) {
       console.log('Message received from worker', e.data);
@@ -38,10 +39,6 @@ const DataWorkerComponent = ({ incrementStats, changeActiveUploads, onError }: D
           detail: { message: error, code }
         });
         window.dispatchEvent(errorEvent);
-
-        if(onError) {
-          onError({ message: error, code });
-        }
         return;
       } else {
         const { status, userId, placeId, count, inQueue, duration } = e.data;
@@ -55,7 +52,7 @@ const DataWorkerComponent = ({ incrementStats, changeActiveUploads, onError }: D
     return () => {
       newWorker.terminate();
     };
-  }, [incrementStats, changeActiveUploads, onError]);
+  }, [incrementStats, changeActiveUploads, onWorkerReady]);
   return null;
 };
 
@@ -70,4 +67,3 @@ const mapDispatchToProps = () => {
 const DataWorker = connect(null, mapDispatchToProps)(DataWorkerComponent);
 
 export default DataWorker;
-export { worker };
