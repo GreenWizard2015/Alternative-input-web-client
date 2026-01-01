@@ -56,6 +56,7 @@ export const AppSlice = createSlice({
     // ========== App UI Reducers ==========
     setMode: (state, action: PayloadAction<EAppMode>) => {
       state.mode = action.payload;
+      state.dialogType = "IDLE";
     },
     updateScreen: (state, action: PayloadAction<IScreen>) => {
       state.screen = action.payload;

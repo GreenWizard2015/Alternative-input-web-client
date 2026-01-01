@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { connect } from "react-redux";
 import { toggleFullscreen } from "../utils/canvas";
@@ -123,7 +123,6 @@ function AppComponent(
 
       if (isExit) {
         if (gameMode) {
-          onPause(); // save all samples
           setScore(gameMode.getScore());
           gameMode.onPause();
         }
@@ -189,7 +188,6 @@ function AppComponent(
 
   const animationFrameId = useRef<number>(0);
   React.useEffect(() => {
-    console.log("x");
     const f = () => {
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
@@ -242,15 +240,11 @@ function AppComponent(
   // Track eye detection from detection results
   useEffect(() => {
     // Check if any detection has eyes visible
-    let anyEyesDetected = false;
-    for (const detection of detectionsByCamera.current.values()) {
-      if (detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)) {
-        anyEyesDetected = true;
-        break;
-      }
-    }
+    const anyEyesDetected = Array.from(detectionsByCamera.current.values()).some(
+      detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
+    );
     setEyesVisible(anyEyesDetected);
-  }, [workerStats]);
+  }, [workerStats, onDetect]);
 
   // Update collected sample counts from worker stats
   useEffect(() => {
@@ -262,23 +256,18 @@ function AppComponent(
     }
   }, [workerStats]);
 
-  const onPause = useCallback(() => {
-    // FaceDetector component handles sample flushing internally
-    // When game pauses, the component will flush samples automatically
-  }, []);
-
   const startGame = useCallback((mode: AppMode) => {
     setMode("game");
     setGameMode(mode);
-    mode.onPause = onPause;
-  }, [onPause, setMode]);
-
-  // Check if all selected cameras have places assigned
-  const allCamerasHavePlaces = selectedCameras.length > 0 &&
-    selectedCameras.every(cam => cam.placeId && cam.placeId.length > 0);
+  }, [setMode]);
 
   // Start button enabled: eyes detected, user selected, and all cameras have places
-  const canStart = eyesVisible && userId.length > 0 && allCamerasHavePlaces;
+  const canStart = useMemo(() => {
+    const hasUser = userId.length > 0;
+    const hasCameras = selectedCameras.length > 0;
+    const allCamerasReady = selectedCameras.every(cam => cam.placeId && cam.placeId.length > 0);
+    return eyesVisible && hasUser && hasCameras && allCamerasReady;
+  }, [eyesVisible, userId, selectedCameras]);
 
   let content = null;
   if (mode === 'intro') {

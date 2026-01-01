@@ -59,26 +59,37 @@ export const UISlice = createSlice({
       let places: UUIDed[] = fromJSON(state.places);
       let users: UUIDed[] = fromJSON(state.users);
 
+      // Update place if exists
+      let placeFound = false;
       places = places.map(p => {
         if (p.uuid === placeId) {
-          if(typeof p.samples !== 'number') {
-            p.samples = 0;
-          }
-          const newSamples = p.samples + count;
+          placeFound = true;
+          const newSamples = (p.samples || 0) + count;
           return { ...p, samples: newSamples };
         }
         return p;
       });
+
+      // Log if place not found
+      if (!placeFound && placeId) {
+        console.warn(`[incrementStats] Place NOT FOUND: ${placeId}, `, places.map(p => p.uuid));
+      }
+
+      // Update user if exists
+      let userFound = false;
       users = users.map(u => {
         if (u.uuid === userId) {
-          if(typeof u.samples !== 'number') {
-            u.samples = 0;
-          }
-          const newSamples = u.samples + count;
+          userFound = true;
+          const newSamples = (u.samples || 0) + count;
           return { ...u, samples: newSamples };
         }
         return u;
       });
+
+      // Log if user not found
+      if (!userFound && userId) {
+        console.warn(`[incrementStats] User NOT FOUND: ${userId}, `, users.map(u => u.uuid));
+      }
 
       state.places = toJSON(places);
       state.users = toJSON(users);

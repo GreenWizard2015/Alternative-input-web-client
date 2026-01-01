@@ -142,6 +142,13 @@ const processQueue = async () => {
         lastDetectionReportTime = now;
       }
     }
+
+    // Send stats periodically
+    const now = Date.now();
+    if (now - lastStatsReportTime >= statsReportInterval) {
+      reportStats();
+      lastStatsReportTime = now;
+    }
   } catch (error) {
     workerError('Face detection error:', error);
     frame.close();
@@ -224,31 +231,37 @@ const doFlush = () => {
  * Send periodic statistics to manager
  */
 const reportStats = () => {
-  if (!config) return;
+  try {
+    if (!config) return;
 
-  const now = Date.now();
-  const elapsed = (now - lastStatsTime) / 1000; // seconds
+    const now = Date.now();
+    const elapsed = (now - lastStatsTime) / 1000; // seconds
 
-  const stats: WorkerStats = {
-    cameraId: config.cameraId,
-    processingFps: elapsed > 0 ? frameCount / elapsed : 0,
-    samplesTotal: buffer ? buffer.getTotalSampleCount() : 0,
-    inputFps: -1,
-  };
+    const stats: WorkerStats = {
+      cameraId: config.cameraId,
+      processingFps: elapsed > 0 ? frameCount / elapsed : 0,
+      samplesTotal: buffer ? buffer.getTotalSampleCount() : 0,
+      inputFps: -1,
+    };
 
-  // Reset counters
-  frameCount = 0;
-  lastStatsTime = now;
+    // Reset counters
+    frameCount = 0;
+    lastStatsTime = now;
 
-  self.postMessage({ type: 'stats', stats });
+    self.postMessage({ type: 'stats', stats });
+  } catch (error) {
+    workerError('Error in reportStats:', error);
+  }
 };
-
-// Periodic stats reporting (~1.5 seconds)
-let statsInterval: ReturnType<typeof setInterval> | null = null;
 
 // Detection reporting throttling
 let lastDetectionReportTime = 0;
 let detectionReportInterval = 1000 / 30; // default 30 FPS
+
+// Stats reporting throttling (~1.5 seconds)
+let lastStatsReportTime = 0;
+let statsReportInterval = 1500;
+
 
 // ============================================================================
 // Worker Logger (sends to main thread console)
@@ -272,62 +285,68 @@ const workerError = (...args: any[]) => {
 // ============================================================================
 
 const handleFrame = ({ frame, time, goal }: any) => {
-  frameQueue.push({ frame, time, goal });
-  if (!isProcessing) processQueue();
+  try {
+    frameQueue.push({ frame, time, goal });
+    if (!isProcessing) processQueue();
+  } catch (error) {
+    workerError('Error in handleFrame:', error);
+  }
 };
 
 const handleInit = async ({ id, config: incomingConfig }: any) => {
-  config = { ...incomingConfig, cameraId: id };
-  buffer = new SampleBuffer();
-  await initFaceLandmarker();
+  try {
+    config = { ...incomingConfig, cameraId: id };
+    buffer = new SampleBuffer();
+    await initFaceLandmarker();
 
-  // Start periodic stats reporting (clear old interval first if it exists)
-  if (statsInterval) {
-    clearInterval(statsInterval);
+    handleUpdateConfig({partial: config});
+  } catch (error) {
+    workerError('Error in handleInit:', error);
   }
-  statsInterval = setInterval(reportStats, 1500);
-  handleUpdateConfig({partial: config});
 };
 
 const handleUpdateConfig = ({ partial }: any) => {
-  if (config && partial) {
-    const oldIsPaused = config.isPaused;
-    config = { ...config, ...partial };
+  try {
+    if (config && partial) {
+      const oldIsPaused = config.isPaused;
+      config = { ...config, ...partial };
 
-    // Detect pause state change
-    if (partial.isPaused !== undefined && oldIsPaused !== partial.isPaused) {
-      handlePauseStateChange(partial.isPaused);
-    }
+      // Detect pause state change
+      if (partial.isPaused !== undefined && oldIsPaused !== partial.isPaused) {
+        handlePauseStateChange(partial.isPaused);
+      }
 
-    // Set detection reporting interval based on sendingFPS
-    // sendingFPS = -1 means send every detection (no throttling)
-    if (config.sendingFPS) {
-      if (config.sendingFPS === -1) {
-        detectionReportInterval = 0; // Send immediately
-      } else if (config.sendingFPS > 0) {
-        detectionReportInterval = 1000 / config.sendingFPS;
+      // Set detection reporting interval based on sendingFPS
+      // sendingFPS = -1 means send every detection (no throttling)
+      if (config.sendingFPS) {
+        if (config.sendingFPS === -1) {
+          detectionReportInterval = 0; // Send immediately
+        } else if (config.sendingFPS > 0) {
+          detectionReportInterval = 1000 / config.sendingFPS;
+        }
       }
     }
+  } catch (error) {
+    workerError('Error in handleUpdateConfig:', error);
   }
 };
 
 const handleStop = () => {
-  frameQueue.forEach(({ frame }) => frame.close());
-  frameQueue = [];
+  try {
+    frameQueue.forEach(({ frame }) => frame.close());
+    frameQueue = [];
 
-  if (faceLandmarker) {
-    faceLandmarker.close();
-    faceLandmarker = null;
+    if (faceLandmarker) {
+      faceLandmarker.close();
+      faceLandmarker = null;
+    }
+
+    buffer?.clear();
+    buffer = null;
+    config = null;
+  } catch (error) {
+    workerError('Error in handleStop:', error);
   }
-
-  if (statsInterval) {
-    clearInterval(statsInterval);
-    statsInterval = null;
-  }
-
-  buffer?.clear();
-  buffer = null;
-  config = null;
 };
 
 type MessageHandler = (data: any) => void;
@@ -340,16 +359,20 @@ const messageHandlers: Record<string, MessageHandler> = {
 };
 
 self.onmessage = function({ data }) {
-  const { type } = data;
-  const handler = messageHandlers[type];
+  try {
+    const { type } = data;
+    const handler = messageHandlers[type];
 
-  if (handler) {
-    try {
-      handler(data);
-    } catch (error) {
-      workerError(`Error handling message type '${type}':`, error);
+    if (handler) {
+      try {
+        handler(data);
+      } catch (error) {
+        workerError(`Error handling message type '${type}':`, error);
+      }
+    } else {
+      workerError(`Unknown message type: '${type}'`);
     }
-  } else {
-    workerError(`Unknown message type: '${type}'`);
+  } catch (error) {
+    workerError('Fatal error in message handler:', error);
   }
 };
