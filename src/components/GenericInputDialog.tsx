@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type InputField = {
@@ -29,6 +29,8 @@ export default function GenericInputDialog({
     onConfirm(values);
   };
 
+  const isAnyEmpty = useMemo(() => fields.some(field => !field.value.trim()), [fields]);
+
   return (
     <>
       {fields.map(field => (
@@ -41,7 +43,7 @@ export default function GenericInputDialog({
         </div>
       ))}
       <div>
-        <button onClick={handleConfirm}>{t('common.ok')}</button>
+        <button onClick={handleConfirm} disabled={isAnyEmpty}>{t('common.ok')}</button>
         <button className='ms-2' onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </>

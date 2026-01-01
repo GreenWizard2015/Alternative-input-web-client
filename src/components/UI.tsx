@@ -7,6 +7,8 @@ import { selectDefaultValues, setPlace, setUser } from '../store/slices/UI';
 import { setCameraPlace } from '../store/slices/App';
 import { connect } from 'react-redux';
 import { useDialogStateMachine } from '../hooks/useDialogStateMachine';
+import { selectUserId, selectSelectedCameras } from '../store/selectors';
+import type { RootState } from '../store';
 
 type UIProps = {
   goFullscreen: () => void;
@@ -16,6 +18,9 @@ type UIProps = {
   doSetCameraPlace: (payload: { deviceId: string; placeId: string }) => void;
   doSetPlace: (payload: { uuid: string; name: string; samples: number }) => void;
   doSetUser: (payload: { uuid: string; name: string; samples: number }) => void;
+  userId?: string;
+  selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
+  screenId?: string;
 };
 
 function UI({
@@ -26,6 +31,9 @@ function UI({
   doSetCameraPlace,
   doSetPlace,
   doSetUser,
+  userId = '',
+  selectedCameras = [],
+  screenId = '',
 }: UIProps) {
   const {
     isIdle,
@@ -90,6 +98,9 @@ function UI({
           onAddPlace={openPlaceDialog}
           onStart={openStartDialog}
           onFullscreen={goFullscreen}
+          userId={userId}
+          selectedCameras={selectedCameras}
+          screenId={screenId}
         />
       )}
     </>
@@ -97,7 +108,13 @@ function UI({
 }
 
 export default connect(
-  () => ({}),
+  (state: RootState) => {
+    const selectedCameras = selectSelectedCameras(state);
+    return {
+      userId: selectUserId(state),
+      selectedCameras: selectedCameras.map(cam => ({ deviceId: cam.deviceId, placeId: cam.placeId })),
+    };
+  },
   {
     selectDefaultValues,
     doSetCameraPlace: setCameraPlace,

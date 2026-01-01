@@ -280,6 +280,7 @@ function AppComponent(
         goFullscreen={() => toggleFullscreen(
           document.getElementById("root") ?? document.body // app root element
         )}
+        screenId={screenId}
       />
     );
   }
