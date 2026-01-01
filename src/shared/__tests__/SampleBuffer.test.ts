@@ -31,43 +31,24 @@ describe('CameraSampleBucket', () => {
     expect(bucket.getCount()).toBe(5);
   });
 
-  test('returns copy of samples', () => {
-    bucket.add(samples[0]);
-    const returned = bucket.getSamples();
-    expect(returned).toEqual([samples[0]]);
-    expect(returned).not.toBe(bucket.getSamples()); // Different array instance
-  });
-
   test('clears all samples', () => {
     samples.forEach(s => bucket.add(s));
     bucket.clear();
     expect(bucket.getCount()).toBe(0);
   });
 
-  test('isEmpty() works correctly', () => {
-    expect(bucket.isEmpty()).toBe(true);
-    bucket.add(samples[0]);
-    expect(bucket.isEmpty()).toBe(false);
-  });
-
-  test('isFull() detects threshold', () => {
-    samples.forEach(s => bucket.add(s));
-    expect(bucket.isFull(3)).toBe(true);
-    expect(bucket.isFull(5)).toBe(true);
-    expect(bucket.isFull(6)).toBe(false);
-  });
-
   describe('extractByTimestamp()', () => {
-    test('extracts samples before time limit', () => {
+    test('extracts samples within time range', () => {
       samples.forEach(s => bucket.add(s));
-      const { sent, remaining } = bucket.extractByTimestamp(1250, 10);
-      expect(sent.length).toBe(3); // 1000, 1100, 1200
-      expect(remaining.length).toBe(2); // 1300, 1400
+      // Extract samples with time >= 1100 and < 1300
+      const { sent, remaining } = bucket.extractByTimestamp(1100, 1300, 10);
+      expect(sent.length).toBe(2); // 1100, 1200
+      expect(remaining.length).toBe(3); // 1000, 1300, 1400
     });
 
     test('respects maxSize parameter', () => {
       samples.forEach(s => bucket.add(s));
-      const { sent, remaining } = bucket.extractByTimestamp(2000, 2);
+      const { sent, remaining } = bucket.extractByTimestamp(1000, 2000, 2);
       expect(sent.length).toBe(2);
       expect(remaining.length).toBe(3);
     });
@@ -75,7 +56,7 @@ describe('CameraSampleBucket', () => {
     test('sorts samples by time before extraction', () => {
       // Add in reverse order
       [...samples].reverse().forEach(s => bucket.add(s));
-      const { sent } = bucket.extractByTimestamp(2000, 10);
+      const { sent } = bucket.extractByTimestamp(1000, 2000, 10);
       // Should be sorted by time
       for (let i = 1; i < sent.length; i++) {
         expect(sent[i].time).toBeGreaterThanOrEqual(sent[i - 1].time);
@@ -84,22 +65,9 @@ describe('CameraSampleBucket', () => {
 
     test('updates bucket contents after extraction', () => {
       samples.forEach(s => bucket.add(s));
-      bucket.extractByTimestamp(1250, 10);
-      expect(bucket.getCount()).toBe(2);
+      bucket.extractByTimestamp(1100, 1300, 10);
+      expect(bucket.getCount()).toBe(3);
     });
-  });
-
-  test('dropSamplesBeforeTime() removes old samples', () => {
-    samples.forEach(s => bucket.add(s));
-    const dropped = bucket.dropSamplesBeforeTime(1250);
-    expect(dropped).toBe(3);
-    expect(bucket.getCount()).toBe(2);
-  });
-
-  test('countSamplesInRange() counts correctly', () => {
-    samples.forEach(s => bucket.add(s));
-    const count = bucket.countSamplesInRange(1100, 1300);
-    expect(count).toBe(2); // 1100, 1200
   });
 });
 
@@ -160,33 +128,6 @@ describe('SampleBuffer', () => {
     expect(buffer.getBucketCount()).toBe(0);
   });
 
-  test('dropSamplesBeforeTime() affects all buckets', () => {
-    samples.forEach(s => buffer.addSample(s));
-    const dropped = buffer.dropSamplesBeforeTime(1200);
-    expect(dropped).toBeGreaterThan(0);
-    expect(buffer.getTotalSampleCount()).toBeLessThan(10);
-  });
-
-  test('hasFullBuckets() detects full buckets', () => {
-    // Create 5 samples with the same IDs to go into one bucket
-    const sameBucketSamples = Array.from({ length: 5 }, (_, i) =>
-      new Sample({
-        time: 1000 + i * 100,
-        leftEye: new Uint8ClampedArray(2304).fill(128),
-        rightEye: new Uint8ClampedArray(2304).fill(100),
-        points: new Float32Array(956).fill(0.5),
-        goal: { x: 0, y: 0 },
-        userId: 'user1',
-        placeId: 'place1',
-        screenId: 'screen1',
-        cameraId: 'cam1',
-      })
-    );
-    sameBucketSamples.forEach(s => buffer.addSample(s));
-    expect(buffer.hasFullBuckets(3)).toBeTruthy();
-    expect(buffer.hasFullBuckets(100)).toBeFalsy();
-  });
-
   describe('extractFromBucket()', () => {
     test('extracts and removes samples from bucket', () => {
       samples.slice(0, 5).forEach(s => buffer.addSample(s));
@@ -194,7 +135,7 @@ describe('SampleBuffer', () => {
       const bucket = buffer.getBucket(key)!;
 
       const before = buffer.getTotalSampleCount();
-      buffer.extractFromBucket(bucket, Date.now(), 10);
+      buffer.extractFromBucket(bucket, 1000, 1500, 10);
       const after = buffer.getTotalSampleCount();
 
       expect(after).toBeLessThan(before);
