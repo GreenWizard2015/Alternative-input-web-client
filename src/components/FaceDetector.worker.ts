@@ -68,6 +68,7 @@ let lastStatsTime = Date.now();
 let minTime: number | null = null; // Samples before this time won't be sent
 
 const PAUSE_BUFFER = 3000; // 3 seconds
+const SAMPLE_THRESHOLD = 2000; // 2 seconds - drop frames older than this
 // ============================================================================
 // Face Detection (Existing Logic)
 // ============================================================================
@@ -261,7 +262,32 @@ let detectionReportInterval = 1000 / 30; // default 30 FPS
 // Stats reporting throttling (~1.5 seconds)
 let lastStatsReportTime = 0;
 let statsReportInterval = 1500;
+/**
+ * Drop frames from queue that are older than threshold
+ * Prevents memory bloat when processing can't keep up with incoming frames
+ */
+const dropOldFrames = (threshold: number) => {
+  const now = Date.now();
+  const cutoffTime = now - threshold;
 
+  const keptFrames: Array<{ frame: VideoFrame; time: number; goal: any }> = [];
+  let droppedCount = 0;
+
+  for (const item of frameQueue) {
+    if (item.time >= cutoffTime) {
+      keptFrames.push(item);
+    } else {
+      item.frame.close();
+      droppedCount++;
+    }
+  }
+
+  frameQueue = keptFrames;
+
+  if (droppedCount > 0) {
+    workerError(`Dropped ${droppedCount} frames older than ${threshold}ms`);
+  }
+};
 
 // ============================================================================
 // Worker Logger (sends to main thread console)
@@ -287,6 +313,7 @@ const workerError = (...args: any[]) => {
 const handleFrame = ({ frame, time, goal }: any) => {
   try {
     frameQueue.push({ frame, time, goal });
+    dropOldFrames(SAMPLE_THRESHOLD);
     if (!isProcessing) processQueue();
   } catch (error) {
     workerError('Error in handleFrame:', error);
