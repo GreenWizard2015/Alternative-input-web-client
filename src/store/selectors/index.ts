@@ -52,7 +52,7 @@ export const selectUsersList = createSelector(
 export const selectUsers = createSelector(
   selectUsersList,
   (users) => {
-    return Object.assign(users, { byId: (id: string) => byId(users, id) });
+    return Object.assign([], users, { byId: (id: string) => byId(users, id) });
   }
 );
 
@@ -61,7 +61,7 @@ export const selectPlaces = createSelector(
   (state: RootState) => state.UI.places,
   (json: string) => {
     const places = fromJSON<UUIDed[]>(json, []);
-    return Object.assign(places, { byId: (id: string) => byId(places, id) });
+    return Object.assign([], places, { byId: (id: string) => byId(places, id) });
   }
 );
 

@@ -13,6 +13,7 @@ import {
   createCameraFrameCapture,
   type CameraCaptureDeps,
 } from './FaceDetectorHelpers';
+import type { CaptureRateController } from './CameraFrameCaptureController';
 
 // ============================================================================
 // Constants
@@ -64,6 +65,7 @@ function FaceDetectorComponent({
 }: FaceDetectorProps) {
   const videosRef = useRef(new Map<string, HTMLVideoElement | null>());
   const managerRef = useRef<FaceDetectorWorkerManager | null>(null);
+  const captureControllersRef = useRef(new Map<string, CaptureRateController>());
 
   // Track FPS locally for input devices
   const { fpsRef, finalFpsRef } = useFpsTracking(sortedDeviceIds);
@@ -86,14 +88,14 @@ function FaceDetectorComponent({
       managerRef.current.setCallbacks(onDetect, onStatsUpdate);
       managerRef.current.setFpsRef(finalFpsRef);
     }
-  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate]);
+  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, finalFpsRef]);
 
   // Keep fpsRef in sync with manager
   useEffect(() => {
     if (managerRef.current) {
       managerRef.current.setFpsRef(finalFpsRef);
     }
-  }, []);
+  }, [finalFpsRef]);
 
   // Update config when settings change
   useEffect(() => {
@@ -134,8 +136,9 @@ function FaceDetectorComponent({
     }
 
     const manager = managerRef.current;
-    const captureIntervals = new Map<string, NodeJS.Timeout>();
     let streams: Map<string, MediaStream> = new Map<string, MediaStream>();
+
+    const controllers = captureControllersRef.current;
 
     (async () => {
       console.log('[FaceDetector] Initializing streams for cameras:', sortedDeviceIds);
@@ -153,17 +156,29 @@ function FaceDetectorComponent({
         };
 
         console.log('[FaceDetector] Starting frame capture for camera:', normalizedCameraId);
-        const intervalId = createCameraFrameCapture(normalizedCameraId, cameraDeps, goal);
-        captureIntervals.set(normalizedCameraId, intervalId);
+        const controller = createCameraFrameCapture(normalizedCameraId, cameraDeps, goal);
+        controllers.set(normalizedCameraId, controller);
       }
     })();
 
     return () => {
-      console.log('[FaceDetector] Cleaning up streams and capture intervals');
-      captureIntervals.forEach((intervalId) => clearInterval(intervalId));
+      console.log('[FaceDetector] Cleaning up streams and capture controllers');
+      controllers.forEach((controller) => controller.cleanup());
+      controllers.clear();
       streams.forEach((stream: MediaStream) => stream.getTracks().forEach((t: MediaStreamTrack) => t.stop()));
     };
   }, [sortedDeviceIds, goal, fpsRef]);
+
+  // Register capture controllers with manager
+  useEffect(() => {
+    if (!managerRef.current) return;
+
+    // Pass capture controllers to manager for automatic rate adjustment
+    managerRef.current.setCaptureControllers(captureControllersRef.current);
+
+    // Set the original stats update callback
+    managerRef.current.onStatsUpdate = onStatsUpdate || null;
+  }, [onStatsUpdate]);
 
   const handleDataWorkerReady = useCallback((worker: Worker) => {
     if (managerRef.current) {

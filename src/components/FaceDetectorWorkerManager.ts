@@ -42,7 +42,7 @@ export interface ManagerConfig extends Omit<Omit<WorkerConfig, 'cameraId'>, 'pla
 export interface WorkerStats {
   cameraId: string;
   processingFps: number;           // Detection/processing FPS from worker
-  inputFps: number;     // Input/capture FPS from camera stream
+  inputFps: number;                // Input/capture FPS from camera stream
   samplesTotal: number;
 }
 
@@ -59,12 +59,20 @@ interface WorkerInstance {
 
 type ManagerMessageHandler = (this: FaceDetectorWorkerManager, cameraId: string, data: any) => void;
 
+// EMA smoothing for processing FPS
+const SMOOTHING_FACTOR = 0.1;
+
+// Dynamic FPS adjustment
+export const HEADROOM_FACTOR = 1.1; // Multiply interval by 1.1 (capture at ~91% of avg processing)
+
 export class FaceDetectorWorkerManager {
   private workers: Map<string, WorkerInstance> = new Map();
   private config: ManagerConfig;
   private uploadEndpoint: string;
   private dataWorker: Worker | null = null;
   private fpsRef: React.RefObject<Map<string, FpsData>> | null = null;
+  private smoothedFpsMap: Map<string, number> = new Map(); // Smoothed FPS per camera
+  private captureControllers: Map<string, any> = new Map(); // Capture rate controllers per camera
 
   // Callbacks for stats and events
   onDetect: ((result: DetectionResult) => void) | null = null;
@@ -198,6 +206,30 @@ export class FaceDetectorWorkerManager {
   }
 
   /**
+   * Register capture rate controllers for all cameras
+   * Manager will update these with the average processing FPS
+   */
+  setCaptureControllers(controllers: Map<string, any>): void {
+    this.captureControllers = controllers;
+  }
+
+  /**
+   * Update all capture rate controllers with calculated target interval
+   * Formula: targetInterval = (1000 / avgProcessingFps) * HEADROOM_FACTOR
+   */
+  private updateCaptureRates(): void {
+    if (this.captureControllers.size === 0) return;
+
+    const targetFps = this.getTargetFps() * HEADROOM_FACTOR;
+    // Calculate target interval with headroom factor
+    const targetInterval = 1000 / targetFps;
+
+    for (const controller of this.captureControllers.values()) {
+      controller.updateRate(targetInterval);
+    }
+  }
+
+  /**
    * Set callbacks (manager-only, not sent to workers)
    */
   setCallbacks(
@@ -238,6 +270,25 @@ export class FaceDetectorWorkerManager {
 
     return byCamera;
   }
+
+  /**
+   * Get minimum processing FPS across all workers (using smoothed values)
+   */
+  getTargetFps(): number {
+    const stats = this.getStats();
+    if (stats.size === 0) return 0;
+
+    let minFps = Infinity;
+    for (const [cameraId, workerStats] of stats) {
+      const rawFps = workerStats.processingFps;
+      const previousSmoothed = this.smoothedFpsMap.get(cameraId) ?? rawFps;
+      const smoothedFps = SMOOTHING_FACTOR * rawFps + (1 - SMOOTHING_FACTOR) * previousSmoothed;
+      this.smoothedFpsMap.set(cameraId, smoothedFps);
+      minFps = Math.min(minFps, smoothedFps);
+    }
+    return minFps === Infinity ? 0 : minFps;
+  }
+
 
   /**
    * Terminate all workers and cleanup
@@ -333,6 +384,8 @@ export class FaceDetectorWorkerManager {
           // Report aggregated stats
           const aggregated = this.getStats();
           this.onStatsUpdate?.(aggregated);
+          // Update capture rates based on average processing FPS
+          this.updateCaptureRates();
         }
       },
       log: function(cameraId: string, data: any) {

@@ -5,12 +5,15 @@
 import { useEffect, useRef } from 'react';
 import FaceDetectorWorkerManager from './FaceDetectorWorkerManager';
 import { hash128Hex } from '../utils';
+import {
+  CameraFrameCaptureController,
+  type CaptureRateController
+} from './CameraFrameCaptureController';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-export const CAPTURE_INTERVAL = 1000 / 30;
 export const READINESS_TIMEOUT = 3000;
 export const FPS_REPORT_INTERVAL = 1500;
 
@@ -129,12 +132,12 @@ export type CameraCaptureDeps = {
   fpsData: RawFpsData;
 };
 
-/** Creates a frame capture interval for a single camera */
+/** Creates a frame capture interval for a single camera with dynamic rate adjustment */
 export const createCameraFrameCapture = (
   normalizedCameraId: string,
   camera: CameraCaptureDeps,
   goal: { current: any }
-) => {
+): CaptureRateController => {
   let isCapturing = false;
 
   const captureFrame = async () => {
@@ -159,6 +162,5 @@ export const createCameraFrameCapture = (
     isCapturing = false;
   };
 
-  const intervalId = setInterval(captureFrame, CAPTURE_INTERVAL);
-  return intervalId;
+  return new CameraFrameCaptureController(captureFrame);
 };
