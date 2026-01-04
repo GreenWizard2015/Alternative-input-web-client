@@ -33,6 +33,7 @@ function MonitorSelector({
       labelKey="menu.monitor"
       renderItemLabel={(monitor) => `${monitor.name}`}
       canRemove={(monitor) => monitor.name !== 'main'}
+      showReset={false}
       confirmRemoveKey="dialogs.confirmRemoveMonitor"
       confirmResetKey="dialogs.confirmResetMonitor"
     />

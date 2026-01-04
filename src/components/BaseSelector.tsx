@@ -12,6 +12,7 @@ export type BaseSelectorProps<T extends { uuid: string }> = {
   renderItemLabel: (item: T) => string;
   canRemove?: (item: T) => boolean;
   canReset?: (item: T) => boolean;
+  showReset?: boolean;
   notSelectedKey?: string;
   confirmRemoveKey?: string;
   confirmResetKey?: string;
@@ -28,6 +29,7 @@ export default function BaseSelector<T extends { uuid: string }>({
   renderItemLabel,
   canRemove,
   canReset,
+  showReset = true,
   notSelectedKey = 'menu.notSelected',
   confirmRemoveKey,
   confirmResetKey,
@@ -86,7 +88,7 @@ export default function BaseSelector<T extends { uuid: string }>({
       >
         {t('menu.remove')}
       </button>
-      <button className='flex-grow m5' disabled={!canResetItem} onClick={handleReset}>{t('menu.reset')}</button>
+      {showReset && <button className='flex-grow m5' disabled={!canResetItem} onClick={handleReset}>{t('menu.reset')}</button>}
     </div>
   );
 }
