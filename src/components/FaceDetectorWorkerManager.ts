@@ -29,6 +29,7 @@ export interface WorkerConfig {
   cameraId: string;
   placeId: string;
   userId: string;
+  monitorId: string;
   screenId: string;
   maxChunkSize: number;
   accept: boolean;

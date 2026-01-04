@@ -18,6 +18,7 @@
   "menu": {
     "user": "User:",
     "place": "Place:",
+    "monitor": "Monitor:",
     "notSelected": "Not selected",
     "add": "Add",
     "remove": "Remove",
@@ -30,10 +31,14 @@
     "enterUserName": "Enter user name",
     "enterUserUUID": "Enter user UUID",
     "enterPlaceName": "Enter place name",
+    "enterMonitorName": "Enter monitor name",
+    "enterMonitorUUID": "Enter monitor UUID",
     "confirmRemoveUser": "Are you sure you want to remove the user \"{{name}}\"?",
     "confirmRemovePlace": "Are you sure you want to remove the place \"{{name}}\"?",
+    "confirmRemoveMonitor": "Are you sure you want to remove the monitor \"{{name}}\"?",
     "confirmResetUser": "Are you sure you want to reset samples for user \"{{name}}\"?",
-    "confirmResetPlace": "Are you sure you want to reset samples for place \"{{name}}\"?"
+    "confirmResetPlace": "Are you sure you want to reset samples for place \"{{name}}\"?",
+    "confirmResetMonitor": "Are you sure you want to reset samples for monitor \"{{name}}\"?"
   },
   "uiHelp": {
     "title": "UI Help",

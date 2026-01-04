@@ -5,7 +5,7 @@ import { Sample, type Position } from "../shared/Sample";
 import FaceDetectorWorkerManager, { ManagerConfig } from './FaceDetectorWorkerManager';
 import { hash128Hex } from '../utils';
 import DataWorker from './DataWorker';
-import { selectUserId, selectSelectedCameras, selectSortedDeviceIds } from '../store/selectors';
+import { selectUserId, selectMonitorId, selectSelectedCameras, selectSortedDeviceIds } from '../store/selectors';
 import type { CameraEntity } from '../types/camera';
 import {
   initializeStreams,
@@ -43,6 +43,7 @@ type FaceDetectorProps = {
   sortedDeviceIds: string[];
   goal: { current: Position | null };
   userId: string;
+  monitorId: string;
   screenId: string;
   onDetect?: (result: DetectionResult) => void;
   onStatsUpdate?: (stats: any) => void;
@@ -56,6 +57,7 @@ function FaceDetectorComponent({
   sortedDeviceIds,
   goal,
   userId,
+  monitorId,
   screenId,
   onDetect,
   onStatsUpdate,
@@ -76,6 +78,7 @@ function FaceDetectorComponent({
     if (!managerRef.current) {
       const config: ManagerConfig = {
         userId,
+        monitorId,
         screenId,
         maxChunkSize: 4 * 1024 * 1024,
         accept,
@@ -83,12 +86,12 @@ function FaceDetectorComponent({
         sendingFPS,
       };
 
-      console.log('[FaceDetector] Creating new FaceDetectorWorkerManager with config:', { userId, screenId, isPaused, accept, sendingFPS });
+      console.log('[FaceDetector] Creating new FaceDetectorWorkerManager with config:', { userId, monitorId, screenId, isPaused, accept, sendingFPS });
       managerRef.current = new FaceDetectorWorkerManager(config);
       managerRef.current.setCallbacks(onDetect, onStatsUpdate);
       managerRef.current.setFpsRef(finalFpsRef);
     }
-  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, finalFpsRef]);
+  }, [userId, monitorId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, finalFpsRef]);
 
   // Keep fpsRef in sync with manager
   useEffect(() => {
@@ -99,12 +102,13 @@ function FaceDetectorComponent({
 
   // Update config when settings change
   useEffect(() => {
-    console.log('[FaceDetector] Config update effect - userId:', userId, 'screenId:', screenId, 'selectedCameras:', selectedCameras);
+    console.log('[FaceDetector] Config update effect - userId:', userId, 'monitorId:', monitorId, 'screenId:', screenId, 'selectedCameras:', selectedCameras);
     if (!managerRef.current) return;
 
     // Update global config first
     managerRef.current.updateConfig({
       userId,
+      monitorId,
       screenId,
       accept,
       isPaused,
@@ -125,7 +129,7 @@ function FaceDetectorComponent({
 
     console.log('[FaceDetector] Config updated for manager');
     managerRef.current.setCallbacks(onDetect, onStatsUpdate);
-  }, [userId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, selectedCameras]);
+  }, [userId, monitorId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, selectedCameras]);
 
   // Set up streams and frame capture
   useEffect(() => {
@@ -211,15 +215,17 @@ function FaceDetectorComponent({
   );
 }
 
-// Redux mapStateToProps: Extract userId, selectedCameras, and sortedDeviceIds from Redux store
+// Redux mapStateToProps: Extract userId, monitorId, selectedCameras, and sortedDeviceIds from Redux store
 // Uses memoized selectors for optimal performance
 const mapStateToProps = (state: any) => {
   const userId = selectUserId(state);
+  const monitorId = selectMonitorId(state);
   const selectedCameras = selectSelectedCameras(state);
   const sortedDeviceIds = selectSortedDeviceIds(state);
 
   return {
     userId,
+    monitorId,
     selectedCameras,
     sortedDeviceIds,
   };

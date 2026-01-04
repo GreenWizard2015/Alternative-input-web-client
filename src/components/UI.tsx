@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import UIStart from './UIStart';
 import UserDialog from './UserDialog';
 import PlaceDialog from './PlaceDialog';
+import MonitorDialog from './MonitorDialog';
 import MainMenu from './MainMenu';
-import { selectDefaultValues, setPlace, setUser } from '../store/slices/UI';
+import { selectDefaultValues, setPlace, setUser, addMonitor } from '../store/slices/UI';
 import { setCameraPlace } from '../store/slices/App';
 import { connect } from 'react-redux';
 import { useDialogStateMachine } from '../hooks/useDialogStateMachine';
@@ -18,6 +19,7 @@ type UIProps = {
   doSetCameraPlace: (payload: { deviceId: string; placeId: string }) => void;
   doSetPlace: (payload: { uuid: string; name: string; samples: number }) => void;
   doSetUser: (payload: { uuid: string; name: string; samples: number }) => void;
+  doAddMonitor: (payload: { uuid: string; name: string; samples: number }) => void;
   userId?: string;
   selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
   screenId?: string;
@@ -31,6 +33,7 @@ function UI({
   doSetCameraPlace,
   doSetPlace,
   doSetUser,
+  doAddMonitor,
   userId = '',
   selectedCameras = [],
   screenId = '',
@@ -39,12 +42,14 @@ function UI({
     isIdle,
     isUserDialog,
     isPlaceDialog,
+    isMonitorDialog,
     isStartDialog,
     tempName,
     tempUUID,
     tempCameraId,
     openUserDialog,
     openPlaceDialog,
+    openMonitorDialog,
     openStartDialog,
     closeDialog,
     setTempName,
@@ -91,11 +96,27 @@ function UI({
         />
       )}
 
+      {isMonitorDialog && (
+        <MonitorDialog
+          tempName={tempName}
+          setTempName={setTempName}
+          tempUUID={tempUUID}
+          setTempUUID={setTempUUID}
+          onConfirm={(monitorName, monitorUUID) => {
+            // Create monitor
+            doAddMonitor({ uuid: monitorUUID, name: monitorName, samples: 0 });
+            closeDialog();
+          }}
+          onCancel={closeDialog}
+        />
+      )}
+
       {isIdle && (
         <MainMenu
           canStart={canStart}
           onAddUser={openUserDialog}
           onAddPlace={openPlaceDialog}
+          onAddMonitor={openMonitorDialog}
           onStart={openStartDialog}
           onFullscreen={goFullscreen}
           userId={userId}
@@ -120,5 +141,6 @@ export default connect(
     doSetCameraPlace: setCameraPlace,
     doSetPlace: setPlace,
     doSetUser: setUser,
+    doAddMonitor: addMonitor,
   }
 )(UI);

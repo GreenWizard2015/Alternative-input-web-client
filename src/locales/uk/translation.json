@@ -18,6 +18,7 @@
   "menu": {
     "user": "Користувач:",
     "place": "Місце:",
+    "monitor": "Монітор:",
     "notSelected": "Не вибрано",
     "add": "Додати",
     "remove": "Видалити",
@@ -30,10 +31,14 @@
     "enterUserName": "Введіть ім'я користувача",
     "enterUserUUID": "Введіть UUID користувача",
     "enterPlaceName": "Введіть назву місця",
+    "enterMonitorName": "Введіть назву монітора",
+    "enterMonitorUUID": "Введіть UUID монітора",
     "confirmRemoveUser": "Ви впевнені, що хочете видалити користувача \"{{name}}\"?",
     "confirmRemovePlace": "Ви впевнені, що хочете видалити місце \"{{name}}\"?",
+    "confirmRemoveMonitor": "Ви впевнені, що хочете видалити монітор \"{{name}}\"?",
     "confirmResetUser": "Ви впевнені, що хочете скинути зразки для користувача \"{{name}}\"?",
-    "confirmResetPlace": "Ви впевнені, що хочете скинути зразки для місця \"{{name}}\"?"
+    "confirmResetPlace": "Ви впевнені, що хочете скинути зразки для місця \"{{name}}\"?",
+    "confirmResetMonitor": "Ви впевнені, що хочете скинути зразки для монітора \"{{name}}\"?"
   },
   "uiHelp": {
     "title": "Довідка інтерфейсу",

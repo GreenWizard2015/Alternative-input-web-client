@@ -19,6 +19,7 @@ describe('Sample Class', () => {
       placeId: 'place456',
       screenId: 'screen789',
       cameraId: 'camera000',
+      monitorId: 'monitor111',
     };
   });
 
@@ -32,15 +33,15 @@ describe('Sample Class', () => {
   test('bucket() returns pipe-separated identifiers', () => {
     const sample = new Sample(sampleData);
     const bucket = sample.bucket();
-    expect(bucket).toBe('user123|place456|screen789|camera000');
+    expect(bucket).toBe('user123|place456|screen789|camera000|monitor111');
   });
 
   test('bucket() format matches expected pattern', () => {
     const sample = new Sample(sampleData);
     const parts = sample.bucket().split('|');
-    expect(parts.length).toBe(4);
+    expect(parts.length).toBe(5);
     expect(parts[0]).toBe('user123');
-    expect(parts[3]).toBe('camera000');
+    expect(parts[4]).toBe('monitor111');
   });
 
   test('handles null eye data', () => {

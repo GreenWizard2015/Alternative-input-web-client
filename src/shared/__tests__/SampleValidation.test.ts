@@ -82,6 +82,7 @@ describe('SampleValidation', () => {
         placeId: 'place1',
         screenId: 'screen1',
         cameraId: 'cam1',
+        monitorId: 'monitor1',
       });
     });
 

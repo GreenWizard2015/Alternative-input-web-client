@@ -22,6 +22,7 @@ describe('CameraSampleBucket', () => {
         placeId: 'place1',
         screenId: 'screen1',
         cameraId: 'cam1',
+        monitorId: 'monitor1',
       })
     );
   });
@@ -88,6 +89,7 @@ describe('SampleBuffer', () => {
         placeId: `place${i % 3}`,
         screenId: 'screen1',
         cameraId: `cam${i % 2}`,
+        monitorId: 'monitor1',
       })
     );
   });

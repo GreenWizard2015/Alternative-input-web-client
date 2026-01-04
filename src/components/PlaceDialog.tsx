@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import GenericInputDialog from './GenericInputDialog';
 
 type PlaceDialogProps = {
@@ -15,14 +16,14 @@ export default function PlaceDialog({
   onConfirm,
   onCancel
 }: PlaceDialogProps) {
-  const fields = [
+  const fields = useMemo(() => [
     {
       key: 'name',
       label: 'dialogs.enterPlaceName',
       value: tempName,
       onChange: setTempName,
     },
-  ];
+  ], [tempName, setTempName]);
 
   const handleConfirm = (values: { name: string }) => {
     // Add camera prefix to place name

@@ -1,12 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import UserSelector from './UserSelector';
+import MonitorSelector from './MonitorSelector';
 import WebcamSelector from './WebcamSelector';
 import { hash128Hex } from '../utils';
+import { selectMonitorId } from '../store/selectors';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
 
 type MainMenuProps = {
   canStart: boolean;
   onAddUser: () => void;
   onAddPlace: (cameraId: string) => void;
+  onAddMonitor: () => void;
   onStart: () => void;
   onFullscreen: () => void;
   userId?: string;
@@ -18,6 +23,7 @@ export default function MainMenu({
   canStart,
   onAddUser,
   onAddPlace,
+  onAddMonitor,
   onStart,
   onFullscreen,
   userId = '',
@@ -25,10 +31,12 @@ export default function MainMenu({
   screenId = ''
 }: MainMenuProps) {
   const { t } = useTranslation();
+  const monitorId = useSelector((state: RootState) => selectMonitorId(state));
 
   // Build debug info
   const debugInfo = [
     `User: ${userId}`,
+    `Monitor: ${monitorId}`,
     ...selectedCameras.map((cam, idx) => `Camera ${idx + 1}: ${hash128Hex(cam.deviceId)}`),
     ...selectedCameras.map((cam, idx) => `Place camera ${idx + 1}: ${cam.placeId || ''}`),
     `Screen: ${screenId}`
@@ -37,6 +45,7 @@ export default function MainMenu({
   return (
     <>
       <UserSelector onAdd={onAddUser} />
+      <MonitorSelector onAdd={onAddMonitor} />
       <WebcamSelector onAddPlace={onAddPlace} />
 
       <button

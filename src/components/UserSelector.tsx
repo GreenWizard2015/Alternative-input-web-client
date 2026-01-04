@@ -1,10 +1,9 @@
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import type { RootState } from '../store';
 import { setUser, removeUser, resetUser } from '../store/slices/UI';
 import { selectUserId, selectUsers } from '../store/selectors';
 import type { User } from '../types/entities';
+import BaseSelector from './BaseSelector';
 
 type UserSelectorProps = {
   userId: string;
@@ -21,45 +20,21 @@ function UserSelector({
   doSetUser,
   doRemoveUser,
   doResetUser,
-  onAdd
+  onAdd,
 }: UserSelectorProps) {
-  const { t } = useTranslation();
-
-  const handleRemoveUser = useCallback(() => {
-    const user = users.byId(userId);
-    if (user && window.confirm(t('dialogs.confirmRemoveUser', { name: user.name }))) {
-      doRemoveUser({ uuid: userId });
-    }
-  }, [userId, users, t, doRemoveUser]);
-
-  const handleResetUser = useCallback(() => {
-    const user = users.byId(userId);
-    if (user && window.confirm(t('dialogs.confirmResetUser', { name: user.name }))) {
-      doResetUser();
-    }
-  }, [userId, users, t, doResetUser]);
-
   return (
-    <div className='flex w100'>
-      {t('menu.user')}
-      <select value={userId} onChange={e => {
-        const value = e.target.value;
-        if (value) {
-          const user = users.byId(value);
-          if (user) doSetUser(user);
-        }
-      }}>
-        <option value="">{t('menu.notSelected')}</option>
-        {users.map(user => (
-          <option key={user.uuid} value={user.uuid}>
-            {user.name} ({user.samples} {t('menu.samples')})
-          </option>
-        ))}
-      </select>
-      <button className='flex-grow m5' onClick={onAdd}>{t('menu.add')}</button>
-      <button className='flex-grow m5' disabled={!userId} onClick={handleRemoveUser}>{t('menu.remove')}</button>
-      <button className='flex-grow m5' disabled={!userId} onClick={handleResetUser}>{t('menu.reset')}</button>
-    </div>
+    <BaseSelector<User>
+      selectedId={userId}
+      items={users}
+      onSelect={doSetUser}
+      onAdd={onAdd}
+      onRemove={() => doRemoveUser({ uuid: userId })}
+      onReset={doResetUser}
+      labelKey="menu.user"
+      renderItemLabel={(user) => `${user.name} (${user.samples} samples)`}
+      confirmRemoveKey="dialogs.confirmRemoveUser"
+      confirmResetKey="dialogs.confirmResetUser"
+    />
   );
 }
 

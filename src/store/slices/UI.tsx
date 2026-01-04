@@ -6,16 +6,26 @@ import { cleanupPlaceFromCameras } from "./App";
 
 interface UIState {
   userId: string,
+  monitorId: string,
 
   // Stored as JSON strings - parse only when needed
   users: string;              // JSON string of UUIDed[]
   places: string;             // JSON string of UUIDed[]
+  monitors: string;           // JSON string of UUIDed[]
 };
+
+const mainMonitorUUID = crypto.randomUUID();
 
 const initialState: UIState = {
   userId: '',
+  monitorId: mainMonitorUUID,
   users: JSON.stringify([]),           // JSON string
   places: JSON.stringify([]),          // JSON string
+  monitors: JSON.stringify([{
+    name: 'main',
+    uuid: mainMonitorUUID,
+    samples: 0,
+  }]),
 };
 
 // Thunk action to remove place and cleanup cameras that reference it
@@ -37,7 +47,7 @@ export const UISlice = createSlice({
     setUser: (state, action: PayloadAction<UUIDed>) => {
       state.userId = action.payload.uuid;
       // Parse users from JSON, add if not already there, serialize back
-      const users: UUIDed[] = fromJSON(state.users);
+      const users: UUIDed[] = fromJSON(state.users, []);
       if (!users.find(u => u.name === action.payload.name)) {
         users.push(action.payload);
       }
@@ -46,7 +56,7 @@ export const UISlice = createSlice({
     },
     setPlace: (state, action: PayloadAction<UUIDed>) => {
       // Just manage the places list - placeId is purely per-camera
-      const places: UUIDed[] = fromJSON(state.places);
+      const places: UUIDed[] = fromJSON(state.places, []);
       if (action.payload && !places.find(p => p.name === action.payload.name)) {
         places.push(action.payload);
       }
@@ -54,10 +64,11 @@ export const UISlice = createSlice({
       state.places = toJSON(filtered);
     },
     incrementStats: (state, action) => {
-      const { userId, placeId, count } = action.payload;
+      const { userId, placeId, monitorId, count } = action.payload;
       // Parse JSON, update, serialize back
-      let places: UUIDed[] = fromJSON(state.places);
-      let users: UUIDed[] = fromJSON(state.users);
+      let places: UUIDed[] = fromJSON(state.places, []);
+      let users: UUIDed[] = fromJSON(state.users, []);
+      let monitors: UUIDed[] = fromJSON(state.monitors, []);
 
       // Update place if exists
       let placeFound = false;
@@ -91,17 +102,34 @@ export const UISlice = createSlice({
         console.warn(`[incrementStats] User NOT FOUND: ${userId}, `, users.map(u => u.uuid));
       }
 
+      // Update monitor if exists
+      let monitorFound = false;
+      monitors = monitors.map(m => {
+        if (m.uuid === monitorId) {
+          monitorFound = true;
+          const newSamples = (m.samples || 0) + count;
+          return { ...m, samples: newSamples };
+        }
+        return m;
+      });
+
+      // Log if monitor not found
+      if (!monitorFound && monitorId) {
+        console.warn(`[incrementStats] Monitor NOT FOUND: ${monitorId}, `, monitors.map(m => m.uuid));
+      }
+
       state.places = toJSON(places);
       state.users = toJSON(users);
+      state.monitors = toJSON(monitors);
     },
     removeUser: (state, action: PayloadAction<{ uuid: string }>) => {
-      const users: UUIDed[] = fromJSON(state.users);
+      const users: UUIDed[] = fromJSON(state.users, []);
       state.users = toJSON(users.filter(u => u.uuid !== action.payload.uuid));
       state.userId = '';
     },
     // reset samples for current user
     resetUser: (state) => {
-      const users: UUIDed[] = fromJSON(state.users);
+      const users: UUIDed[] = fromJSON(state.users, []);
       state.users = toJSON(users.map(u => {
         if (u.uuid === state.userId) {
           return { ...u, samples: 0 };
@@ -111,7 +139,7 @@ export const UISlice = createSlice({
     },
     resetPlace: (state, action: PayloadAction<{ uuid: string }>) => {
       // Reset samples for a specific place
-      const places: UUIDed[] = fromJSON(state.places);
+      const places: UUIDed[] = fromJSON(state.places, []);
       state.places = toJSON(places.map(p => {
         if (p.uuid === action.payload.uuid) {
           return { ...p, samples: 0 };
@@ -120,9 +148,55 @@ export const UISlice = createSlice({
       }));
     },
 
+    // Monitor reducers (mirror user pattern)
+    setMonitor: (state, action: PayloadAction<UUIDed>) => {
+      state.monitorId = action.payload.uuid;
+      // Parse monitors from JSON, add if not already there, serialize back
+      const monitors: UUIDed[] = fromJSON(state.monitors, []);
+      if (!monitors.find(m => m.name === action.payload.name)) {
+        monitors.push(action.payload);
+      }
+      const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
+      state.monitors = toJSON(filtered);
+    },
+    addMonitor: (state, action: PayloadAction<UUIDed>) => {
+      // Parse monitors from JSON, add if not already there, serialize back
+      const monitors: UUIDed[] = fromJSON(state.monitors, []);
+      if (!monitors.find(m => m.name === action.payload.name)) {
+        monitors.push(action.payload);
+      }
+      const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
+      state.monitors = toJSON(filtered);
+    },
+    removeMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
+      const monitors: UUIDed[] = fromJSON(state.monitors, []);
+      // Find the monitor to check if it's "main"
+      const monitorToRemove = monitors.find(m => m.uuid === action.payload.uuid);
+      // Prevent removal of "main" monitor
+      if (monitorToRemove?.name === 'main') {
+        console.warn('[removeMonitor] Cannot remove "main" monitor');
+        return;
+      }
+      state.monitors = toJSON(monitors.filter(m => m.uuid !== action.payload.uuid));
+      // Reset monitorId if removed monitor was selected
+      if (state.monitorId === action.payload.uuid) {
+        state.monitorId = '';
+      }
+    },
+    resetMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
+      const monitors: UUIDed[] = fromJSON(state.monitors, []);
+      state.monitors = toJSON(monitors.map(m => {
+        if (m.uuid === action.payload.uuid) {
+          return { ...m, samples: 0 };
+        }
+        return m;
+      }));
+    },
+
     selectDefaultValues: (state) => {
-      const users: UUIDed[] = fromJSON(state.users);
-      const places: UUIDed[] = fromJSON(state.places);
+      const users: UUIDed[] = fromJSON(state.users, []);
+      const places: UUIDed[] = fromJSON(state.places, []);
+      let monitors: UUIDed[] = fromJSON(state.monitors, []);
 
       if (users.length > 0) {
         const user = users.find(u => u.uuid === state.userId);
@@ -134,13 +208,34 @@ export const UISlice = createSlice({
       if (places.length > 0) {
         state.places = toJSON(places.filter(p => SampleValidation.validateUUIDed(p)));
       }
+
+      // Ensure "main" monitor exists - auto-add if empty
+      if (monitors.length === 0) {
+        const mainMonitorUUID = crypto.randomUUID();
+        monitors = [{
+          name: 'main',
+          uuid: mainMonitorUUID,
+          samples: 0,
+        }];
+        state.monitorId = mainMonitorUUID;
+      } else {
+        // Auto-select "main" monitor if no monitor is selected
+        if (!state.monitorId) {
+          const mainMonitor = monitors.find(m => m.name === 'main');
+          if (mainMonitor) {
+            state.monitorId = mainMonitor.uuid;
+          }
+        }
+      }
+
+      state.monitors = toJSON(monitors.filter(m => SampleValidation.validateUUIDed(m)));
     },
 
   },
   extraReducers: (builder) => {
     builder.addCase(removePlace.fulfilled, (state, action) => {
       const placeId = action.payload;
-      const places: UUIDed[] = fromJSON(state.places);
+      const places: UUIDed[] = fromJSON(state.places, []);
       state.places = toJSON(places.filter(p => p.uuid !== placeId));
     });
   },
@@ -152,6 +247,10 @@ export const {
   removeUser,
   resetUser,
   resetPlace,
+  setMonitor,
+  addMonitor,
+  removeMonitor,
+  resetMonitor,
   selectDefaultValues,
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;

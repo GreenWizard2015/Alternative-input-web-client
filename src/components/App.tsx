@@ -42,6 +42,7 @@ type AppSettings = {
   mode: string,
   setMode: (mode: string) => void,
   userId: string,
+  monitorId: string,
   activeUploads: number,
   meanUploadDuration: number,
   selectedCameras: CameraEntity[], // Memoized selected cameras from Redux
@@ -51,7 +52,7 @@ type AppSettings = {
 };
 
 function AppComponent(
-  { mode, setMode, userId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
+  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
 ) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -261,13 +262,14 @@ function AppComponent(
     setGameMode(mode);
   }, [setMode]);
 
-  // Start button enabled: eyes detected, user selected, and all cameras have places
+  // Start button enabled: eyes detected, user selected, monitor selected, and all cameras have places
   const canStart = useMemo(() => {
     const hasUser = userId.length > 0;
+    const hasMonitor = monitorId.length > 0;
     const hasCameras = selectedCameras.length > 0;
     const allCamerasReady = selectedCameras.every(cam => cam.placeId && cam.placeId.length > 0);
-    return eyesVisible && hasUser && hasCameras && allCamerasReady;
-  }, [eyesVisible, userId, selectedCameras]);
+    return eyesVisible && hasUser && hasMonitor && hasCameras && allCamerasReady;
+  }, [eyesVisible, userId, monitorId, selectedCameras]);
 
   let content = null;
   if (mode === 'intro') {

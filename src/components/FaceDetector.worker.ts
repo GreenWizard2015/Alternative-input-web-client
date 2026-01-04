@@ -124,6 +124,7 @@ const processQueue = async () => {
         placeId: config.placeId,
         screenId: config.screenId,
         cameraId: config.cameraId,
+        monitorId: config.monitorId,
       });
 
        // Buffer sample only if accepting AND not paused AND goal is valid AND passes minTime filter
@@ -181,6 +182,7 @@ const flushBuckets = (minSamples: number = 0) => {
             serializedBuffer: serialized,
             userId: first.userId,
             placeId: first.placeId,
+            monitorId: first.monitorId,
             count: sent.length
           }, [serialized]);
         } catch (error) {

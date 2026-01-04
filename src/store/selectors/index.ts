@@ -12,6 +12,8 @@ export const selectMode = (state: RootState): string => state.App.mode;
 
 export const selectUserId = (state: RootState): string => state.UI.userId;
 
+export const selectMonitorId = (state: RootState): string => state.UI.monitorId || '';
+
 export const selectActiveUploads = (state: RootState): number => state.App.activeUploads;
 
 export const selectMeanUploadDuration = (state: RootState): number => state.App.meanUploadDuration;
@@ -35,7 +37,7 @@ export const selectSortedDeviceIds = createSelector(
     const ids = cameras.map(cam => cam.deviceId).sort();
     return toJSON(ids);
   },
-  (ids) => fromJSON<string[]>(ids)
+  (ids) => fromJSON<string[]>(ids, [])
 );
 
 /**
@@ -65,6 +67,20 @@ export const selectPlaces = createSelector(
   }
 );
 
+// Monitors list stored as JSON string, parsed only when accessed
+export const selectMonitorsList = createSelector(
+  (state: RootState) => state.UI.monitors,
+  (json: string) => fromJSON<UUIDed[]>(json, [])
+);
+
+// Monitors with byId helper stored as JSON string, parsed only when accessed
+export const selectMonitors = createSelector(
+  selectMonitorsList,
+  (monitors) => {
+    return Object.assign([], monitors, { byId: (id: string) => byId(monitors, id) });
+  }
+);
+
 /**
  * Composite selector - returns multiple values as object
  * Memoized to prevent unnecessary re-renders
@@ -72,13 +88,15 @@ export const selectPlaces = createSelector(
 export const selectAppProps = createSelector(
   selectMode,
   selectUserId,
+  selectMonitorId,
   selectActiveUploads,
   selectMeanUploadDuration,
   selectSelectedCameras,
   selectUsers,
-  (mode, userId, activeUploads, meanUploadDuration, selectedCameras, users) => ({
+  (mode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, users) => ({
     mode,
     userId,
+    monitorId,
     activeUploads,
     meanUploadDuration,
     selectedCameras,

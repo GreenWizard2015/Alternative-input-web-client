@@ -20,6 +20,7 @@ describe('serialize()', () => {
         placeId: 'place-123456789012345678901234567890',
         screenId: 'screen-12345678901234567890123456789',
         cameraId: 'camera-12345678901234567890123456789',
+        monitorId: 'monitor-1234567890123456789012345678',
       })
     );
   });
@@ -32,7 +33,7 @@ describe('serialize()', () => {
 
   test('buffer size matches expected format', () => {
     const buffer = serialize(samples);
-    const headerSize = 1 + 36 * 4; // version + 4 IDs
+    const headerSize = 1 + 36 * 5; // version + 5 IDs (userId, placeId, screenId, cameraId, monitorId)
     const expectedSize = headerSize + samples.length * sampleSize();
     expect(buffer.byteLength).toBe(expectedSize);
   });
@@ -67,7 +68,7 @@ describe('serialize()', () => {
   test('serializes single sample', () => {
     const singleSample = [samples[0]];
     const buffer = serialize(singleSample);
-    const headerSize = 1 + 36 * 4;
+    const headerSize = 1 + 36 * 5; // version + 5 IDs
     expect(buffer.byteLength).toBe(headerSize + sampleSize());
   });
 
@@ -83,6 +84,7 @@ describe('serialize()', () => {
         placeId: 'place-123456789012345678901234567890',
         screenId: 'screen-12345678901234567890123456789',
         cameraId: 'camera-12345678901234567890123456789',
+        monitorId: 'monitor-1234567890123456789012345678',
       })
     );
     const buffer = serialize(largeBatch);
@@ -100,6 +102,7 @@ describe('serialize()', () => {
       placeId: 'place-123456789012345678901234567890',
       screenId: 'screen-12345678901234567890123456789',
       cameraId: 'camera-12345678901234567890123456789',
+      monitorId: 'monitor-1234567890123456789012345678',
     });
     expect(() => serialize([sampleWithNullEyes])).not.toThrow();
   });
@@ -116,12 +119,14 @@ describe('serialize()', () => {
       placeId: 'place-123456789012345678901234567890',
       screenId: 'screen-12345678901234567890123456789',
       cameraId: 'camera-12345678901234567890123456789',
+      monitorId: 'monitor-1234567890123456789012345678',
     });
 
     const buffer = serialize([sample]);
 
     // Verify buffer contains the serialized data
-    expect(buffer.byteLength).toBe(145 + sampleSize());
+    // Header: 1 (version) + 5*36 (IDs) = 181
+    expect(buffer.byteLength).toBe(181 + sampleSize());
 
     // Verify by checking the header version
     const view = new DataView(buffer);
@@ -141,6 +146,7 @@ describe('serialize()', () => {
       placeId: 'place-123456789012345678901234567890',
       screenId: 'screen-12345678901234567890123456789',
       cameraId: 'camera-12345678901234567890123456789',
+      monitorId: 'monitor-1234567890123456789012345678',
     });
 
     expect(() => serialize([sample])).not.toThrow();
@@ -157,6 +163,7 @@ describe('serialize()', () => {
       placeId: 'place-123456789012345678901234567890',
       screenId: 'screen-12345678901234567890123456789',
       cameraId: 'camera-1234567890123456789012345678',
+      monitorId: 'monitor-123456789012345678901234567',
     });
 
     expect(() => serialize([invalidSample])).toThrow();

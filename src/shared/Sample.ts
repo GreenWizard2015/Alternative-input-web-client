@@ -32,7 +32,7 @@ export function byId(items: UUIDed[], id: string): UUIDed | undefined {
  * Sample - Represents a single facial detection sample
  *
  * Contains facial landmark detection data, eye crops, and gaze goal position.
- * All samples in a serialized batch must have the same userId, placeId, screenId, cameraId.
+ * All samples in a serialized batch must have the same userId, placeId, screenId, cameraId, and monitorId.
  *
  * Validates goal position in constructor if provided.
  * Goal must be in range [-2, 2] (inclusive) for both x and y coordinates, or null for invalid detections.
@@ -53,6 +53,8 @@ export class Sample {
   screenId: string;
   // cameraId: identifier for the camera that captured this sample
   cameraId: string;
+  // monitorId: identifier for the monitor selected during this sample (for tracking/correlation, not stats)
+  monitorId: string;
 
   private static readonly GOAL_MIN = -2;
   private static readonly GOAL_MAX = 2;
@@ -67,6 +69,7 @@ export class Sample {
     placeId: string;
     screenId: string;
     cameraId: string;
+    monitorId: string;
   }) {
     // Validate goal position if provided (inclusive bounds)
     if (data.goal) {
@@ -87,14 +90,15 @@ export class Sample {
     this.placeId = data.placeId;
     this.screenId = data.screenId;
     this.cameraId = data.cameraId;
+    this.monitorId = data.monitorId;
   }
 
   /**
    * Returns a pipe-joined string of all sample identifiers.
-   * Format: "userId|placeId|screenId|cameraId"
+   * Format: "userId|placeId|screenId|cameraId|monitorId"
    */
   bucket(): string {
-    return [this.userId, this.placeId, this.screenId, this.cameraId].join('|');
+    return [this.userId, this.placeId, this.screenId, this.cameraId, this.monitorId].join('|');
   }
 }
 
@@ -112,7 +116,7 @@ export const EYE_SIZE = 48;
  * - goal.x: 4 bytes (float32, normalized -1.0 to 1.0)
  * - goal.y: 4 bytes (float32, normalized -1.0 to 1.0)
  *
- * Note: userId, placeId, screenId, and cameraId are not included here.
+ * Note: userId, placeId, screenId, cameraId, and monitorId are not included here.
  * They are common to all samples in a chunk and are written only once in the header.
  */
 export function sampleSize(): number {

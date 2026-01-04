@@ -3,6 +3,7 @@ import type { RootState } from '../store';
 import {
   openUserDialog as openUserDialogAction,
   openPlaceDialog as openPlaceDialogAction,
+  openMonitorDialog as openMonitorDialogAction,
   openStartDialog as openStartDialogAction,
   closeDialog as closeDialogAction,
   setTempName as setTempNameAction,
@@ -21,12 +22,14 @@ export function useDialogStateMachine() {
   const isIdle = dialogType === 'IDLE';
   const isUserDialog = dialogType === 'USER_DIALOG';
   const isPlaceDialog = dialogType === 'PLACE_DIALOG';
+  const isMonitorDialog = dialogType === 'MONITOR_DIALOG';
   const isStartDialog = dialogType === 'START_DIALOG';
 
   return {
     // Dispatchers
     openUserDialog: () => dispatch(openUserDialogAction()),
     openPlaceDialog: (cameraId?: string) => dispatch(openPlaceDialogAction(cameraId)),
+    openMonitorDialog: () => dispatch(openMonitorDialogAction()),
     openStartDialog: () => dispatch(openStartDialogAction()),
     closeDialog: () => dispatch(closeDialogAction()),
     setTempName: (name: string) => dispatch(setTempNameAction(name)),
@@ -36,6 +39,7 @@ export function useDialogStateMachine() {
     isIdle,
     isUserDialog,
     isPlaceDialog,
+    isMonitorDialog,
     isStartDialog,
     // Raw values
     tempName,

@@ -16,17 +16,14 @@ export function toJSON<T>(data: T): string {
 /**
  * Parse JSON string back to typed data
  * @param json - JSON string to parse
- * @param fallback - Optional fallback value if parsing fails
+ * @param fallback - Fallback value if parsing fails (required)
  * @returns Parsed data or fallback if parsing fails
  */
-export function fromJSON<T>(json: string, fallback?: T): T {
+export function fromJSON<T>(json: string, fallback: T): T {
   try {
     return JSON.parse(json);
   } catch {
-    if (fallback !== undefined) {
-      return fallback;
-    }
-    throw new Error(`Failed to parse JSON: ${json}`);
+    return fallback;
   }
 }
 

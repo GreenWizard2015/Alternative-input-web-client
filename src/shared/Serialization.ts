@@ -33,6 +33,7 @@ function accumulateUnique(key: keyof Sample) {
  *   - placeId: 36 bytes (UTF-8 encoded string)
  *   - screenId: 36 bytes (UTF-8 encoded string)
  *   - cameraId: 36 bytes (UTF-8 encoded string)
+ *   - monitorId: 36 bytes (UTF-8 encoded string)
  * - Per-sample data (repeated for each sample):
  *   - time: 8 bytes (uint64 BigInt milliseconds)
  *   - leftEye: 2,304 bytes (48x48 uint8 grayscale)
@@ -41,9 +42,9 @@ function accumulateUnique(key: keyof Sample) {
  *   - goal.x: 4 bytes (float32)
  *   - goal.y: 4 bytes (float32)
  *
- * Total size = 1 + 144 + (samples.length * sampleSize())
+ * Total size = 1 + 180 + (samples.length * sampleSize())
  *
- * @throws Error if samples have inconsistent userId, placeId, screenId, or cameraId
+ * @throws Error if samples have inconsistent userId, placeId, screenId, cameraId, or monitorId
  * @throws Error if sample data doesn't match expected format (eye size, landmarks, etc.)
  */
 export function serialize(samples: Sample[]): ArrayBuffer {
@@ -68,8 +69,13 @@ export function serialize(samples: Sample[]): ArrayBuffer {
     throw new Error('Expected one camera ID, got ' + cameraIDs.length);
   }
 
-  // Allocate buffer: version (1) + header IDs (144) + all samples
-  const headerSize = 36 + 36 + 36 + 36 + 1;
+  const monitorIDs = samples.reduce(accumulateUnique('monitorId'), []);
+  if (1 !== monitorIDs.length) {
+    throw new Error('Expected one monitor ID, got ' + monitorIDs.length);
+  }
+
+  // Allocate buffer: version (1) + header IDs (180: 5×36) + all samples
+  const headerSize = 36 + 36 + 36 + 36 + 36 + 1;
   const totalSize = samples.length * sampleSize() + headerSize;
   const buffer = new ArrayBuffer(totalSize);
   const view = new DataView(buffer);
@@ -96,12 +102,13 @@ export function serialize(samples: Sample[]): ArrayBuffer {
     }
   };
 
-  // Write header: userId, placeId, screenId, cameraId (all from first sample)
+  // Write header: userId, placeId, screenId, cameraId, monitorId (all from first sample)
   const sample = samples[0];
   saveString(sample.userId, 'userID');
   saveString(sample.placeId, 'placeID');
   saveString(sample.screenId, 'screenID');
   saveString(sample.cameraId, 'cameraID');
+  saveString(sample.monitorId, 'monitorID');
 
   // Create empty eye for null cases
   const EMPTY_EYE = new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(0);
