@@ -4,8 +4,7 @@ import UserDialog from './UserDialog';
 import PlaceDialog from './PlaceDialog';
 import MonitorDialog from './MonitorDialog';
 import MainMenu from './MainMenu';
-import { selectDefaultValues, setPlace, setUser, addMonitor } from '../store/slices/UI';
-import { setCameraPlace } from '../store/slices/App';
+import { selectDefaultValues, addPlace, setUser, addMonitor } from '../store/slices/UI';
 import { connect } from 'react-redux';
 import { useDialogStateMachine } from '../hooks/useDialogStateMachine';
 import { selectUserId, selectSelectedCameras } from '../store/selectors';
@@ -16,10 +15,9 @@ type UIProps = {
   onStart: (mode: any) => void;
   canStart: boolean;
   selectDefaultValues: () => void;
-  doSetCameraPlace: (payload: { deviceId: string; placeId: string }) => void;
-  doSetPlace: (payload: { uuid: string; name: string; samples: number }) => void;
-  doSetUser: (payload: { uuid: string; name: string; samples: number }) => void;
-  doAddMonitor: (payload: { uuid: string; name: string; samples: number }) => void;
+  doAddPlace: (name: string) => void;
+  doSetUser: (name: string) => void;
+  doAddMonitor: (name: string) => void;
   userId?: string;
   selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
   screenId?: string;
@@ -30,8 +28,7 @@ function UI({
   onStart,
   canStart,
   selectDefaultValues,
-  doSetCameraPlace,
-  doSetPlace,
+  doAddPlace,
   doSetUser,
   doAddMonitor,
   userId = '',
@@ -45,7 +42,6 @@ function UI({
     isMonitorDialog,
     isStartDialog,
     tempName,
-    tempUUID,
     tempCameraId,
     openUserDialog,
     openPlaceDialog,
@@ -53,7 +49,6 @@ function UI({
     openStartDialog,
     closeDialog,
     setTempName,
-    setTempUUID,
   } = useDialogStateMachine();
 
   useEffect(() => {
@@ -68,11 +63,9 @@ function UI({
         <UserDialog
           tempName={tempName}
           setTempName={setTempName}
-          tempUUID={tempUUID}
-          setTempUUID={setTempUUID}
-          onConfirm={() => {
+          onConfirm={(name) => {
             // Create user and select it, then close
-            doSetUser({ uuid: tempUUID, name: tempName, samples: 0 });
+            doSetUser(name);
             closeDialog();
           }}
           onCancel={closeDialog}
@@ -85,11 +78,9 @@ function UI({
           tempName={tempName}
           setTempName={setTempName}
           onConfirm={(placeName) => {
-            // Create place and assign to camera (placeName already has camera prefix)
-            doSetPlace({ uuid: tempUUID, name: placeName, samples: 0 });
-            if (tempCameraId) {
-              doSetCameraPlace({ deviceId: tempCameraId, placeId: tempUUID });
-            }
+            // Create place (placeName already has camera prefix)
+            // UUID is generated in Redux reducer
+            doAddPlace(placeName);
             closeDialog();
           }}
           onCancel={closeDialog}
@@ -100,11 +91,10 @@ function UI({
         <MonitorDialog
           tempName={tempName}
           setTempName={setTempName}
-          tempUUID={tempUUID}
-          setTempUUID={setTempUUID}
-          onConfirm={(monitorName, monitorUUID) => {
+          onConfirm={(name) => {
             // Create monitor
-            doAddMonitor({ uuid: monitorUUID, name: monitorName, samples: 0 });
+            // UUID is generated in Redux reducer
+            doAddMonitor(name);
             closeDialog();
           }}
           onCancel={closeDialog}
@@ -138,8 +128,7 @@ export default connect(
   },
   {
     selectDefaultValues,
-    doSetCameraPlace: setCameraPlace,
-    doSetPlace: setPlace,
+    doAddPlace: addPlace,
     doSetUser: setUser,
     doAddMonitor: addMonitor,
   }

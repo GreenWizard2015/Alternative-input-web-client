@@ -44,24 +44,46 @@ export const UISlice = createSlice({
   name: "UI",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<UUIDed>) => {
-      state.userId = action.payload.uuid;
-      // Parse users from JSON, add if not already there, serialize back
-      const users: UUIDed[] = fromJSON(state.users, []);
-      if (!users.find(u => u.name === action.payload.name)) {
-        users.push(action.payload);
+    setUser: (state, action: PayloadAction<string | null>) => {
+      // If null, clear selection
+      if (action.payload === null) {
+        state.userId = '';
+        return;
       }
-      const filtered = users.filter(u => SampleValidation.validateUUIDed(u));
-      state.users = toJSON(filtered);
+
+      // Parse users from JSON to find existing user by name
+      const users: UUIDed[] = fromJSON(state.users, []);
+      const existingUser = users.find(u => u.name === action.payload);
+
+      if (existingUser) {
+        // Select existing user - use their UUID
+        state.userId = existingUser.uuid;
+      } else {
+        // New user - generate UUID and add to list
+        const uuid = crypto.randomUUID();
+        state.userId = uuid;
+        users.push({ uuid, name: action.payload, samples: 0 });
+        const filtered = users.filter(u => SampleValidation.validateUUIDed(u));
+        state.users = toJSON(filtered);
+      }
     },
-    setPlace: (state, action: PayloadAction<UUIDed>) => {
+    addPlace: (state, action: PayloadAction<string | null>) => {
+      // If null, do nothing
+      if (action.payload === null) {
+        return;
+      }
+
       // Just manage the places list - placeId is purely per-camera
       const places: UUIDed[] = fromJSON(state.places, []);
-      if (action.payload && !places.find(p => p.name === action.payload.name)) {
-        places.push(action.payload);
+      const existingPlace = places.find(p => p.name === action.payload);
+
+      if (!existingPlace) {
+        // New place - generate UUID and add
+        const uuid = crypto.randomUUID();
+        places.push({ uuid, name: action.payload, samples: 0 });
+        const filtered = places.filter(p => SampleValidation.validateUUIDed(p));
+        state.places = toJSON(filtered);
       }
-      const filtered = places.filter(p => SampleValidation.validateUUIDed(p));
-      state.places = toJSON(filtered);
     },
     incrementStats: (state, action) => {
       const { userId, placeId, monitorId, count } = action.payload;
@@ -149,24 +171,46 @@ export const UISlice = createSlice({
     },
 
     // Monitor reducers (mirror user pattern)
-    setMonitor: (state, action: PayloadAction<UUIDed>) => {
-      state.monitorId = action.payload.uuid;
-      // Parse monitors from JSON, add if not already there, serialize back
-      const monitors: UUIDed[] = fromJSON(state.monitors, []);
-      if (!monitors.find(m => m.name === action.payload.name)) {
-        monitors.push(action.payload);
+    setMonitor: (state, action: PayloadAction<string | null>) => {
+      // If null, clear selection
+      if (action.payload === null) {
+        state.monitorId = '';
+        return;
       }
-      const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
-      state.monitors = toJSON(filtered);
+
+      // Parse monitors from JSON to find existing monitor by name
+      const monitors: UUIDed[] = fromJSON(state.monitors, []);
+      const existingMonitor = monitors.find(m => m.name === action.payload);
+
+      if (existingMonitor) {
+        // Select existing monitor - use their UUID
+        state.monitorId = existingMonitor.uuid;
+      } else {
+        // New monitor - generate UUID and add to list
+        const uuid = crypto.randomUUID();
+        state.monitorId = uuid;
+        monitors.push({ uuid, name: action.payload, samples: 0 });
+        const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
+        state.monitors = toJSON(filtered);
+      }
     },
-    addMonitor: (state, action: PayloadAction<UUIDed>) => {
+    addMonitor: (state, action: PayloadAction<string | null>) => {
+      // If null, do nothing
+      if (action.payload === null) {
+        return;
+      }
+
       // Parse monitors from JSON, add if not already there, serialize back
       const monitors: UUIDed[] = fromJSON(state.monitors, []);
-      if (!monitors.find(m => m.name === action.payload.name)) {
-        monitors.push(action.payload);
+      const existingMonitor = monitors.find(m => m.name === action.payload);
+
+      if (!existingMonitor) {
+        // New monitor - generate UUID and add
+        const uuid = crypto.randomUUID();
+        monitors.push({ uuid, name: action.payload, samples: 0 });
+        const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
+        state.monitors = toJSON(filtered);
       }
-      const filtered = monitors.filter(m => SampleValidation.validateUUIDed(m));
-      state.monitors = toJSON(filtered);
     },
     removeMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
       const monitors: UUIDed[] = fromJSON(state.monitors, []);
@@ -243,7 +287,7 @@ export const UISlice = createSlice({
 
 export const {
   setUser,
-  setPlace,
+  addPlace,
   removeUser,
   resetUser,
   resetPlace,

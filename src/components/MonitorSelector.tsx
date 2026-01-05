@@ -8,7 +8,7 @@ import BaseSelector from './BaseSelector';
 type MonitorSelectorProps = {
   monitorId: string;
   monitors: UUIDed[] & { byId: (id: string) => UUIDed | undefined };
-  doSetMonitor: (monitor: UUIDed) => void;
+  doSetMonitor: (name: string | null) => void;
   doRemoveMonitor: (payload: { uuid: string }) => void;
   doResetMonitor: (payload: { uuid: string }) => void;
   onAdd: () => void;
@@ -26,7 +26,7 @@ function MonitorSelector({
     <BaseSelector<UUIDed>
       selectedId={monitorId}
       items={monitors}
-      onSelect={doSetMonitor}
+      onSelect={(monitor) => doSetMonitor(monitor ? monitor.name : null)}
       onAdd={onAdd}
       onRemove={() => doRemoveMonitor({ uuid: monitorId })}
       onReset={() => doResetMonitor({ uuid: monitorId })}

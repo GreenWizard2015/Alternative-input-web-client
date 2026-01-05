@@ -8,7 +8,7 @@ import BaseSelector from './BaseSelector';
 type UserSelectorProps = {
   userId: string;
   users: User[] & { byId: (id: string) => User | undefined };
-  doSetUser: (user: User) => void;
+  doSetUser: (name: string | null) => void;
   doRemoveUser: (payload: { uuid: string }) => void;
   doResetUser: () => void;
   onAdd: () => void;
@@ -26,7 +26,7 @@ function UserSelector({
     <BaseSelector<User>
       selectedId={userId}
       items={users}
-      onSelect={doSetUser}
+      onSelect={(user) => doSetUser(user ? user.name : null)}
       onAdd={onAdd}
       onRemove={() => doRemoveUser({ uuid: userId })}
       onReset={doResetUser}

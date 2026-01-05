@@ -71,6 +71,9 @@ export default function BaseSelector<T extends { uuid: string }>({
           if (value) {
             const item = items.byId(value);
             if (item) onSelect(item);
+          } else {
+            // Pass null to clear selection
+            onSelect(null as any);
           }
         }}>
         <option value="">{t(notSelectedKey)}</option>

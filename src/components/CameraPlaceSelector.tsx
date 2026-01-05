@@ -41,7 +41,7 @@ function CameraPlaceSelector({
     <BaseSelector<Place>
       selectedId={selectedPlaceId}
       items={filteredPlaces}
-      onSelect={(place) => doSetCameraPlace({ deviceId: cameraId, placeId: place.uuid })}
+      onSelect={(place) => doSetCameraPlace({ deviceId: cameraId, placeId: place ? place.uuid : '' })}
       onAdd={() => onAddPlace(cameraId)}
       onRemove={() => doRemovePlace(selectedPlaceId)}
       onReset={() => doResetPlace({ uuid: selectedPlaceId })}

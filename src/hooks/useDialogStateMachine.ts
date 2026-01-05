@@ -7,7 +7,6 @@ import {
   openStartDialog as openStartDialogAction,
   closeDialog as closeDialogAction,
   setTempName as setTempNameAction,
-  setTempUUID as setTempUUIDAction,
   setTempCameraId as setTempCameraIdAction,
 } from '../store/slices/App';
 
@@ -15,7 +14,6 @@ export function useDialogStateMachine() {
   const dispatch = useDispatch();
   const dialogType = useSelector((state: RootState) => state.App.dialogType);
   const tempName = useSelector((state: RootState) => state.App.tempName);
-  const tempUUID = useSelector((state: RootState) => state.App.tempUUID);
   const tempCameraId = useSelector((state: RootState) => state.App.tempCameraId);
 
   // Type guards for current state
@@ -33,7 +31,6 @@ export function useDialogStateMachine() {
     openStartDialog: () => dispatch(openStartDialogAction()),
     closeDialog: () => dispatch(closeDialogAction()),
     setTempName: (name: string) => dispatch(setTempNameAction(name)),
-    setTempUUID: (uuid: string) => dispatch(setTempUUIDAction(uuid)),
     setTempCameraId: (cameraId: string) => dispatch(setTempCameraIdAction(cameraId)),
     // State guards
     isIdle,
@@ -43,7 +40,6 @@ export function useDialogStateMachine() {
     isStartDialog,
     // Raw values
     tempName,
-    tempUUID,
     tempCameraId,
   };
 }

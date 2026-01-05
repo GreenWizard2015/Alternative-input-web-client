@@ -3,17 +3,13 @@ import BaseDialog from './BaseDialog';
 type UserDialogProps = {
   tempName: string;
   setTempName: (name: string) => void;
-  tempUUID: string;
-  setTempUUID: (uuid: string) => void;
-  onConfirm: (name: string, uuid: string) => void;
+  onConfirm: (name: string) => void;
   onCancel: () => void;
 };
 
 export default function UserDialog({
   tempName,
   setTempName,
-  tempUUID,
-  setTempUUID,
   onConfirm,
   onCancel
 }: UserDialogProps) {
@@ -21,12 +17,9 @@ export default function UserDialog({
     <BaseDialog
       tempName={tempName}
       setTempName={setTempName}
-      tempUUID={tempUUID}
-      setTempUUID={setTempUUID}
       onConfirm={onConfirm}
       onCancel={onCancel}
       nameLabelKey="dialogs.enterUserName"
-      uuidLabelKey="dialogs.enterUserUUID"
     />
   );
 }

@@ -25,7 +25,6 @@ interface AppState {
   // Dialog state (ephemeral)
   dialogType: DialogType;
   tempName: string;
-  tempUUID: string;
   tempCameraId: string;
 }
 
@@ -38,7 +37,6 @@ const initialState: AppState = {
   cameras: JSON.stringify({}),
   dialogType: "IDLE",
   tempName: "",
-  tempUUID: "",
   tempCameraId: "",
 };
 
@@ -158,13 +156,11 @@ export const AppSlice = createSlice({
     openUserDialog: (state) => {
       state.dialogType = "USER_DIALOG";
       state.tempName = "";
-      state.tempUUID = crypto.randomUUID();
     },
 
     openPlaceDialog: (state, action: PayloadAction<string | undefined>) => {
       state.dialogType = "PLACE_DIALOG";
       state.tempName = "";
-      state.tempUUID = crypto.randomUUID();
       if (action.payload) {
         state.tempCameraId = action.payload;
       }
@@ -173,7 +169,6 @@ export const AppSlice = createSlice({
     openMonitorDialog: (state) => {
       state.dialogType = "MONITOR_DIALOG";
       state.tempName = "";
-      state.tempUUID = crypto.randomUUID();
     },
 
     openStartDialog: (state) => {
@@ -183,16 +178,11 @@ export const AppSlice = createSlice({
     closeDialog: (state) => {
       state.dialogType = "IDLE";
       state.tempName = "";
-      state.tempUUID = "";
       state.tempCameraId = "";
     },
 
     setTempName: (state, action: PayloadAction<string>) => {
       state.tempName = action.payload;
-    },
-
-    setTempUUID: (state, action: PayloadAction<string>) => {
-      state.tempUUID = action.payload;
     },
 
     setTempCameraId: (state, action: PayloadAction<string>) => {
@@ -217,7 +207,6 @@ export const {
   openStartDialog,
   closeDialog,
   setTempName,
-  setTempUUID,
   setTempCameraId,
 } = AppSlice.actions;
 
