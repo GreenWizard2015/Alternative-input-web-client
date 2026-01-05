@@ -32,8 +32,8 @@ body {
 .UI-wrapper {
   /* center the UI */
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  justify-content: flex-start;
+  align-items: stretch;
   flex-direction: column;
 
   padding: 20px;
@@ -45,8 +45,9 @@ body {
   min-width: 50vw;
   max-width: 50dvw;
   max-width: 50vw;
-  min-height: 30dvh;
-  min-height: 30vh;
+  max-height: 90dvh;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .UI-wrapper button {
@@ -232,4 +233,109 @@ select {
   padding: 8px;
   background-color: #f5f5f5;
   border: 1px solid #ddd;
+}
+
+/* LanguageSelector */
+.language-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.language-selector-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.language-selector-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.language-selector-btn {
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+  background-color: #6c757d;
+  font-weight: normal;
+}
+
+.language-selector-btn-inline {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.language-selector-btn-normal {
+  padding: 8px 16px;
+}
+
+.language-selector-btn-active {
+  background-color: #007bff;
+  font-weight: bold;
+}
+
+/* Intro */
+.intro-language-container {
+  margin-bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.intro-warning {
+  color: red;
+  font-weight: bold;
+}
+
+/* Error messages */
+.error-message-red {
+  color: red;
+  font-weight: bold;
+}
+
+.text-red {
+  color: red;
+}
+
+.error-notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 400px;
+  z-index: 9999;
+  font-family: Arial, sans-serif;
+}
+
+.error-notification-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background-color: #dc3545;
+  color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* BaseSelector */
+.base-selector-unselected {
+  border-color: red !important;
+  border-width: 2px !important;
+}
+
+/* GoalsProgress */
+.progress-bar-section {
+  background-color: silver;
+  height: 1.5rem;
+  vertical-align: middle;
+}
+
+.progress-bar-fill {
+  vertical-align: middle;
+  white-space: nowrap;
 }

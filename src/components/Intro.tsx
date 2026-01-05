@@ -11,7 +11,7 @@ const Intro: React.FC<PrivacyNoticeProps> = ({ onConfirm }) => {
 
   return (
     <>
-      <div style={{ marginBottom: '20px' }}>
+      <div className="intro-language-container">
         <LanguageSelector inline={false} />
       </div>
 
@@ -24,7 +24,7 @@ const Intro: React.FC<PrivacyNoticeProps> = ({ onConfirm }) => {
           <li key={index}>{instruction}</li>
         ))}
       </ol>
-      <p style={{ color: "red", fontWeight: "bold" }}>
+      <p className="intro-warning">
         <strong>{t('intro.warningTitle')}:</strong> {t('intro.warningText')}
       </p>
       <h3>{t('intro.knownIssuesTitle')}</h3>

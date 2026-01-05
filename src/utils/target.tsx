@@ -30,6 +30,12 @@ export function drawTarget(
   canvasCtx.fillStyle = style || 'red';
   canvasCtx.fill();
 
+  // draw circle in center
+  canvasCtx.beginPath();
+  canvasCtx.ellipse(position.x, position.y, 2, 2, 0, 0, Math.PI * 2);
+  canvasCtx.fillStyle = 'lime';
+  canvasCtx.fill();
+
   // draw sign character at the center of the circle
   if (sign) {
     canvasCtx.fillStyle = 'lime';

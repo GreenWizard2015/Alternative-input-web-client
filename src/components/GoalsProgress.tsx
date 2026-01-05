@@ -37,21 +37,18 @@ const MultiLevelProgressBar = ({ currentValue, levels, higherLevelMessage }: IMu
 
     return (
       <div
-        className="p-0 mx-0"
+        className="p-0 mx-0 progress-bar-section"
         key={index}
-        style={{ 
-          backgroundColor: "silver",
+        style={{
           width: `${(rng / totalMax) * 100}%`,
-          height: "1.5rem",
-          verticalAlign: "middle",
         }}
         >
-        <div style={{ 
-          verticalAlign: "middle",
-          whiteSpace: "nowrap",
-          backgroundColor: active ? level.color : "lime",
-          width: `${(sectionValue / rng) * 100}%`,
-        }}>
+        <div
+          className="progress-bar-fill"
+          style={{
+            backgroundColor: active ? level.color : "lime",
+            width: `${(sectionValue / rng) * 100}%`,
+          }}>
           {active ? `${cumulativeValue} / ${level.value}` : ""}
         </div>
       </div>

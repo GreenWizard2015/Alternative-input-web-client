@@ -8,45 +8,29 @@ interface LanguageSelectorProps {
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ inline = false }) => {
   const { i18n, t } = useTranslation();
 
-  const handleLanguageChange = (lang: string) => {
-    i18n.changeLanguage(lang);
+  const handleLanguageChange = async (lang: string) => {
+    await i18n.changeLanguage(lang);
   };
 
-  const buttonStyle = inline
-    ? { marginRight: '8px', padding: '4px 8px', fontSize: '12px' }
-    : { marginRight: '8px', padding: '8px 16px' };
+  const buttonBaseClasses = `language-selector-btn ${inline ? 'language-selector-btn-inline' : 'language-selector-btn-normal'}`;
 
   return (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-      <label style={{ fontWeight: 'bold' }}>{t('intro.selectLanguage')}:</label>
-      <button
-        onClick={() => handleLanguageChange('en')}
-        style={{
-          ...buttonStyle,
-          backgroundColor: i18n.language === 'en' ? '#007bff' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontWeight: i18n.language === 'en' ? 'bold' : 'normal',
-        }}
-      >
-        {t('common.english')}
-      </button>
-      <button
-        onClick={() => handleLanguageChange('uk')}
-        style={{
-          ...buttonStyle,
-          backgroundColor: i18n.language === 'uk' ? '#007bff' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontWeight: i18n.language === 'uk' ? 'bold' : 'normal',
-        }}
-      >
-        {t('common.ukrainian')}
-      </button>
+    <div className="language-selector">
+      <label className="language-selector-label">{t('intro.selectLanguage')}:</label>
+      <div className="language-selector-buttons">
+        <button
+          onClick={() => handleLanguageChange('en')}
+          className={`${buttonBaseClasses} ${i18n.language === 'en' ? 'language-selector-btn-active' : ''}`}
+        >
+          {t('common.english')}
+        </button>
+        <button
+          onClick={() => handleLanguageChange('uk')}
+          className={`${buttonBaseClasses} ${i18n.language === 'uk' ? 'language-selector-btn-active' : ''}`}
+        >
+          {t('common.ukrainian')}
+        </button>
+      </div>
     </div>
   );
 };

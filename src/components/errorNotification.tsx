@@ -38,30 +38,9 @@ function ErrorNotification() {
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        maxWidth: '400px',
-        zIndex: 9999,
-        fontFamily: 'Arial, sans-serif',
-      }}
-    >
+    <div className="error-notification-container">
       {errors.map(error => (
-        <div
-          key={error.id}
-          style={{
-            padding: '12px 16px',
-            marginBottom: '10px',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            borderRadius: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            fontSize: '14px',
-            lineHeight: '1.4',
-          }}
-        >
+        <div key={error.id} className="error-notification-item">
           <strong>Upload Error {error.code ? `(${error.code})` : ''}</strong>
           <br />
           {error.message}

@@ -273,33 +273,25 @@ function AppComponent(
 
   let content = null;
   if (mode === 'intro') {
-    content = <Intro onConfirm={() => setMode('menu')} />;
-  } else if (mode === 'menu') {
     content = (
-      <UI
-        onStart={startGame}
-        canStart={canStart}
-        goFullscreen={() => toggleFullscreen(
-          document.getElementById("root") ?? document.body // app root element
-        )}
-        screenId={screenId}
-      />
+      <div id="UI">
+        <div className="UI-wrapper">
+          <Intro onConfirm={() => setMode('menu')} />
+        </div>
+      </div>
     );
-  }
-
-  // Wrap content in UI container with notifications
-  if (content != null) {
+  } else if (mode === 'menu') {
     content = (
       <div id="UI">
         <div className="UI-wrapper">
           {(0 < activeUploads) ? (
-            <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
+            <div className="w-100 mx-auto text-center error-message-red">
               {t('notifications.activeUploads', { count: activeUploads })}<br />
               {t('notifications.waitUploads')}
             </div>
           ) : null}
           {eyesVisible ? null : (
-            <div className="w-100 mx-auto text-center" style={{color: 'red'}}>
+            <div className="w-100 mx-auto text-center error-message-red">
               {t('notifications.webcamProblem')}<br />
               {t('notifications.eyesNotDetected')}
             </div>
@@ -310,7 +302,14 @@ function AppComponent(
             </div>
           ) : null}
           <GoalsProgress />
-          {content}
+          <UI
+            onStart={startGame}
+            canStart={canStart}
+            goFullscreen={() => toggleFullscreen(
+              document.getElementById("root") ?? document.body // app root element
+            )}
+            screenId={screenId}
+          />
         </div>
       </div>
     );

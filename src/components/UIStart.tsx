@@ -51,7 +51,7 @@ export default function UIStart({ onStart }: UIStartProps) {
     if (!useGamification) return null;
 
     return (
-      <div style={{ color: 'red' }}>
+      <div className="text-red">
         {t('gameStart.gamificationWarning')}
       </div>
     );
@@ -122,7 +122,7 @@ export default function UIStart({ onStart }: UIStartProps) {
           <p>{t('gameStart.circleMovingHelp')}</p>
           <p>{t('gameStart.circleMovingPurpose')}</p>
           {gamificationNote}
-          <div style={{ color: 'red' }}>
+          <div className="text-red">
             {t('gameStart.dataCollection')}
           </div>
           <ul>

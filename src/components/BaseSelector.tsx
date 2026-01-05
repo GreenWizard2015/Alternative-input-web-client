@@ -65,7 +65,7 @@ export default function BaseSelector<T extends { uuid: string }>({
       {t(labelKey)}
       <select
         value={selectedId}
-        style={{ borderColor: !selectedId ? 'red' : undefined, borderWidth: !selectedId ? '2px' : undefined }}
+        className={!selectedId ? 'base-selector-unselected' : ''}
         onChange={e => {
           const value = e.target.value;
           if (value) {
