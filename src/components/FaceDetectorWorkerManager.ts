@@ -20,6 +20,7 @@ import FaceDetectorWorkerModule from './FaceDetector.worker.ts';
 import { DetectionResult } from './FaceDetector';
 import { DEFAULT_SETTINGS } from '../utils/MP';
 import { FpsData } from './FaceDetectorHelpers.js';
+import type { CaptureRateController } from './CameraFrameCaptureController';
 
 // ============================================================================
 // Type Definitions
@@ -49,9 +50,11 @@ export interface WorkerStats {
 
 export type AggregatedStats = Map<string, WorkerStats>;
 
-interface WorkerInstance {
+interface CameraState {
   worker: Worker;
   stats: WorkerStats | null;
+  smoothedFps: number;
+  controller: CaptureRateController | null;
 }
 
 // ============================================================================
@@ -67,13 +70,11 @@ const SMOOTHING_FACTOR = 0.1;
 export const HEADROOM_FACTOR = 1.1; // Multiply interval by 1.1 (capture at ~91% of avg processing)
 
 export class FaceDetectorWorkerManager {
-  private workers: Map<string, WorkerInstance> = new Map();
+  private cameras: Map<string, CameraState> = new Map(); // All per-camera state grouped by cameraId
   private config: ManagerConfig;
   private uploadEndpoint: string;
   private dataWorker: Worker | null = null;
   private fpsRef: React.RefObject<Map<string, FpsData>> | null = null;
-  private smoothedFpsMap: Map<string, number> = new Map(); // Smoothed FPS per camera
-  private captureControllers: Map<string, any> = new Map(); // Capture rate controllers per camera
 
   // Callbacks for stats and events
   onDetect: ((result: DetectionResult) => void) | null = null;
@@ -100,18 +101,20 @@ export class FaceDetectorWorkerManager {
    */
   addCamera(cameraId: string): Worker {
     // Don't add duplicate cameras
-    if (this.workers.has(cameraId)) {
-      return this.workers.get(cameraId)!.worker;
+    if (this.cameras.has(cameraId)) {
+      return this.cameras.get(cameraId)!.worker;
     }
 
     // Create worker instance
     const worker = new FaceDetectorWorkerModule();
-    const instance: WorkerInstance = {
+    const state: CameraState = {
       worker,
-      stats: null
+      stats: null,
+      smoothedFps: 0,
+      controller: null
     };
 
-    this.workers.set(cameraId, instance);
+    this.cameras.set(cameraId, state);
 
     // Setup message handler
     worker.onmessage = (event: MessageEvent) => {
@@ -132,11 +135,12 @@ export class FaceDetectorWorkerManager {
    * Remove a camera worker
    */
   removeCamera(cameraId: string): void {
-    const instance = this.workers.get(cameraId);
-    if (instance) {
-      instance.worker.postMessage({ type: 'stop' });
-      instance.worker.terminate();
-      this.workers.delete(cameraId);
+    const state = this.cameras.get(cameraId);
+    if (state) {
+      state.worker.postMessage({ type: 'stop' });
+      state.worker.terminate();
+      state.controller?.cleanup();
+      this.cameras.delete(cameraId);
     }
   }
 
@@ -149,13 +153,13 @@ export class FaceDetectorWorkerManager {
     time: number,
     goal: any
   ): void {
-    const instance = this.workers.get(cameraId);
-    if (!instance) {
+    const state = this.cameras.get(cameraId);
+    if (!state) {
       console.warn(`Camera ${cameraId} not found`);
       return;
     }
 
-    instance.worker.postMessage(
+    state.worker.postMessage(
       {
         type: 'frame',
         frame,
@@ -173,8 +177,8 @@ export class FaceDetectorWorkerManager {
     this.config = { ...this.config, ...partial };
 
     // Broadcast to all workers
-    for (const instance of this.workers.values()) {
-      instance.worker.postMessage({
+    for (const state of this.cameras.values()) {
+      state.worker.postMessage({
         type: 'updateConfig',
         partial
       });
@@ -184,16 +188,26 @@ export class FaceDetectorWorkerManager {
   /**
    * Update per-camera placeId configurations
    * Allows different cameras to use different placeId (userId is always global)
+   * Also cleans up workers for cameras no longer in the config map
    */
   updateCameraConfigs(cameraConfigMap: Record<string, { placeId: string }>): void {
-    // Send per-camera config updates to each worker
+    // Send per-camera config updates to each camera state
     for (const [cameraId, cameraConfig] of Object.entries(cameraConfigMap)) {
-      const instance = this.workers.get(cameraId);
-      if (instance) {
-        instance.worker.postMessage({
+      const state = this.cameras.get(cameraId);
+      if (state) {
+        state.worker.postMessage({
           type: 'updateConfig',
           partial: { placeId: cameraConfig.placeId }
         });
+      }
+    }
+
+    // Cleanup: Remove cameras no longer in the config
+    const configuredCameras = new Set(Object.keys(cameraConfigMap));
+    for (const cameraId of this.cameras.keys()) {
+      if (!configuredCameras.has(cameraId)) {
+        console.log('[FaceDetectorWorkerManager] Removing orphaned camera:', cameraId);
+        this.removeCamera(cameraId);
       }
     }
   }
@@ -210,8 +224,14 @@ export class FaceDetectorWorkerManager {
    * Register capture rate controllers for all cameras
    * Manager will update these with the average processing FPS
    */
-  setCaptureControllers(controllers: Map<string, any>): void {
-    this.captureControllers = controllers;
+  setCaptureControllers(controllers: Map<string, CaptureRateController>): void {
+    // Assign each controller to its corresponding camera state
+    for (const [cameraId, controller] of controllers) {
+      const state = this.cameras.get(cameraId);
+      if (state) {
+        state.controller = controller;
+      }
+    }
   }
 
   /**
@@ -219,14 +239,21 @@ export class FaceDetectorWorkerManager {
    * Formula: targetInterval = (1000 / avgProcessingFps) * HEADROOM_FACTOR
    */
   private updateCaptureRates(): void {
-    if (this.captureControllers.size === 0) return;
+    if (this.cameras.size === 0) return;
 
     const targetFps = this.getTargetFps() * HEADROOM_FACTOR;
+
+    // Guard against invalid FPS values that would result in invalid intervals
+    if (targetFps === 0 || !isFinite(1000 / targetFps)) {
+      console.warn('[FaceDetectorWorkerManager] Skipping capture rate update: invalid FPS', { targetFps });
+      return;
+    }
+
     // Calculate target interval with headroom factor
     const targetInterval = 1000 / targetFps;
 
-    for (const controller of this.captureControllers.values()) {
-      controller.updateRate(targetInterval);
+    for (const state of this.cameras.values()) {
+      state.controller?.updateRate(targetInterval);
     }
   }
 
@@ -250,22 +277,34 @@ export class FaceDetectorWorkerManager {
   }
 
   /**
-   * Get current stats from all workers
+   * Get current camera IDs (for cleanup and monitoring)
+   */
+  getWorkerIds(): string[] {
+    return Array.from(this.cameras.keys());
+  }
+
+  /**
+   * Get current stats from all cameras
    * Includes both processing FPS (from worker) and input FPS (from ref)
+   * Returns copies of stats objects to prevent external mutations
    */
   getStats(): AggregatedStats {
     const byCamera = new Map<string, WorkerStats>();
 
-    for (const [cameraId, instance] of this.workers) {
-      if (instance.stats) {
-        // Merge in inputFps from fpsRef if available
-        if (this.fpsRef?.current) {
-          const fpsData = this.fpsRef.current.get(cameraId);
-          if (fpsData) {
-            instance.stats.inputFps = fpsData.fps;
-          }
-        }
-        byCamera.set(cameraId, instance.stats);
+    for (const [cameraId, state] of this.cameras) {
+      if (state.stats) {
+        // Create copy instead of returning reference to prevent state mutations
+        // fpsRef.current is always set when used in production
+        const inputFps = this.fpsRef?.current.get(cameraId)?.fps ?? state.stats.inputFps;
+
+        const statsCopy: WorkerStats = {
+          cameraId: state.stats.cameraId,
+          processingFps: state.stats.processingFps,
+          inputFps,
+          samplesTotal: state.stats.samplesTotal
+        };
+
+        byCamera.set(cameraId, statsCopy);
       }
     }
 
@@ -273,7 +312,7 @@ export class FaceDetectorWorkerManager {
   }
 
   /**
-   * Get minimum processing FPS across all workers (using smoothed values)
+   * Get minimum processing FPS across all cameras (using smoothed values)
    */
   getTargetFps(): number {
     const stats = this.getStats();
@@ -281,10 +320,12 @@ export class FaceDetectorWorkerManager {
 
     let minFps = Infinity;
     for (const [cameraId, workerStats] of stats) {
+      const state = this.cameras.get(cameraId);
+      if (!state) continue;
+
       const rawFps = workerStats.processingFps;
-      const previousSmoothed = this.smoothedFpsMap.get(cameraId) ?? rawFps;
-      const smoothedFps = SMOOTHING_FACTOR * rawFps + (1 - SMOOTHING_FACTOR) * previousSmoothed;
-      this.smoothedFpsMap.set(cameraId, smoothedFps);
+      const smoothedFps = SMOOTHING_FACTOR * rawFps + (1 - SMOOTHING_FACTOR) * state.smoothedFps;
+      state.smoothedFps = smoothedFps;
       minFps = Math.min(minFps, smoothedFps);
     }
     return minFps === Infinity ? 0 : minFps;
@@ -292,14 +333,15 @@ export class FaceDetectorWorkerManager {
 
 
   /**
-   * Terminate all workers and cleanup
+   * Terminate all cameras and cleanup
    */
   terminate(): void {
-    for (const [, instance] of this.workers) {
-      instance.worker.postMessage({ type: 'stop' });
-      instance.worker.terminate();
+    // Use removeCamera() to ensure complete cleanup of all resources:
+    // workers, controllers, stats, and smoothed FPS data
+    const cameraIds = Array.from(this.cameras.keys());
+    for (const cameraId of cameraIds) {
+      this.removeCamera(cameraId);
     }
-    this.workers.clear();
   }
 
   /**
@@ -379,9 +421,9 @@ export class FaceDetectorWorkerManager {
       },
       stats: function(cameraId: string, data: any) {
         const { stats } = data;
-        const instance = this.workers.get(cameraId);
-        if (instance && stats && typeof stats === 'object') {
-          instance.stats = stats;
+        const state = this.cameras.get(cameraId);
+        if (state && stats && typeof stats === 'object') {
+          state.stats = stats;
           // Report aggregated stats
           const aggregated = this.getStats();
           this.onStatsUpdate?.(aggregated);

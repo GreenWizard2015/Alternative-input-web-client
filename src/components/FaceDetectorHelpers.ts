@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import FaceDetectorWorkerManager from './FaceDetectorWorkerManager';
 import { hash128Hex } from '../utils';
+import { type Position } from '../shared/Sample';
 import {
   CameraFrameCaptureController,
   type CaptureRateController
@@ -67,8 +68,8 @@ export const initializeStreams = async (
   const streams = new Map<string, MediaStream>();
 
   for (const cameraId of cameraIds) {
+    const normalizedCameraId = hash128Hex(cameraId);
     try {
-      const normalizedCameraId = hash128Hex(cameraId);
       const video = videoRefs.get(normalizedCameraId);
       if (!video) continue;
 
@@ -83,7 +84,13 @@ export const initializeStreams = async (
       await video.play().catch(() => {});
       await waitForVideoReady(video, READINESS_TIMEOUT);
     } catch (error) {
-      // Silently skip stream initialization errors
+      // Log stream initialization errors with context
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorName = error instanceof DOMException ? error.name : 'Unknown';
+      console.error(
+        `[FaceDetector] Failed to initialize stream for ${normalizedCameraId}: ${errorName}: ${errorMsg}`
+      );
+      // Continue with next camera
     }
   }
 
@@ -119,6 +126,25 @@ export const useFpsTracking = (cameraIds: string[]) => {
     return () => clearInterval(fpsTimer);
   }, [cameraIds]);
 
+  // Cleanup entries for cameras that are no longer in the list
+  useEffect(() => {
+    const normalizedCameraIds = new Set(cameraIds.map(id => hash128Hex(id)));
+
+    // Remove entries from fpsRef that are no longer active
+    for (const cameraId of fpsRef.current.keys()) {
+      if (!normalizedCameraIds.has(cameraId)) {
+        fpsRef.current.delete(cameraId);
+      }
+    }
+
+    // Remove entries from finalFpsRef that are no longer active
+    for (const cameraId of finalFpsRef.current.keys()) {
+      if (!normalizedCameraIds.has(cameraId)) {
+        finalFpsRef.current.delete(cameraId);
+      }
+    }
+  }, [cameraIds]);
+
   return {fpsRef, finalFpsRef};
 };
 
@@ -136,7 +162,7 @@ export type CameraCaptureDeps = {
 export const createCameraFrameCapture = (
   normalizedCameraId: string,
   camera: CameraCaptureDeps,
-  goal: { current: any }
+  goal: React.RefObject<Position | null>
 ): CaptureRateController => {
   let isCapturing = false;
 
@@ -155,7 +181,13 @@ export const createCameraFrameCapture = (
         // Update FPS counter
         camera.fpsData.frames++;
       } catch (error) {
-        // Silently skip frame capture errors
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        const isMemoryError = errorMsg.includes('QuotaExceeded');
+        const level = isMemoryError ? 'warn' : 'error';
+        const context = isMemoryError ? ' - GPU memory exhausted' : '';
+        console[level as 'warn' | 'error'](
+          `[FaceDetector] Frame capture error on ${normalizedCameraId}: ${errorMsg}${context}`
+        );
       }
     }
 

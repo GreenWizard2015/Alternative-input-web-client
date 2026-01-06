@@ -1,0 +1,3 @@
+- See .claude/TESTING.md when creating/editing tests
+- See .claude/CODING.md when creating/editing code
+- Add important lessons learned to .claude/TESTING.md or .claude/CODING.md after completing significant refactoring or fixing issues. Keep short and actionable—focus on "why" and patterns, not implementation details

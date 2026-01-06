@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import { DEFAULT_SETTINGS } from '../utils/MP';
 import { Sample, type Position } from "../shared/Sample";
-import FaceDetectorWorkerManager, { ManagerConfig } from './FaceDetectorWorkerManager';
+import FaceDetectorWorkerManager, { ManagerConfig, type AggregatedStats } from './FaceDetectorWorkerManager';
 import { hash128Hex } from '../utils';
 import DataWorker from './DataWorker';
 import { selectUserId, selectMonitorId, selectSelectedCameras, selectSortedDeviceIds } from '../store/selectors';
 import type { CameraEntity } from '../types/camera';
+import type { RootState } from '../store';
 import {
   initializeStreams,
   useFpsTracking,
@@ -46,7 +47,7 @@ type FaceDetectorProps = {
   monitorId: string;
   screenId: string;
   onDetect?: (result: DetectionResult) => void;
-  onStatsUpdate?: (stats: any) => void;
+  onStatsUpdate?: (stats: AggregatedStats) => void;
   isPaused?: boolean;
   accept?: boolean;
   sendingFPS?: number;
@@ -65,9 +66,9 @@ function FaceDetectorComponent({
   accept = true,
   sendingFPS = 30,
 }: FaceDetectorProps) {
-  const videosRef = useRef(new Map<string, HTMLVideoElement | null>());
+  const videosRef = useRef<Map<string, HTMLVideoElement | null>>(new Map());
   const managerRef = useRef<FaceDetectorWorkerManager | null>(null);
-  const captureControllersRef = useRef(new Map<string, CaptureRateController>());
+  const captureControllersRef = useRef<Map<string, CaptureRateController>>(new Map());
 
   // Track FPS locally for input devices
   const { fpsRef, finalFpsRef } = useFpsTracking(sortedDeviceIds);
@@ -115,17 +116,17 @@ function FaceDetectorComponent({
       sendingFPS,
     });
 
-    // Update per-camera configs if they exist
-    if (selectedCameras.length > 0) {
-      const cameraConfigMap: Record<string, { placeId: string }> = {};
-      for (const camera of selectedCameras) {
-        const hashedCameraId = hash128Hex(camera.deviceId);
-        cameraConfigMap[hashedCameraId] = {
-          placeId: camera.placeId || '',
-        };
-      }
-      managerRef.current.updateCameraConfigs(cameraConfigMap);
+    // Update per-camera configs (also triggers cleanup of orphaned workers)
+    const cameraConfigMap: Record<string, { placeId: string }> = {};
+    for (const camera of selectedCameras) {
+      const hashedCameraId = hash128Hex(camera.deviceId);
+      cameraConfigMap[hashedCameraId] = {
+        placeId: camera.placeId || '',
+      };
     }
+    // Always call updateCameraConfigs - it handles cleanup internally
+    // If cameraConfigMap is empty (all cameras deselected), it removes all workers
+    managerRef.current.updateCameraConfigs(cameraConfigMap);
 
     console.log('[FaceDetector] Config updated for manager');
     managerRef.current.setCallbacks(onDetect, onStatsUpdate);
@@ -217,7 +218,7 @@ function FaceDetectorComponent({
 
 // Redux mapStateToProps: Extract userId, monitorId, selectedCameras, and sortedDeviceIds from Redux store
 // Uses memoized selectors for optimal performance
-const mapStateToProps = (state: any) => {
+const mapStateToProps = (state: RootState) => {
   const userId = selectUserId(state);
   const monitorId = selectMonitorId(state);
   const selectedCameras = selectSelectedCameras(state);

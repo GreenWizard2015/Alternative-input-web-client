@@ -53,7 +53,7 @@ import type { WorkerConfig, WorkerStats } from "./FaceDetectorWorkerManager";
 
 let frameQueue: Array<{ frame: VideoFrame; time: number; goal: any }> = [];
 let isProcessing = false;
-let faceLandmarker: any = null;
+let faceLandmarker: FaceLandmarker | null = null;
 let offscreenCanvas: OffscreenCanvas | null = null;
 
 // NEW: Configuration and buffer management
@@ -65,7 +65,7 @@ let frameCount = 0;
 let lastStatsTime = Date.now();
 
 // Pause state tracking
-let minTime: number | null = null; // Samples before this time won't be sent
+let minTime: number = 0; // Samples before this time won't be sent (initialized to 0, not null)
 
 const PAUSE_BUFFER = 3000; // 3 seconds
 const SAMPLE_THRESHOLD = 2000; // 2 seconds - drop frames older than this
@@ -128,7 +128,7 @@ const processQueue = async () => {
       });
 
        // Buffer sample only if accepting AND not paused AND goal is valid AND passes minTime filter
-      if (config.accept && !config.isPaused && buffer && sample.goal && (minTime < sample.time)) {
+      if (config.accept && !config.isPaused && buffer && sample.goal && minTime < sample.time) {
         buffer.addSample(sample);
 
         // Check auto-flush threshold
@@ -159,7 +159,13 @@ const processQueue = async () => {
   processQueue();
 };
 
-const maxSamples = () => Math.floor(config.maxChunkSize / sampleSize());
+const maxSamples = () => {
+  if (!config) {
+    workerError('maxSamples called before config initialized');
+    return 0;
+  }
+  return Math.floor(config.maxChunkSize / sampleSize());
+};
 /**
  * Flush a buckets
  * @param minSamples - Minimum samples to send in one batch (optional, default: send all)
@@ -170,7 +176,11 @@ const flushBuckets = (minSamples: number = 0) => {
     const maxTime = Date.now() - PAUSE_BUFFER;
     const allBuckets = buffer.getAllBuckets();
     for (const bucket of allBuckets) {
-      while (minSamples < bucket.getCount()) {
+      let attempts = 0;
+      const maxAttempts = 100; // Safety guard against infinite loops
+
+      while (minSamples < bucket.getCount() && attempts < maxAttempts) {
+        attempts++;
         const { sent } = buffer.extractFromBucket(bucket, minTime, maxTime, maxSamples());
         if (sent.length === 0) break;
 
@@ -189,6 +199,11 @@ const flushBuckets = (minSamples: number = 0) => {
           const errorMsg = error instanceof Error ? error.message : String(error);
           workerError('Flush error:', errorMsg);
         }
+      }
+
+      // Log warning if we hit attempt limit (indicates a problem)
+      if (attempts >= maxAttempts) {
+        workerError(`flushBuckets: Hit max attempts (${maxAttempts}) for bucket with count ${bucket.getCount()}`);
       }
     }
   } catch (error) {
@@ -318,7 +333,8 @@ const handleFrame = ({ frame, time, goal }: any) => {
     dropOldFrames(SAMPLE_THRESHOLD);
     if (!isProcessing) processQueue();
   } catch (error) {
-    workerError('Error in handleFrame:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    workerError('Error in handleFrame:', errorMsg);
   }
 };
 
