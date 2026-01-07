@@ -7,7 +7,11 @@
     "cancel": "Cancel",
     "close": "Close",
     "start": "Start",
-    "back": "Back"
+    "back": "Back",
+    "user": "User",
+    "monitor": "Monitor",
+    "cameras": "Cameras",
+    "none": "None"
   },
   "webcam": {
     "label": "Webcamera:",
@@ -48,6 +52,7 @@
     "splineMode": "Spline Mode",
     "lookAtMode": "Look At Mode",
     "circleMovingMode": "Circle Moving Mode",
+    "confirmTitle": "Confirm Game Start",
     "useGamification": "Use gamification (disable only if you can't press the keys (Z, A, S, X).)",
     "lookAtHelp": "In this mode you should concentrate on the static red circle. Grey circle means inactive mode.",
     "lookAtPurpose": "This mode intended to stabilize gaze predictions.",

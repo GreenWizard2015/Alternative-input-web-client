@@ -11,7 +11,6 @@ import { Intro } from "./Intro";
 import { AggregatedStats } from "./FaceDetectorWorkerManager";
 import UploadsNotification from "./uploadsNotification";
 import ErrorNotification from "./errorNotification";
-import GoalsProgress from "./GoalsProgress";
 import FPSDisplay from "./FPSDisplay";
 import { setMode } from "../store/slices/App";
 import { selectAppProps, selectSortedDeviceIds } from "../store/selectors";
@@ -47,12 +46,13 @@ type AppSettings = {
   meanUploadDuration: number,
   selectedCameras: CameraEntity[], // Memoized selected cameras from Redux
   sortedDeviceIds: string[], // Sorted device IDs of selected cameras
+  tempGameMode: AppMode | null, // Temp game mode from confirmation dialog
   currentUser?: any, // Current user object
   users?: any[], // Users array
 };
 
 function AppComponent(
-  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
+  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds, tempGameMode }: AppSettings
 ) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -257,6 +257,13 @@ function AppComponent(
     }
   }, [workerStats]);
 
+  // When mode becomes 'game' and tempGameMode is set (from Redux dialog), use it
+  useEffect(() => {
+    if (mode === 'game' && tempGameMode && !gameMode) {
+      setGameMode(tempGameMode);
+    }
+  }, [mode, tempGameMode, gameMode]);
+
   const startGame = useCallback((mode: AppMode) => {
     setMode("game");
     setGameMode(mode);
@@ -301,7 +308,6 @@ function AppComponent(
               {t('notifications.lastScore', { score: score.toFixed(2) })}
             </div>
           ) : null}
-          <GoalsProgress />
           <UI
             onStart={startGame}
             canStart={canStart}
@@ -341,6 +347,7 @@ export default connect(
   (state: RootState) => ({
     ...selectAppProps(state),
     sortedDeviceIds: selectSortedDeviceIds(state),
+    tempGameMode: state.App.tempGameMode,
   }),
   { setMode }
 )(AppComponent);

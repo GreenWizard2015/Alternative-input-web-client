@@ -1,9 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { CameraConfig } from "../../types/camera";
+import type { AppMode } from "../../modes/AppMode";
 import { toJSON, fromJSON } from "../json";
 
 type EAppMode = "menu" | "game" | "intro";
-type DialogType = "IDLE" | "USER_DIALOG" | "PLACE_DIALOG" | "START_DIALOG" | "MONITOR_DIALOG";
+type DialogType = "IDLE" | "USER_DIALOG" | "PLACE_DIALOG" | "START_DIALOG" | "MONITOR_DIALOG" | "GAME_CONFIRM_DIALOG";
 
 interface IScreen {
   left: number;
@@ -26,6 +27,7 @@ interface AppState {
   dialogType: DialogType;
   tempName: string;
   tempCameraId: string;
+  tempGameMode: AppMode | null;
 }
 
 const SMOOTHING_FACTOR = 0.9;
@@ -38,6 +40,7 @@ const initialState: AppState = {
   dialogType: "IDLE",
   tempName: "",
   tempCameraId: "",
+  tempGameMode: null,
 };
 
 interface IChangeActiveUploads {
@@ -175,10 +178,16 @@ export const AppSlice = createSlice({
       state.dialogType = "START_DIALOG";
     },
 
+    openGameConfirmDialog: (state, action: PayloadAction<AppMode>) => {
+      state.dialogType = "GAME_CONFIRM_DIALOG";
+      state.tempGameMode = action.payload;
+    },
+
     closeDialog: (state) => {
       state.dialogType = "IDLE";
       state.tempName = "";
       state.tempCameraId = "";
+      state.tempGameMode = null;
     },
 
     setTempName: (state, action: PayloadAction<string>) => {
@@ -205,6 +214,7 @@ export const {
   openPlaceDialog,
   openMonitorDialog,
   openStartDialog,
+  openGameConfirmDialog,
   closeDialog,
   setTempName,
   setTempCameraId,

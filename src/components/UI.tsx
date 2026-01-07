@@ -3,6 +3,7 @@ import UIStart from './UIStart';
 import UserDialog from './UserDialog';
 import PlaceDialog from './PlaceDialog';
 import MonitorDialog from './MonitorDialog';
+import StartConfirmDialog from './StartConfirmDialog';
 import MainMenu from './MainMenu';
 import { selectDefaultValues, addPlace, setUser, addMonitor } from '../store/slices/UI';
 import { connect } from 'react-redux';
@@ -19,7 +20,7 @@ type UIProps = {
   doSetUser: (name: string) => void;
   doAddMonitor: (name: string) => void;
   userId?: string;
-  selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
+  selectedCameras?: Array<{ deviceId: string; placeId?: string; label?: string }>;
   screenId?: string;
 };
 
@@ -41,8 +42,10 @@ function UI({
     isPlaceDialog,
     isMonitorDialog,
     isStartDialog,
+    isGameConfirmDialog,
     tempName,
     tempCameraId,
+    tempGameMode,
     openUserDialog,
     openPlaceDialog,
     openMonitorDialog,
@@ -58,6 +61,8 @@ function UI({
   return (
     <>
       {isStartDialog && <UIStart onStart={onStart} />}
+
+      {isGameConfirmDialog && <StartConfirmDialog />}
 
       {isUserDialog && (
         <UserDialog
@@ -121,9 +126,11 @@ function UI({
 export default connect(
   (state: RootState) => {
     const selectedCameras = selectSelectedCameras(state);
+    const userId = selectUserId(state);
+
     return {
-      userId: selectUserId(state),
-      selectedCameras: selectedCameras.map(cam => ({ deviceId: cam.deviceId, placeId: cam.placeId })),
+      userId,
+      selectedCameras: selectedCameras.map(cam => ({ deviceId: cam.deviceId, placeId: cam.placeId, label: cam.label })),
     };
   },
   {

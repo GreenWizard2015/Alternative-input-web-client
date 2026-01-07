@@ -5,6 +5,7 @@ import {
   openPlaceDialog as openPlaceDialogAction,
   openMonitorDialog as openMonitorDialogAction,
   openStartDialog as openStartDialogAction,
+  openGameConfirmDialog as openGameConfirmDialogAction,
   closeDialog as closeDialogAction,
   setTempName as setTempNameAction,
   setTempCameraId as setTempCameraIdAction,
@@ -15,6 +16,7 @@ export function useDialogStateMachine() {
   const dialogType = useSelector((state: RootState) => state.App.dialogType);
   const tempName = useSelector((state: RootState) => state.App.tempName);
   const tempCameraId = useSelector((state: RootState) => state.App.tempCameraId);
+  const tempGameMode = useSelector((state: RootState) => state.App.tempGameMode);
 
   // Type guards for current state
   const isIdle = dialogType === 'IDLE';
@@ -22,6 +24,7 @@ export function useDialogStateMachine() {
   const isPlaceDialog = dialogType === 'PLACE_DIALOG';
   const isMonitorDialog = dialogType === 'MONITOR_DIALOG';
   const isStartDialog = dialogType === 'START_DIALOG';
+  const isGameConfirmDialog = dialogType === 'GAME_CONFIRM_DIALOG';
 
   return {
     // Dispatchers
@@ -38,8 +41,10 @@ export function useDialogStateMachine() {
     isPlaceDialog,
     isMonitorDialog,
     isStartDialog,
+    isGameConfirmDialog,
     // Raw values
     tempName,
     tempCameraId,
+    tempGameMode,
   };
 }
