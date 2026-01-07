@@ -45,7 +45,6 @@ function UI({
     isGameConfirmDialog,
     tempName,
     tempCameraId,
-    tempGameMode,
     openUserDialog,
     openPlaceDialog,
     openMonitorDialog,

@@ -5,7 +5,6 @@ import {
   openPlaceDialog as openPlaceDialogAction,
   openMonitorDialog as openMonitorDialogAction,
   openStartDialog as openStartDialogAction,
-  openGameConfirmDialog as openGameConfirmDialogAction,
   closeDialog as closeDialogAction,
   setTempName as setTempNameAction,
   setTempCameraId as setTempCameraIdAction,
