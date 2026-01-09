@@ -149,22 +149,24 @@ export const UISlice = createSlice({
       state.users = toJSON(users.filter(u => u.uuid !== action.payload.uuid));
       state.userId = '';
     },
-    // reset samples for current user
-    resetUser: (state) => {
+    // recreate user - keep name, generate new uuid, clear samples
+    recreateUser: (state) => {
       const users: UUIDed[] = fromJSON(state.users, []);
       state.users = toJSON(users.map(u => {
         if (u.uuid === state.userId) {
-          return { ...u, samples: 0 };
+          const newUuid = crypto.randomUUID();
+          state.userId = newUuid;
+          return { ...u, uuid: newUuid, samples: 0 };
         }
         return u;
       }));
     },
-    resetPlace: (state, action: PayloadAction<{ uuid: string }>) => {
-      // Reset samples for a specific place
+    recreatePlace: (state, action: PayloadAction<{ uuid: string }>) => {
+      // Recreate place - keep name, generate new uuid, clear samples
       const places: UUIDed[] = fromJSON(state.places, []);
       state.places = toJSON(places.map(p => {
         if (p.uuid === action.payload.uuid) {
-          return { ...p, samples: 0 };
+          return { ...p, uuid: crypto.randomUUID(), samples: 0 };
         }
         return p;
       }));
@@ -227,11 +229,12 @@ export const UISlice = createSlice({
         state.monitorId = '';
       }
     },
-    resetMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
+    recreateMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
+      // Recreate monitor - keep name, generate new uuid, clear samples
       const monitors: UUIDed[] = fromJSON(state.monitors, []);
       state.monitors = toJSON(monitors.map(m => {
         if (m.uuid === action.payload.uuid) {
-          return { ...m, samples: 0 };
+          return { ...m, uuid: crypto.randomUUID(), samples: 0 };
         }
         return m;
       }));
@@ -289,12 +292,12 @@ export const {
   setUser,
   addPlace,
   removeUser,
-  resetUser,
-  resetPlace,
+  recreateUser,
+  recreatePlace,
   setMonitor,
   addMonitor,
   removeMonitor,
-  resetMonitor,
+  recreateMonitor,
   selectDefaultValues,
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;

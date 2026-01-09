@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import type { RootState } from '../store';
-import { setMonitor, removeMonitor, resetMonitor } from '../store/slices/UI';
+import { setMonitor, removeMonitor, recreateMonitor } from '../store/slices/UI';
 import { selectMonitorId, selectMonitors } from '../store/selectors';
 import type { UUIDed } from '../shared/Sample';
 import BaseSelector from './BaseSelector';
@@ -10,7 +10,7 @@ type MonitorSelectorProps = {
   monitors: UUIDed[] & { byId: (id: string) => UUIDed | undefined };
   doSetMonitor: (name: string | null) => void;
   doRemoveMonitor: (payload: { uuid: string }) => void;
-  doResetMonitor: (payload: { uuid: string }) => void;
+  doRecreateMonitor: (payload: { uuid: string }) => void;
   onAdd: () => void;
 };
 
@@ -19,7 +19,7 @@ function MonitorSelector({
   monitors,
   doSetMonitor,
   doRemoveMonitor,
-  doResetMonitor,
+  doRecreateMonitor,
   onAdd,
 }: MonitorSelectorProps) {
   return (
@@ -29,13 +29,12 @@ function MonitorSelector({
       onSelect={(monitor) => doSetMonitor(monitor ? monitor.name : null)}
       onAdd={onAdd}
       onRemove={() => doRemoveMonitor({ uuid: monitorId })}
-      onReset={() => doResetMonitor({ uuid: monitorId })}
+      onRecreate={() => doRecreateMonitor({ uuid: monitorId })}
       labelKey="menu.monitor"
       renderItemLabel={(monitor) => `${monitor.name}`}
       canRemove={(monitor) => monitor.name !== 'main'}
-      showReset={false}
       confirmRemoveKey="dialogs.confirmRemoveMonitor"
-      confirmResetKey="dialogs.confirmResetMonitor"
+      confirmRecreateKey="dialogs.confirmRecreateMonitor"
     />
   );
 }
@@ -48,6 +47,6 @@ export default connect(
   {
     doSetMonitor: setMonitor,
     doRemoveMonitor: removeMonitor,
-    doResetMonitor: resetMonitor,
+    doRecreateMonitor: recreateMonitor,
   }
 )(MonitorSelector);

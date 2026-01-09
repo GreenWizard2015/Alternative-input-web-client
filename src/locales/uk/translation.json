@@ -26,7 +26,7 @@
     "notSelected": "Не вибрано",
     "add": "Додати",
     "remove": "Видалити",
-    "reset": "Скинути",
+    "recreate": "Перестворити",
     "help": "Довідка",
     "fullscreen": "Повний екран",
     "samples": "зразків"
@@ -37,12 +37,14 @@
     "enterPlaceName": "Введіть назву місця",
     "enterMonitorName": "Введіть назву монітора",
     "enterMonitorUUID": "Введіть UUID монітора",
+    "confirmRemoveItem": "Ви впевнені, що хочете видалити \"{{name}}\"?",
     "confirmRemoveUser": "Ви впевнені, що хочете видалити користувача \"{{name}}\"?",
     "confirmRemovePlace": "Ви впевнені, що хочете видалити місце \"{{name}}\"?",
     "confirmRemoveMonitor": "Ви впевнені, що хочете видалити монітор \"{{name}}\"?",
-    "confirmResetUser": "Ви впевнені, що хочете скинути зразки для користувача \"{{name}}\"?",
-    "confirmResetPlace": "Ви впевнені, що хочете скинути зразки для місця \"{{name}}\"?",
-    "confirmResetMonitor": "Ви впевнені, що хочете скинути зразки для монітора \"{{name}}\"?"
+    "confirmRecreateItem": "Ви впевнені, що хочете перестворити \"{{name}}\"?",
+    "confirmRecreateUser": "Ви впевнені, що хочете перестворити користувача \"{{name}}\"?",
+    "confirmRecreatePlace": "Ви впевнені, що хочете перестворити місце \"{{name}}\"?",
+    "confirmRecreateMonitor": "Ви впевнені, що хочете перестворити монітор \"{{name}}\"?"
   },
   "uiHelp": {
     "title": "Довідка інтерфейсу",

@@ -7,15 +7,13 @@ export type BaseSelectorProps<T extends { uuid: string }> = {
   onSelect: (item: T) => void;
   onAdd: () => void;
   onRemove: () => void;
-  onReset: () => void;
+  onRecreate: () => void;
   labelKey: string;
   renderItemLabel: (item: T) => string;
   canRemove?: (item: T) => boolean;
-  canReset?: (item: T) => boolean;
-  showReset?: boolean;
   notSelectedKey?: string;
   confirmRemoveKey?: string;
-  confirmResetKey?: string;
+  confirmRecreateKey?: string;
 };
 
 export default function BaseSelector<T extends { uuid: string }>({
@@ -24,15 +22,13 @@ export default function BaseSelector<T extends { uuid: string }>({
   onSelect,
   onAdd,
   onRemove,
-  onReset,
+  onRecreate,
   labelKey,
   renderItemLabel,
   canRemove,
-  canReset,
-  showReset = true,
   notSelectedKey = 'menu.notSelected',
   confirmRemoveKey,
-  confirmResetKey,
+  confirmRecreateKey,
 }: BaseSelectorProps<T>) {
   const { t } = useTranslation();
 
@@ -46,19 +42,18 @@ export default function BaseSelector<T extends { uuid: string }>({
     }
   }, [selectedId, items, t, onRemove, confirmRemoveKey]);
 
-  const handleReset = useCallback(() => {
+  const handleRecreate = useCallback(() => {
     const item = items.byId(selectedId);
     if (!item) return;
 
-    const confirmKey = confirmResetKey || `dialogs.confirmResetItem`;
+    const confirmKey = confirmRecreateKey || `dialogs.confirmRecreateItem`;
     if (window.confirm(t(confirmKey, { name: (item as any).name || selectedId }))) {
-      onReset();
+      onRecreate();
     }
-  }, [selectedId, items, t, onReset, confirmResetKey]);
+  }, [selectedId, items, t, onRecreate, confirmRecreateKey]);
 
   const currentItem = items.byId(selectedId);
   const canRemoveItem = currentItem && (canRemove ? canRemove(currentItem) : true);
-  const canResetItem = currentItem && (canReset ? canReset(currentItem) : true);
 
   return (
     <div className='flex w100'>
@@ -91,7 +86,7 @@ export default function BaseSelector<T extends { uuid: string }>({
       >
         {t('menu.remove')}
       </button>
-      {showReset && <button className='flex-grow m5' disabled={!canResetItem} onClick={handleReset}>{t('menu.reset')}</button>}
+      <button className='flex-grow m5' onClick={handleRecreate}>{t('menu.recreate')}</button>
     </div>
   );
 }

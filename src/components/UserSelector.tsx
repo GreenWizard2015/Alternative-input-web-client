@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import type { RootState } from '../store';
-import { setUser, removeUser, resetUser } from '../store/slices/UI';
+import { setUser, removeUser, recreateUser } from '../store/slices/UI';
 import { selectUserId, selectUsers } from '../store/selectors';
 import type { User } from '../types/entities';
 import BaseSelector from './BaseSelector';
@@ -10,7 +10,7 @@ type UserSelectorProps = {
   users: User[] & { byId: (id: string) => User | undefined };
   doSetUser: (name: string | null) => void;
   doRemoveUser: (payload: { uuid: string }) => void;
-  doResetUser: () => void;
+  doRecreateUser: () => void;
   onAdd: () => void;
 };
 
@@ -19,7 +19,7 @@ function UserSelector({
   users,
   doSetUser,
   doRemoveUser,
-  doResetUser,
+  doRecreateUser,
   onAdd,
 }: UserSelectorProps) {
   return (
@@ -29,11 +29,11 @@ function UserSelector({
       onSelect={(user) => doSetUser(user ? user.name : null)}
       onAdd={onAdd}
       onRemove={() => doRemoveUser({ uuid: userId })}
-      onReset={doResetUser}
+      onRecreate={doRecreateUser}
       labelKey="menu.user"
       renderItemLabel={(user) => `${user.name} (${user.samples} samples)`}
       confirmRemoveKey="dialogs.confirmRemoveUser"
-      confirmResetKey="dialogs.confirmResetUser"
+      confirmRecreateKey="dialogs.confirmRecreateUser"
     />
   );
 }
@@ -46,6 +46,6 @@ export default connect(
   {
     doSetUser: setUser,
     doRemoveUser: removeUser,
-    doResetUser: resetUser,
+    doRecreateUser: recreateUser,
   }
 )(UserSelector);

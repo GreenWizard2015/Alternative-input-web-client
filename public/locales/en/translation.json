@@ -20,7 +20,7 @@
     "place": "Place:",
     "add": "Add",
     "remove": "Remove",
-    "reset": "Reset",
+    "recreate": "Recreate",
     "help": "Help",
     "fullscreen": "Fullscreen",
     "samples": "samples"
@@ -29,8 +29,10 @@
     "enterUserName": "Enter user name",
     "enterUserUUID": "Enter user UUID",
     "enterPlaceName": "Enter place name",
+    "confirmRemoveItem": "Are you sure you want to remove \"{{name}}\"?",
     "confirmRemoveUser": "Are you sure you want to remove the user ({{name}})?",
-    "confirmRemovePlace": "Are you sure you want to remove the place ({{name}})?"
+    "confirmRemovePlace": "Are you sure you want to remove the place ({{name}})?",
+    "confirmRecreateItem": "Are you sure you want to recreate \"{{name}}\" (clear samples)?"
   },
   "uiHelp": {
     "title": "UI Help",

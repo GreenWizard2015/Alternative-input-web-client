@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { connect } from 'react-redux';
 import type { RootState } from '../store';
 import { setCameraPlace } from '../store/slices/App';
-import { resetPlace, removePlace } from '../store/slices/UI';
+import { recreatePlace, removePlace } from '../store/slices/UI';
 import { selectPlaces } from '../store/selectors';
 import type { Place } from '../types/entities';
 import { byId } from '../shared/Sample';
@@ -13,7 +13,7 @@ type CameraPlaceSelectorProps = {
   selectedPlaceId: string;
   places: Place[] & { byId: (id: string) => Place | undefined };
   doSetCameraPlace: (payload: { deviceId: string; placeId: string }) => void;
-  doResetPlace: (payload: { uuid: string }) => void;
+  doRecreatePlace: (payload: { uuid: string }) => void;
   doRemovePlace: (placeId: string) => any;
   onAddPlace: (cameraId: string) => void;
 };
@@ -23,7 +23,7 @@ function CameraPlaceSelector({
   selectedPlaceId,
   places,
   doSetCameraPlace,
-  doResetPlace,
+  doRecreatePlace,
   doRemovePlace,
   onAddPlace,
 }: CameraPlaceSelectorProps) {
@@ -44,11 +44,11 @@ function CameraPlaceSelector({
       onSelect={(place) => doSetCameraPlace({ deviceId: cameraId, placeId: place ? place.uuid : '' })}
       onAdd={() => onAddPlace(cameraId)}
       onRemove={() => doRemovePlace(selectedPlaceId)}
-      onReset={() => doResetPlace({ uuid: selectedPlaceId })}
+      onRecreate={() => doRecreatePlace({ uuid: selectedPlaceId })}
       labelKey="menu.place"
       renderItemLabel={(place) => `${withoutPrefix(place.name)} (${place.samples} samples)`}
       confirmRemoveKey="dialogs.confirmRemovePlace"
-      confirmResetKey="dialogs.confirmResetPlace"
+      confirmRecreateKey="dialogs.confirmRecreatePlace"
     />
   );
 }
@@ -59,7 +59,7 @@ export default connect(
   }),
   {
     doSetCameraPlace: setCameraPlace,
-    doResetPlace: resetPlace,
+    doRecreatePlace: recreatePlace,
     doRemovePlace: removePlace,
   }
 )(CameraPlaceSelector);

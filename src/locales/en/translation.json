@@ -26,7 +26,7 @@
     "notSelected": "Not selected",
     "add": "Add",
     "remove": "Remove",
-    "reset": "Reset",
+    "recreate": "Recreate",
     "help": "Help",
     "fullscreen": "Fullscreen",
     "samples": "samples"
@@ -37,12 +37,14 @@
     "enterPlaceName": "Enter place name",
     "enterMonitorName": "Enter monitor name",
     "enterMonitorUUID": "Enter monitor UUID",
+    "confirmRemoveItem": "Are you sure you want to remove \"{{name}}\"?",
     "confirmRemoveUser": "Are you sure you want to remove the user \"{{name}}\"?",
     "confirmRemovePlace": "Are you sure you want to remove the place \"{{name}}\"?",
     "confirmRemoveMonitor": "Are you sure you want to remove the monitor \"{{name}}\"?",
-    "confirmResetUser": "Are you sure you want to reset samples for user \"{{name}}\"?",
-    "confirmResetPlace": "Are you sure you want to reset samples for place \"{{name}}\"?",
-    "confirmResetMonitor": "Are you sure you want to reset samples for monitor \"{{name}}\"?"
+    "confirmRecreateItem": "Are you sure you want to recreate \"{{name}}\" (clear samples)?",
+    "confirmRecreateUser": "Are you sure you want to recreate user \"{{name}}\" (clear samples)?",
+    "confirmRecreatePlace": "Are you sure you want to recreate place \"{{name}}\" (clear samples)?",
+    "confirmRecreateMonitor": "Are you sure you want to recreate monitor \"{{name}}\" (clear samples)?"
   },
   "uiHelp": {
     "title": "UI Help",

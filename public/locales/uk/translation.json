@@ -20,7 +20,7 @@
     "place": "Місце:",
     "add": "Додати",
     "remove": "Видалити",
-    "reset": "Скинути",
+    "recreate": "Перестворити",
     "help": "Довідка",
     "fullscreen": "Повний екран",
     "samples": "зразків"
@@ -29,8 +29,10 @@
     "enterUserName": "Введіть ім'я користувача",
     "enterUserUUID": "Введіть UUID користувача",
     "enterPlaceName": "Введіть назву місця",
+    "confirmRemoveItem": "Ви впевнені, що хочете видалити \"{{name}}\"?",
     "confirmRemoveUser": "Ви впевнені, що хочете видалити користувача ({{name}})?",
-    "confirmRemovePlace": "Ви впевнені, що хочете видалити місце ({{name}})?"
+    "confirmRemovePlace": "Ви впевнені, що хочете видалити місце ({{name}})?",
+    "confirmRecreateItem": "Ви впевнені, що хочете перестворити \"{{name}}\"?"
   },
   "uiHelp": {
     "title": "Довідка інтерфейсу",
