@@ -46,13 +46,12 @@ type AppSettings = {
   meanUploadDuration: number,
   selectedCameras: CameraEntity[], // Memoized selected cameras from Redux
   sortedDeviceIds: string[], // Sorted device IDs of selected cameras
-  tempGameMode: AppMode | null, // Temp game mode from confirmation dialog
   currentUser?: any, // Current user object
   users?: any[], // Users array
 };
 
 function AppComponent(
-  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds, tempGameMode }: AppSettings
+  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
 ) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -257,16 +256,9 @@ function AppComponent(
     }
   }, [workerStats]);
 
-  // When mode becomes 'game' and tempGameMode is set (from Redux dialog), use it
-  useEffect(() => {
-    if (mode === 'game' && tempGameMode && !gameMode) {
-      setGameMode(tempGameMode);
-    }
-  }, [mode, tempGameMode, gameMode]);
-
   const startGame = useCallback((mode: AppMode) => {
-    setMode("game");
     setGameMode(mode);
+    setMode("game");
   }, [setMode]);
 
   // Start button enabled: eyes detected, user selected, monitor selected, and all cameras have places
@@ -347,7 +339,6 @@ export default connect(
   (state: RootState) => ({
     ...selectAppProps(state),
     sortedDeviceIds: selectSortedDeviceIds(state),
-    tempGameMode: state.App.tempGameMode,
   }),
   { setMode }
 )(AppComponent);

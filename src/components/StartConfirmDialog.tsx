@@ -1,10 +1,16 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import type { AppMode } from '../modes/AppMode';
 import { selectUserId, selectMonitorId, selectSelectedCameras, selectUsers, selectMonitors } from '../store/selectors';
-import { closeDialog, setMode } from '../store/slices/App';
+import { closeDialog } from '../store/slices/App';
 
-export default function StartConfirmDialog() {
+interface StartConfirmDialogProps {
+  gameMode: AppMode;
+  onConfirm: (mode: AppMode) => void;
+}
+
+export default function StartConfirmDialog({ gameMode, onConfirm }: StartConfirmDialogProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -22,9 +28,9 @@ export default function StartConfirmDialog() {
 
   // Redux actions
   const handleConfirm = useCallback(() => {
-    dispatch(setMode('game'));
+    onConfirm(gameMode);
     dispatch(closeDialog());
-  }, [dispatch]);
+  }, [gameMode, onConfirm, dispatch]);
 
   const handleCancel = useCallback(() => {
     dispatch(closeDialog());

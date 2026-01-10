@@ -45,10 +45,13 @@ function UI({
     isGameConfirmDialog,
     tempName,
     tempCameraId,
+    pendingGameMode,
+    onGameStartConfirm,
     openUserDialog,
     openPlaceDialog,
     openMonitorDialog,
     openStartDialog,
+    openGameConfirmDialog,
     closeDialog,
     setTempName,
   } = useDialogStateMachine();
@@ -59,9 +62,9 @@ function UI({
 
   return (
     <>
-      {isStartDialog && <UIStart onStart={onStart} />}
+      {isStartDialog && <UIStart onStart={(mode) => openGameConfirmDialog(mode, onStart)} />}
 
-      {isGameConfirmDialog && <StartConfirmDialog />}
+      {isGameConfirmDialog && pendingGameMode && onGameStartConfirm && <StartConfirmDialog gameMode={pendingGameMode} onConfirm={onGameStartConfirm} />}
 
       {isUserDialog && (
         <UserDialog

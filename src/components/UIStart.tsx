@@ -1,10 +1,8 @@
 import React, { useState, useCallback, useMemo, ReactNode } from 'react';
-import { useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import MiniGameController from '../modes/MiniGameController';
 import NullController from '../modes/NullController';
 import { AppMode } from '../modes/AppMode';
-import { openGameConfirmDialog } from '../store/slices/App';
 
 type GameModeConstructor = new (controller: MiniGameController | NullController) => AppMode;
 
@@ -42,9 +40,8 @@ interface UIStartProps {
   onStart: (mode: AppMode) => void;
 }
 
-export default function UIStart(_: UIStartProps) {
+export default function UIStart({ onStart }: UIStartProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const [helpMode, setHelpMode] = useState<string>('');
   const back: ReactNode = useMemo(() => (
     <button className='ms-2' onClick={() => setHelpMode('')}>{t('common.back')}</button>
@@ -71,20 +68,20 @@ export default function UIStart(_: UIStartProps) {
   const handleStartLookAt = useCallback(async () => {
     const Mode = await getLookAtMode();
     const mode = new Mode(controller);
-    dispatch(openGameConfirmDialog(mode));
-  }, [controller, dispatch]);
+    onStart(mode);
+  }, [controller, onStart]);
 
   const handleStartSpline = useCallback(async () => {
     const Mode = await getSplineMode();
     const mode = new Mode(controller);
-    dispatch(openGameConfirmDialog(mode));
-  }, [controller, dispatch]);
+    onStart(mode);
+  }, [controller, onStart]);
 
   const handleStartCircleMoving = useCallback(async () => {
     const Mode = await getCircleMovingMode();
     const mode = new Mode(controller);
-    dispatch(openGameConfirmDialog(mode));
-  }, [controller, dispatch]);
+    onStart(mode);
+  }, [controller, onStart]);
 
   switch (helpMode) {
     case 'lookAt':
