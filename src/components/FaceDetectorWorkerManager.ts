@@ -253,7 +253,9 @@ export class FaceDetectorWorkerManager {
     const targetInterval = 1000 / targetFps;
 
     for (const state of this.cameras.values()) {
-      state.controller?.updateRate(targetInterval);
+      if (state.controller) {
+        state.controller.updateRate(targetInterval);
+      }
     }
   }
 

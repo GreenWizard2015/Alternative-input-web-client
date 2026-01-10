@@ -160,30 +160,27 @@ function FaceDetectorComponent({
           manager,
         };
 
-        console.log('[FaceDetector] Starting frame capture for camera:', normalizedCameraId);
         const controller = createCameraFrameCapture(normalizedCameraId, cameraDeps, goal);
         controllers.set(normalizedCameraId, controller);
       }
+
+      // Register controllers with manager AFTER they are all created
+      // This is critical to prevent race condition where stats arrive before controllers are registered
+      manager.setCaptureControllers(controllers);
+      manager.onStatsUpdate = onStatsUpdate || null;
     })();
 
     return () => {
       console.log('[FaceDetector] Cleaning up streams and capture controllers');
+      // Before clearing controllers, notify manager that controllers are being removed
+      if (managerRef.current) {
+        managerRef.current.setCaptureControllers(new Map());
+      }
       controllers.forEach((controller) => controller.cleanup());
       controllers.clear();
       streams.forEach((stream: MediaStream) => stream.getTracks().forEach((t: MediaStreamTrack) => t.stop()));
     };
-  }, [sortedDeviceIds, goal, fpsRef]);
-
-  // Register capture controllers with manager
-  useEffect(() => {
-    if (!managerRef.current) return;
-
-    // Pass capture controllers to manager for automatic rate adjustment
-    managerRef.current.setCaptureControllers(captureControllersRef.current);
-
-    // Set the original stats update callback
-    managerRef.current.onStatsUpdate = onStatsUpdate || null;
-  }, [onStatsUpdate]);
+  }, [sortedDeviceIds, goal, fpsRef, onStatsUpdate]);
 
   const handleDataWorkerReady = useCallback((worker: Worker) => {
     if (managerRef.current) {

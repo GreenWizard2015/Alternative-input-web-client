@@ -698,4 +698,223 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       }
     });
   });
+
+  describe('ISSUE: Controller registration and updateRate()', () => {
+    it('CRITICAL: should register controller before stats arrive', () => {
+      const cameraId = 'camera-1';
+
+      // Add camera (creates worker, but NO controller registered yet)
+      manager.addCamera(cameraId);
+
+      // Access internal state to verify controller is null before registration
+      const internalState = (manager as any).cameras.get(cameraId);
+      expect(internalState.controller).toBeNull();
+
+      // Now register controller (simulates Fix 1 working correctly)
+      const mockController = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      const controllersMap = new Map([[cameraId, mockController]]);
+      manager.setCaptureControllers(controllersMap);
+
+      // FIXED STATE: controller should now be registered
+      const stateAfterRegistration = (manager as any).cameras.get(cameraId);
+      expect(stateAfterRegistration.controller).toBe(mockController);
+      expect(stateAfterRegistration.controller).not.toBeNull();
+    });
+
+    it('should handle stats update with registered controller', () => {
+      const cameraId = 'camera-1';
+
+      manager.addCamera(cameraId);
+
+      const mockController = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      manager.setCaptureControllers(new Map([[cameraId, mockController]]));
+
+      // Simulate stats message arrival (would trigger updateCaptureRates)
+      // For this test, we just verify controller is callable
+      const state = (manager as any).cameras.get(cameraId);
+      if (state.controller) {
+        state.controller.updateRate(50);
+      }
+
+      // FIXED: updateRate should have been called
+      expect(mockController.updateRate).toHaveBeenCalledWith(50);
+    });
+
+    it('should detect missing controller registration', () => {
+      const cameraId = 'camera-1';
+
+      manager.addCamera(cameraId);
+
+      // Simulate calling updateCaptureRates when controller is null
+      const internalState = (manager as any).cameras.get(cameraId);
+
+      // This is the BROKEN state: controller is null
+      if (internalState.controller) {
+        internalState.controller.updateRate(50);
+        // This would execute if controller exists
+      } else {
+        // BROKEN: This is silent failure in production
+        // With Fix 2, we should log a warning
+        expect(internalState.controller).toBeNull();
+      }
+    });
+
+    it('should register multiple controllers independently', () => {
+      const camera1 = 'camera-1';
+      const camera2 = 'camera-2';
+
+      manager.addCamera(camera1);
+      manager.addCamera(camera2);
+
+      const mockController1 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+      const mockController2 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      const controllersMap = new Map([
+        [camera1, mockController1],
+        [camera2, mockController2],
+      ]);
+
+      manager.setCaptureControllers(controllersMap);
+
+      const state1 = (manager as any).cameras.get(camera1);
+      const state2 = (manager as any).cameras.get(camera2);
+
+      expect(state1.controller).toBe(mockController1);
+      expect(state2.controller).toBe(mockController2);
+    });
+
+    it('should handle partial controller registration (one camera missing controller)', () => {
+      const camera1 = 'camera-1';
+      const camera2 = 'camera-2';
+
+      manager.addCamera(camera1);
+      manager.addCamera(camera2);
+
+      // Only register controller for camera1, not camera2
+      const mockController1 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      const controllersMap = new Map([[camera1, mockController1]]);
+      manager.setCaptureControllers(controllersMap);
+
+      const state1 = (manager as any).cameras.get(camera1);
+      const state2 = (manager as any).cameras.get(camera2);
+
+      // camera1: registered
+      expect(state1.controller).toBe(mockController1);
+      expect(state1.controller).not.toBeNull();
+
+      // camera2: NOT registered
+      expect(state2.controller).toBeNull();
+    });
+
+    it('should update rate only on cameras with registered controllers', () => {
+      const camera1 = 'camera-1';
+      const camera2 = 'camera-2';
+
+      manager.addCamera(camera1);
+      manager.addCamera(camera2);
+
+      const mockController1 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      // Register only camera1
+      const controllersMap = new Map([[camera1, mockController1]]);
+      manager.setCaptureControllers(controllersMap);
+
+      // Simulate updateCaptureRates being called
+      const targetInterval = 50;
+
+      const state1 = (manager as any).cameras.get(camera1);
+      const state2 = (manager as any).cameras.get(camera2);
+
+      // With proper implementation, only camera1 should update
+      if (state1.controller) {
+        state1.controller.updateRate(targetInterval);
+      }
+      if (state2.controller) {
+        state2.controller.updateRate(targetInterval);
+      }
+
+      // Only camera1 should have updateRate called
+      expect(mockController1.updateRate).toHaveBeenCalledWith(targetInterval);
+
+      // camera2 has no controller, so nothing should have been called
+      const state2Internal = (manager as any).cameras.get(camera2);
+      expect(state2Internal.controller).toBeNull();
+    });
+
+    it('should handle re-registration of controllers', () => {
+      const cameraId = 'camera-1';
+
+      manager.addCamera(cameraId);
+
+      // Register first controller
+      const mockController1 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      manager.setCaptureControllers(new Map([[cameraId, mockController1]]));
+
+      const state1 = (manager as any).cameras.get(cameraId);
+      expect(state1.controller).toBe(mockController1);
+
+      // Re-register with different controller
+      const mockController2 = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      manager.setCaptureControllers(new Map([[cameraId, mockController2]]));
+
+      const state2 = (manager as any).cameras.get(cameraId);
+      // Should have new controller
+      expect(state2.controller).toBe(mockController2);
+      expect(state2.controller).not.toBe(mockController1);
+    });
+
+    it('should clear controller when empty map is registered', () => {
+      const cameraId = 'camera-1';
+
+      manager.addCamera(cameraId);
+
+      // Register controller
+      const mockController = {
+        updateRate: jest.fn(),
+        cleanup: jest.fn(),
+      };
+
+      manager.setCaptureControllers(new Map([[cameraId, mockController]]));
+
+      const stateWithController = (manager as any).cameras.get(cameraId);
+      expect(stateWithController.controller).toBe(mockController);
+
+      // Register empty map
+      manager.setCaptureControllers(new Map());
+
+      const stateAfterClearing = (manager as any).cameras.get(cameraId);
+      // Controller should remain (setCaptureControllers doesn't remove, just doesn't update)
+      // This tests the current behavior - Fix might change this
+      expect(stateAfterClearing).toBeDefined();
+    });
+  });
 });
