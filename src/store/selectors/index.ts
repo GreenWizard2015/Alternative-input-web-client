@@ -4,6 +4,8 @@ import type { CameraEntity } from "../../types/camera";
 import { fromJSON, toJSON } from "../json";
 import type { UUIDed } from "../../shared/Sample";
 import { byId } from "../../shared/Sample";
+import type { Goal } from "../../types/Goal";
+import { DEFAULT_GOAL } from "../../types/Goal";
 
 /**
  * Base selectors - extract raw state values (no memoization needed)
@@ -79,6 +81,12 @@ export const selectMonitors = createSelector(
   (monitors) => {
     return Object.assign([], monitors, { byId: (id: string) => byId(monitors, id) });
   }
+);
+
+// Goal settings stored as JSON string, parsed only when accessed
+export const selectGoalSettings = createSelector(
+  (state: RootState) => state.UI.goalSettings,
+  (json: string) => fromJSON<Goal>(json, DEFAULT_GOAL)
 );
 
 /**

@@ -14,6 +14,7 @@ type MainMenuProps = {
   onAddMonitor: () => void;
   onStart: () => void;
   onFullscreen: () => void;
+  onGoalSettings: () => void;
   userId?: string;
   selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
   screenId?: string;
@@ -26,6 +27,7 @@ export default function MainMenu({
   onAddMonitor,
   onStart,
   onFullscreen,
+  onGoalSettings,
   userId = '',
   selectedCameras = [],
   screenId = ''
@@ -56,6 +58,7 @@ export default function MainMenu({
         {t('common.start')}
       </button>
       <button className='w100' onClick={onFullscreen}>{t('menu.fullscreen')}</button>
+      <button className='w100' onClick={onGoalSettings}>{t('dialogs.goalSettings')}</button>
 
       <textarea className="debug-info-textarea" value={debugInfo} readOnly />
     </>

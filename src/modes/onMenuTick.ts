@@ -1,9 +1,9 @@
 import i18n from "../i18n";
 import { grayscale2image, decodeLandmarks } from "../utils/MP";
-import { drawTarget } from "../utils/target";
 import { DetectionResult } from "../components/FaceDetector";
 import type { Position } from "../shared/Sample";
 import type { AppMode } from "./AppMode";
+import type { IGameController } from "../types/ControllerInterface";
 
 type MenuTickData = {
   canvas: HTMLCanvasElement;
@@ -18,10 +18,11 @@ type MenuTickData = {
   eyesDetected: boolean;
   detections: Map<string, DetectionResult>;
   collectedSampleCounts: Record<string, number>;
+  controller: IGameController;
 };
 
 export function onMenuTick({
-  viewport, canvasCtx, detections
+  viewport, canvasCtx, detections, controller
 }: MenuTickData) {
   const { t } = i18n;
   // Draw all camera frames in grid layout
@@ -76,7 +77,7 @@ export function onMenuTick({
         // Draw landmark points
         for (const point of points) {
           canvasCtx.beginPath();
-          canvasCtx.arc(x + point.x, y + point.y, 2, 0, 3 * Math.PI);
+          canvasCtx.arc(x + point.x, y + point.y, 2, 0, 2 * Math.PI);
           canvasCtx.stroke();
           canvasCtx.closePath();
         }
@@ -120,21 +121,22 @@ export function onMenuTick({
     return null;
   }
 
-  // draw example of target
+  // draw example of target using controller
   const targetPos: Position = { x: 0.1 * viewport.width, y: 0.5 * viewport.height };
-  const arrows: string[] = ['Z', 'A', 'S', 'X'];
-  drawTarget({
-    position: targetPos,
-    canvasCtx, radius: 10, style: "red",
-    sign: arrows[Math.floor(Date.now() / 5000) % arrows.length]
-  });
+
+  // Controller draws goal with its symbols and colors
+  controller.drawTarget(canvasCtx, targetPos, 'active');
+
   // TEXT "This is how target looks like"
-  canvasCtx.fillStyle = "red";
+  const textColor = controller.getGoalTextColor();
+  canvasCtx.fillStyle = textColor;
   canvasCtx.font = "21px Arial";
   canvasCtx.fillText(t('canvas.targetHelp'), targetPos.x - 120, targetPos.y - 70);
+
   // rectangle around the target
+  const activeColor = controller.getGoalColor('active');
   canvasCtx.setLineDash([]);
-  canvasCtx.strokeStyle = "red";
+  canvasCtx.strokeStyle = activeColor;
   canvasCtx.lineWidth = 2;
   canvasCtx.strokeRect(targetPos.x - 50, targetPos.y - 50, 100, 100);
   return null;

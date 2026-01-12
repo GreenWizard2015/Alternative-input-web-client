@@ -1,22 +1,28 @@
 import Spline from "cubic-spline";
 import { AppMode } from "./AppMode";
 import { calcDistance, clip, generatePoints, uniform } from "./utils";
+import type { IGameController } from "../types/ControllerInterface";
+import type { Viewport } from "./AppMode";
 
 export class SplineMode extends AppMode {
-  constructor(controller) {
-    super();
+  _currentTime: number = 0;
+  _maxT: number = 0;
+  _points: Array<{ x: number; y: number }> | null = null;
+  _getPoint: (t: number) => { x: number; y: number } = () => ({ x: 0, y: 0 });
+
+  constructor(controller: IGameController) {
+    super(controller);
     this._pos = { x: 0.5, y: 0.5 }
     this._points = null;
     this._currentTime = 0;
     this._newSpline({ extend: false });
-    this._controller = controller;
   }
 
-  _newSpline({ extend } = { extend: true }) {
+  _newSpline({ extend = true }: { extend?: boolean } = {}): void {
     this._currentTime = 0;
     const N = 3;
     let points = generatePoints(4);
-    if (extend) {
+    if (extend && this._points) {
         points = this._points.slice(-N).concat(points);
     }
     this._points = points = points.map(({ x, y }) => ({ x: clip(x, -0.5, 1.5), y: clip(y, -0.5, 1.5) }));
@@ -39,7 +45,7 @@ export class SplineMode extends AppMode {
     });
   }
 
-  doTick(deltaT, viewport) {
+  doTick(deltaT: number, _viewport: Viewport): void {
     this._currentTime += deltaT;
     if (this._maxT < this._currentTime) this._newSpline();
 
@@ -54,27 +60,25 @@ export class SplineMode extends AppMode {
     }
   }
 
-  onRender(data) {
+  onRender(data: any): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
     this.drawTarget({
-      canvasCtx, viewport,
-      style: this._controller.isActivated() ? 'red' : 'yellow',
-      sign: this._controller.sign()
+      viewport, canvasCtx,
+      state: this._controller.isActivated() ? 'active' : 'inactive'
     });
   }
 
-  onKeyDown(event) {
-    this._controller.onKeyDown(event);
+  onKeyDown(event: KeyboardEvent): void {
     super.onKeyDown(event);
   }
 
-  getScore() {
+  getScore(): number | null {
     return this._controller.getScore();
   }
 
-  accept() {
+  accept(): boolean {
     if(!this._controller.isActivated()) {
       return false;
     }

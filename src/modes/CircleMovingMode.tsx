@@ -1,19 +1,24 @@
-import { add, addScalar, multipleScalar, subtract } from "../utils/pointOperations";
+import { add, addScalar, multiplyScalar, subtract } from "../utils/pointOperations";
 import { AppMode } from "./AppMode";
 import { calcDistance, uniform } from "./utils";
+import type { IGameController } from "../types/ControllerInterface";
+import type { Viewport } from "./AppMode";
 
 export class CircleMovingMode extends AppMode {
-  constructor(controller) {
-    super();
+  _maxLevel: number = 25;
+  _level: number = 5;
+  _currentTime: number = 0;
+  _active: boolean = false;
+  _maxT: number = 0;
+  _path: Array<{ x: number; y: number }> = [];
+  _distances: number[] = [];
 
-    this._controller = controller;
-    this._maxLevel = 25;
-    this._level = 5;
-    this._currentTime = 0;
-    this._reset();
+  constructor(controller: IGameController) {
+    super(controller);
+    this._reset(false);
   }
 
-  doTick(deltaT, _viewport) {
+  doTick(deltaT: number, _viewport: Viewport): void {
     // update goal
     if (this._active) {
       this._currentTime += deltaT;
@@ -22,10 +27,9 @@ export class CircleMovingMode extends AppMode {
       0,
       Math.min(1, this._currentTime / this._maxT)
     ) : 0;
-    if ((1 === dt) && this._active) { // if we reached the end
-      const nextLevel = Math.floor(Math.random() * this._maxLevel);
-      this._level = Math.min(this._maxLevel, Math.max(0, nextLevel));
-      this._reset();
+    if ((1 === dt) && this._active) { // if we reached the end, randomly set level for next iteration
+      this._level = Math.floor(Math.random() * this._maxLevel);
+      this._reset(false);
     }
     if(0 === dt) { // if we are at the start
       this._pos = this._path[0];
@@ -33,7 +37,7 @@ export class CircleMovingMode extends AppMode {
     if ((0 < dt) && (dt < 1)) { // if we are in the middle
       // find the segment
       let i = 0;
-      while (this._distances[i] < dt) {
+      while (i < this._distances.length - 1 && this._distances[i] < dt) {
         i++;
       }
       const relT = (dt - this._distances[i - 1]) / (this._distances[i] - this._distances[i - 1]);
@@ -41,7 +45,7 @@ export class CircleMovingMode extends AppMode {
       const B = this._path[i];
       this._pos = add(
         A,
-        multipleScalar(
+        multiplyScalar(
           subtract(B, A), // B - A
           relT
         ) // A + (B - A) * relT
@@ -49,43 +53,45 @@ export class CircleMovingMode extends AppMode {
     }
   }
 
-  onRender(data) {
+  onRender(data: any): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
-    // draw it
+    // draw it with controller (respects user's goal settings)
     this.drawTarget({
       viewport, canvasCtx,
-      style: this._controller.isActivated() ? 'red' : 'yellow',
-      sign: this._controller.sign()
+      state: this._controller.isActivated() ? 'active' : 'inactive'
     });
   }
 
-  onKeyDown(event) {
+  onKeyDown(event: KeyboardEvent): void {
     super.onKeyDown(event);
-    this._controller.onKeyDown(event);
     if (!this._active && this._controller.isActivated()) {
-      this._active = true;
-      this._currentTime = 0; // reset timer
+      this._reset(true);
+      return;
     }
 
-    if (this._controller.isDummy() && event.code === 'ArrowLeft') {
-      this._active = true;
-      this._currentTime = 0; // reset timer
+    // Numpad Enter to activate
+    if (event.code === 'NumpadEnter') {
+      this._reset(true);
+      return;
     }
 
-    if (event.code === 'ArrowUp') {
+    // Level control with numpad +/- keys only
+    if (event.code === 'NumpadAdd') {
       this._level = Math.min(this._maxLevel, this._level + 1);
-      this._reset();
+      this._reset(false);
+      return;
     }
 
-    if (event.code === 'ArrowDown') {
+    if (event.code === 'NumpadSubtract') {
       this._level = Math.max(0, this._level - 1);
-      this._reset();
+      this._reset(false);
+      return;
     }
   }
 
-  _reset() {
+  _reset(start: boolean): void {
     const path = [
       { x: -1, y: 1 },
       { x: 1, y: 1 },
@@ -95,7 +101,7 @@ export class CircleMovingMode extends AppMode {
     ];
     const lvl = (this._maxLevel - this._level) / (2 * this._maxLevel);
     this._path = path.map(
-      point => addScalar(multipleScalar(point, lvl), 0.5)
+      point => addScalar(multiplyScalar(point, lvl), 0.5)
     );
     // calculate an array of distances between points
     this._distances = calcDistance(this._path);
@@ -105,18 +111,19 @@ export class CircleMovingMode extends AppMode {
     this._distances = this._distances.map(d => d / totalDistance);
     this._maxT = totalDistance / speed; // in seconds (since we use deltaT in seconds)
 
-    this._active = false;
+    // Always reset timer
     this._currentTime = 0;
+    this._active = start;
   }
 
-  accept() {
+  accept(): boolean {
     if (this._active && this._controller.isActivated()) {
       return super.accept();
     }
     return false;
   }
 
-  getScore() {
+  getScore(): number | null {
     return this._controller.getScore();
   }
 }

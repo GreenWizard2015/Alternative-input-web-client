@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useMemo, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import MiniGameController from '../modes/MiniGameController';
 import NullController from '../modes/NullController';
 import { AppMode } from '../modes/AppMode';
+import { selectGoalSettings } from '../store/selectors';
+import { renderSymbol } from '../types/Goal';
 
 type GameModeConstructor = new (controller: MiniGameController | NullController) => AppMode;
 
@@ -38,50 +41,62 @@ const getSplineMode = async (): Promise<GameModeConstructor> => {
 
 interface UIStartProps {
   onStart: (mode: AppMode) => void;
+  onBack: () => void;
 }
 
-export default function UIStart({ onStart }: UIStartProps) {
+export default function UIStart({ onStart, onBack }: UIStartProps) {
   const { t } = useTranslation();
+  const goalSettings = useSelector(selectGoalSettings);
   const [helpMode, setHelpMode] = useState<string>('');
   const back: ReactNode = useMemo(() => (
     <button className='ms-2' onClick={() => setHelpMode('')}>{t('common.back')}</button>
   ), [t]);
+
+  // Format symbols for display: "Z, A, S, X" or "Z, ↑, S, ←"
+  const symbolsString = useMemo(() => {
+    const displayed = goalSettings.symbols.map(renderSymbol);
+    if (displayed.length === 1) return displayed[0];
+    if (displayed.length === 2) return `${displayed[0]} or ${displayed[1]}`;
+    return displayed.slice(0, -1).join(', ') + ` or ${displayed[displayed.length - 1]}`;
+  }, [goalSettings.symbols]);
   const [useGamification, setUseGamification] = useState<boolean>(true);
   const gamificationNote: ReactNode = React.useMemo(() => {
     if (!useGamification) return null;
 
     return (
       <div className="text-red">
-        {t('gameStart.gamificationWarning')}
+        {t('gameStart.gamificationWarning', { keys: symbolsString })}
       </div>
     );
-  }, [useGamification, t]);
-  const [controller, setController] = useState<MiniGameController | NullController>(new MiniGameController());
-  React.useEffect(() => {
+  }, [useGamification, t, symbolsString]);
+
+  const createController = useCallback((): MiniGameController | NullController => {
     if (useGamification) {
-      setController(new MiniGameController());
-    } else {
-      setController(new NullController());
+      return new MiniGameController(goalSettings);
     }
-  }, [useGamification]);
+    return new NullController(goalSettings);
+  }, [useGamification, goalSettings]);
 
   const handleStartLookAt = useCallback(async () => {
     const Mode = await getLookAtMode();
+    const controller = createController();
     const mode = new Mode(controller);
     onStart(mode);
-  }, [controller, onStart]);
+  }, [createController, onStart]);
 
   const handleStartSpline = useCallback(async () => {
     const Mode = await getSplineMode();
+    const controller = createController();
     const mode = new Mode(controller);
     onStart(mode);
-  }, [controller, onStart]);
+  }, [createController, onStart]);
 
   const handleStartCircleMoving = useCallback(async () => {
     const Mode = await getCircleMovingMode();
+    const controller = createController();
     const mode = new Mode(controller);
     onStart(mode);
-  }, [controller, onStart]);
+  }, [createController, onStart]);
 
   switch (helpMode) {
     case 'lookAt':
@@ -119,6 +134,16 @@ export default function UIStart({ onStart }: UIStartProps) {
       )
 
     case 'circleMoving':
+      // Get static shortcuts and insert dynamic activate line with actual symbols
+      const baseShortcuts = t('gameStart.keyboardShortcuts.circleMoving', { returnObjects: true }) as string[];
+      const circleMovingShortcuts = [
+        baseShortcuts[0],  // Numpad +
+        baseShortcuts[1],  // Numpad -
+        baseShortcuts[2],  // Numpad Enter
+        `Press ${symbolsString} to activate`,  // Dynamic symbols from goal settings
+        baseShortcuts[3],  // Esc
+        baseShortcuts[4],  // P / Enter / Space
+      ];
       return (
         <div className="ui-help">
           <h1>{t('gameStart.circleMovingMode')}</h1>
@@ -129,7 +154,7 @@ export default function UIStart({ onStart }: UIStartProps) {
             {t('gameStart.dataCollection')}
           </div>
           <ul>
-            {(t('gameStart.keyboardShortcuts.circleMoving', { returnObjects: true }) as string[]).map((shortcut, index) => (
+            {circleMovingShortcuts.map((shortcut, index) => (
               <li key={index}>{shortcut}</li>
             ))}
           </ul>
@@ -149,9 +174,10 @@ export default function UIStart({ onStart }: UIStartProps) {
           <div>
             <label>
               <input type="checkbox" checked={useGamification} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUseGamification(e.target.checked)} />
-              {t('gameStart.useGamification')}
+              {t('gameStart.useGamification', { keys: symbolsString })}
             </label>
           </div>
+          <button onClick={onBack} className='ms-2'>{t('common.back')}</button>
         </div>
       );
   }

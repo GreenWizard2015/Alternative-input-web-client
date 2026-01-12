@@ -13,10 +13,12 @@ import UploadsNotification from "./uploadsNotification";
 import ErrorNotification from "./errorNotification";
 import FPSDisplay from "./FPSDisplay";
 import { setMode } from "../store/slices/App";
-import { selectAppProps, selectSortedDeviceIds } from "../store/selectors";
+import { selectAppProps, selectSortedDeviceIds, selectGoalSettings } from "../store/selectors";
 import type { RootState } from "../store";
 import type { Position } from "../shared/Sample";
 import type { CameraEntity } from "../types/camera";
+import type { IGameController } from "../types/ControllerInterface";
+import MiniGameController from "../modes/MiniGameController";
 
 type TickData = {
   canvas: HTMLCanvasElement;
@@ -31,10 +33,19 @@ type TickData = {
   eyesDetected: boolean;
   detections: Map<string, DetectionResult>;
   collectedSampleCounts: Record<string, number>;
+  controller: IGameController;
 };
 
+// Helper function to check if any eyes are detected from multiple cameras
+function areEyesDetected(detections: Map<string, DetectionResult>): boolean {
+  return Array.from(detections.values()).some(
+    detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
+  );
+}
+
 function onGameTick(data: TickData) {
-  return data.gameMode!.process(data);
+  if (!data.gameMode) return null;
+  return data.gameMode.process(data);
 }
 
 type AppSettings = {
@@ -48,12 +59,19 @@ type AppSettings = {
   sortedDeviceIds: string[], // Sorted device IDs of selected cameras
   currentUser?: any, // Current user object
   users?: any[], // Users array
+  goalSettings: any, // Goal settings from Redux
 };
 
 function AppComponent(
-  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds }: AppSettings
+  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds, goalSettings }: AppSettings
 ) {
   const { t } = useTranslation();
+
+  // Create menu controller with current goal settings
+  const menuController = React.useMemo(
+    () => new MiniGameController(goalSettings),
+    [goalSettings]
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
   const goalPosition = useRef<Position | null>(null);
@@ -186,65 +204,85 @@ function AppComponent(
     return () => window.removeEventListener('resize', trackViewport);
   }, []);
 
+  // Time tracking for frame-based updates
+  const lastTickTimeRef = useRef<number>(Date.now());
   const animationFrameId = useRef<number>(0);
-  React.useEffect(() => {
-    const f = () => {
-      const canvasElement = canvasRef.current;
-      if (!canvasElement) return;
-      // Only resize if dimensions actually changed
-      if (canvasElement.width !== canvasElement.clientWidth ||
-          canvasElement.height !== canvasElement.clientHeight) {
-        canvasElement.width = canvasElement.clientWidth;
-        canvasElement.height = canvasElement.clientHeight;
-      }
-      const canvasCtx = canvasElement.getContext("2d");
-      if (!canvasCtx) return;
-      // Use clearRect for faster clearing
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      const viewport = {
-        left: canvasElement.offsetLeft,
-        top: canvasElement.offsetTop,
-        width: canvasElement.width,
-        height: canvasElement.height,
-      };
+  // Frame update: called on every requestAnimationFrame
+  const doTick = useCallback(() => {
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
 
-      // Eyes detected: check if any camera currently has eyes visible
-      // Strategy: if ANY camera has eyes, game proceeds (for multi-camera robustness)
-      // Treat null frame as eyes not detected
-      const eyesDetected = Array.from(detectionsByCamera.current.values()).some(
-        detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
-      );
+    // Prepare canvas
+    if (canvasElement.width !== canvasElement.clientWidth ||
+        canvasElement.height !== canvasElement.clientHeight) {
+      canvasElement.width = canvasElement.clientWidth;
+      canvasElement.height = canvasElement.clientHeight;
+    }
 
-      goalPosition.current = onTick({
-        canvas: canvasElement,
-        canvasCtx: canvasCtx,
-        viewport,
-        gameMode,
-        eyesDetected,
-        goal: goalPosition.current,
-        user: tickStateRef.current.userId,
-        screenId: tickStateRef.current.screenId,
-        activeUploads: tickStateRef.current.activeUploads,
-        meanUploadDuration: tickStateRef.current.meanUploadDuration,
-        detections: detectionsByCamera.current,
-        collectedSampleCounts: collectedSampleCountsRef.current,
-      });
-      animationFrameId.current = requestAnimationFrame(f);
+    const canvasCtx = canvasElement.getContext("2d");
+    if (!canvasCtx) return;
+
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+    const viewport = {
+      left: canvasElement.offsetLeft,
+      top: canvasElement.offsetTop,
+      width: canvasElement.width,
+      height: canvasElement.height,
     };
-    animationFrameId.current = requestAnimationFrame(f);
+
+    // Eyes detected: check if any camera currently has eyes visible
+    // Strategy: if ANY camera has eyes, game proceeds (for multi-camera robustness)
+    // Treat null frame as eyes not detected
+    const eyesDetected = areEyesDetected(detectionsByCamera.current);
+
+    // Calculate deltaT for frame-based timing
+    const now = Date.now();
+    const deltaT = (now - lastTickTimeRef.current) / 1000; // in seconds
+
+    // Delegate to mode-specific tick handler
+    goalPosition.current = onTick({
+      canvas: canvasElement,
+      canvasCtx: canvasCtx,
+      viewport,
+      gameMode,
+      eyesDetected,
+      goal: goalPosition.current,
+      user: tickStateRef.current.userId,
+      screenId: tickStateRef.current.screenId,
+      activeUploads: tickStateRef.current.activeUploads,
+      meanUploadDuration: tickStateRef.current.meanUploadDuration,
+      detections: detectionsByCamera.current,
+      collectedSampleCounts: collectedSampleCountsRef.current,
+      controller: mode === 'menu' ? menuController : (gameMode?._controller as IGameController),
+    });
+
+    // Call menuController.doTick() in menu mode to update controller state
+    if (mode === 'menu') {
+      menuController.doTick(deltaT);
+    }
+
+    // Schedule next frame
+    lastTickTimeRef.current = now;
+  }, [onTick, gameMode, mode, menuController]);
+
+  React.useEffect(() => {
+    const frameLoop = () => {
+      doTick();
+      animationFrameId.current = requestAnimationFrame(frameLoop);
+    };
+    animationFrameId.current = requestAnimationFrame(frameLoop);
 
     return () => { cancelAnimationFrame(animationFrameId.current); };
-  }, [onTick, gameMode]);
+  }, [doTick]);
 
   // Track eye detection from detection results
   useEffect(() => {
     // Check if any detection has eyes visible
-    const anyEyesDetected = Array.from(detectionsByCamera.current.values()).some(
-      detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
-    );
+    const anyEyesDetected = areEyesDetected(detectionsByCamera.current);
     setEyesVisible(anyEyesDetected);
-  }, [workerStats, onDetect]);
+  }, [workerStats]);
 
   // Update collected sample counts from worker stats
   useEffect(() => {
@@ -258,8 +296,13 @@ function AppComponent(
 
   const startGame = useCallback((mode: AppMode) => {
     setGameMode(mode);
-    setMode("game");
-  }, [setMode]);
+  }, []);
+
+  useEffect(() => {
+    if (gameMode) {
+      setMode("game");
+    }
+  }, [gameMode, setMode]);
 
   // Start button enabled: eyes detected, user selected, monitor selected, and all cameras have places
   const canStart = useMemo(() => {
@@ -339,6 +382,7 @@ export default connect(
   (state: RootState) => ({
     ...selectAppProps(state),
     sortedDeviceIds: selectSortedDeviceIds(state),
+    goalSettings: selectGoalSettings(state),
   }),
   { setMode }
 )(AppComponent);

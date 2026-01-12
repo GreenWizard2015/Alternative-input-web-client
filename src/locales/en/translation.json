@@ -44,7 +44,19 @@
     "confirmRecreateItem": "Are you sure you want to recreate \"{{name}}\" (clear samples)?",
     "confirmRecreateUser": "Are you sure you want to recreate user \"{{name}}\" (clear samples)?",
     "confirmRecreatePlace": "Are you sure you want to recreate place \"{{name}}\" (clear samples)?",
-    "confirmRecreateMonitor": "Are you sure you want to recreate monitor \"{{name}}\" (clear samples)?"
+    "confirmRecreateMonitor": "Are you sure you want to recreate monitor \"{{name}}\" (clear samples)?",
+    "goalSettings": "Goal Settings",
+    "colorsLabel": "Colors",
+    "colorActive": "Active Color",
+    "colorInactive": "Inactive Color",
+    "colorPaused": "Paused Color",
+    "colorText": "Text Color",
+    "symbolsLabel": "Symbols",
+    "symbol1": "Symbol 1",
+    "symbol2": "Symbol 2",
+    "symbol3": "Symbol 3",
+    "symbol4": "Symbol 4",
+    "symbolsUnique": "Symbols must be unique"
   },
   "uiHelp": {
     "title": "UI Help",
@@ -55,14 +67,14 @@
     "lookAtMode": "Look At Mode",
     "circleMovingMode": "Circle Moving Mode",
     "confirmTitle": "Confirm Game Start",
-    "useGamification": "Use gamification (disable only if you can't press the keys (Z, A, S, X).)",
+    "useGamification": "Use gamification (disable only if you can't press the keys ({{keys}}).)",
     "lookAtHelp": "In this mode you should concentrate on the static red circle. Grey circle means inactive mode.",
     "lookAtPurpose": "This mode intended to stabilize gaze predictions.",
     "splineHelp": "In this mode you should concentrate on the red circle and ignore others.",
     "splinePurpose": "This is the main mode of the application. It is intended to adjust gaze predictions in motion.",
     "circleMovingHelp": "In this mode you should concentrate on the red circle while it moving.",
     "circleMovingPurpose": "This mode intended to stabilize gaze predictions in motion.",
-    "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.",
+    "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: {{keys}}. If you press the correct key, the circle will turn red, and recordings will be saved.",
     "keyboardShortcuts": {
       "lookAt": [
         "Esc - return to main menu",
@@ -73,10 +85,9 @@
         "P / Enter / Space - toggle pause"
       ],
       "circleMoving": [
-        "Arrow Up - increase level of difficulty",
-        "Arrow Down - decrease level of difficulty",
-        "Arrow Left - activate the circle",
-        "Z, A, S, X - press the correct key to activate",
+        "Numpad + - increase path radius",
+        "Numpad - - decrease path radius",
+        "Numpad Enter - activate the circle",
         "Esc - return to main menu",
         "P / Enter / Space - toggle pause"
       ]

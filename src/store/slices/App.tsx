@@ -3,7 +3,7 @@ import type { CameraConfig } from "../../types/camera";
 import { toJSON, fromJSON } from "../json";
 
 type EAppMode = "menu" | "game" | "intro";
-type DialogType = "IDLE" | "USER_DIALOG" | "PLACE_DIALOG" | "START_DIALOG" | "MONITOR_DIALOG" | "GAME_CONFIRM_DIALOG";
+type DialogType = "IDLE" | "USER_DIALOG" | "PLACE_DIALOG" | "START_DIALOG" | "MONITOR_DIALOG" | "GAME_CONFIRM_DIALOG" | "GOAL_DIALOG";
 
 interface IScreen {
   left: number;
@@ -60,7 +60,6 @@ export const AppSlice = createSlice({
       state.screen = action.payload;
     },
     changeActiveUploads: (state, action: PayloadAction<IChangeActiveUploads>) => {
-      console.log(action.payload);
       const { total, duration } = action.payload;
       state.activeUploads = total;
       if(null !== duration) {
@@ -179,6 +178,10 @@ export const AppSlice = createSlice({
       state.dialogType = "GAME_CONFIRM_DIALOG";
     },
 
+    openGoalDialog: (state) => {
+      state.dialogType = "GOAL_DIALOG";
+    },
+
     closeDialog: (state) => {
       state.dialogType = "IDLE";
       state.tempName = "";
@@ -210,6 +213,7 @@ export const {
   openMonitorDialog,
   openStartDialog,
   openGameConfirmDialog,
+  openGoalDialog,
   closeDialog,
   setTempName,
   setTempCameraId,

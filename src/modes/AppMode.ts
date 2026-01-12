@@ -1,11 +1,11 @@
 import i18n from "../i18n";
-import { drawTarget } from "../utils/target";
 import { grayscale2image } from "../utils/MP";
 import CBackground from "./CBackground";
 import CRandomIllumination from "./CRandomIllumination";
 import { DetectionResult } from "../components/FaceDetector";
 import type { Position } from "../shared/Sample";
 import type { FPSData } from "../types/fps";
+import type { IGameController } from "../types/ControllerInterface";
 export type { FPSData };
 export type Viewport = { width: number, height: number }
 
@@ -24,7 +24,7 @@ export type AppModeRenderData = {
   canvas: HTMLCanvasElement;
   canvasCtx: CanvasRenderingContext2D;
   viewport: Viewport;
-  goal: any;
+  goal: Position | null;
   user: string;
   screenId: string;
   gameMode: AppMode;
@@ -52,8 +52,10 @@ export class AppMode {
   _illumination: CRandomIllumination = new CRandomIllumination();
   _overflowed: boolean = false;
   _eyesDetected: boolean = false;
+  _controller: IGameController;
 
-  constructor() {
+  constructor(controller: IGameController) {
+    this._controller = controller;
     this._paused = true;
   }
 
@@ -71,6 +73,7 @@ export class AppMode {
     }
     this._background.onEvent(event);
     this._illumination.onEvent(event);
+    this._controller.onKeyDown(event);
   }
 
   doTick(_deltaT: number, _viewport: Viewport) {
@@ -94,6 +97,7 @@ export class AppMode {
     this.doTick(deltaT, data.viewport);
     this._background.onTick(deltaT);
     this._illumination.onTick(deltaT);
+    this._controller.doTick(deltaT); // ← CRITICAL: Sync controller with frame time
     this._background.onRender(canvasCtx, viewport);
     this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
 
@@ -249,19 +253,16 @@ export class AppMode {
   }
 
   drawTarget(
-    { position=null, viewport, radius=10, canvasCtx, style, sign='' }:
-    { 
-      position: Position | null, viewport: Viewport, 
-      radius: number,
-      canvasCtx: CanvasRenderingContext2D, style?: string, sign?: string
+    { viewport, canvasCtx, state='active' }:
+    {
+      viewport: Viewport,
+      canvasCtx: CanvasRenderingContext2D,
+      state?: 'active' | 'inactive' | 'paused'
     }
   ) {
-    position = position ?? this._pos;
-    const absolutePosition = AppMode.makeAbsolute({ position, viewport });
-    drawTarget({ 
-      position: absolutePosition, 
-      radius, canvasCtx, style, sign
-    });
+    const absolutePosition = AppMode.makeAbsolute({ position: this._pos, viewport });
+    // Delegate to controller for goal rendering with user's symbols and colors
+    this._controller.drawTarget(canvasCtx, absolutePosition, state);
   }
 
   drawText({ text, viewport, canvasCtx, color, style }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, color?: string, style?:string }) {
@@ -293,6 +294,6 @@ export class AppMode {
   }
   
   onPause() {
-
+    this._paused = true;
   }
 }

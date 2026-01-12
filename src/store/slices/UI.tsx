@@ -3,6 +3,8 @@ import type { UUIDed } from "../../shared/Sample";
 import { SampleValidation } from "../../shared/SampleValidation";
 import { toJSON, fromJSON } from "../json";
 import { cleanupPlaceFromCameras } from "./App";
+import type { Goal } from "../../types/Goal";
+import { DEFAULT_GOAL } from "../../types/Goal";
 
 interface UIState {
   userId: string,
@@ -12,6 +14,7 @@ interface UIState {
   users: string;              // JSON string of UUIDed[]
   places: string;             // JSON string of UUIDed[]
   monitors: string;           // JSON string of UUIDed[]
+  goalSettings: string;       // JSON string of Goal
 };
 
 const mainMonitorUUID = crypto.randomUUID();
@@ -26,6 +29,7 @@ const initialState: UIState = {
     uuid: mainMonitorUUID,
     samples: 0,
   }]),
+  goalSettings: JSON.stringify(DEFAULT_GOAL),  // JSON string of Goal
 };
 
 // Thunk action to remove place and cleanup cameras that reference it
@@ -278,6 +282,11 @@ export const UISlice = createSlice({
       state.monitors = toJSON(monitors.filter(m => SampleValidation.validateUUIDed(m)));
     },
 
+    // Goal settings reducer (persistent)
+    setGoalSettings: (state, action: PayloadAction<Goal>) => {
+      state.goalSettings = toJSON(action.payload);
+    },
+
   },
   extraReducers: (builder) => {
     builder.addCase(removePlace.fulfilled, (state, action) => {
@@ -299,6 +308,7 @@ export const {
   removeMonitor,
   recreateMonitor,
   selectDefaultValues,
+  setGoalSettings,
 } = UISlice.actions;
 export const { incrementStats } = UISlice.actions;
 // removePlace is exported as a thunk (see above)

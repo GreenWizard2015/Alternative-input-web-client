@@ -4,6 +4,7 @@ import UserDialog from './UserDialog';
 import PlaceDialog from './PlaceDialog';
 import MonitorDialog from './MonitorDialog';
 import StartConfirmDialog from './StartConfirmDialog';
+import GoalDialog from './GoalDialog';
 import MainMenu from './MainMenu';
 import { selectDefaultValues, addPlace, setUser, addMonitor } from '../store/slices/UI';
 import { connect } from 'react-redux';
@@ -43,6 +44,7 @@ function UI({
     isMonitorDialog,
     isStartDialog,
     isGameConfirmDialog,
+    isGoalDialog,
     tempName,
     tempCameraId,
     pendingGameMode,
@@ -52,6 +54,7 @@ function UI({
     openMonitorDialog,
     openStartDialog,
     openGameConfirmDialog,
+    openGoalDialog,
     closeDialog,
     setTempName,
   } = useDialogStateMachine();
@@ -62,7 +65,7 @@ function UI({
 
   return (
     <>
-      {isStartDialog && <UIStart onStart={(mode) => openGameConfirmDialog(mode, onStart)} />}
+      {isStartDialog && <UIStart onStart={(mode) => openGameConfirmDialog(mode, onStart)} onBack={closeDialog} />}
 
       {isGameConfirmDialog && pendingGameMode && onGameStartConfirm && <StartConfirmDialog gameMode={pendingGameMode} onConfirm={onGameStartConfirm} />}
 
@@ -108,6 +111,12 @@ function UI({
         />
       )}
 
+      {isGoalDialog && (
+        <GoalDialog
+          onClose={closeDialog}
+        />
+      )}
+
       {isIdle && (
         <MainMenu
           canStart={canStart}
@@ -116,6 +125,7 @@ function UI({
           onAddMonitor={openMonitorDialog}
           onStart={openStartDialog}
           onFullscreen={goFullscreen}
+          onGoalSettings={openGoalDialog}
           userId={userId}
           selectedCameras={selectedCameras}
           screenId={screenId}

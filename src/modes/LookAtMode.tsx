@@ -1,28 +1,32 @@
 import { AppMode } from "./AppMode";
+import type { IGameController } from "../types/ControllerInterface";
+import type { Viewport } from "./AppMode";
 
 export class LookAtMode extends AppMode {
-  constructor(controller) {
-    super();
+  _visibleT: number = 5.0;
+  _currentTime: number = 0;
+  _active: boolean = false;
+
+  constructor(controller: IGameController) {
+    super(controller);
     this._visibleT = 5.0;
     this._pos = { x: 0.5, y: 0.5 };
-    this._controller = controller;
     this._currentTime = 0;
   }
 
-  _next() {
+  _next(): void {
     this._pos = { x: Math.random(), y: Math.random() };
     this._active = false;
     this._currentTime = 0;
     this._controller.reset();
   }
 
-  onKeyDown(event) {
+  onKeyDown(event: KeyboardEvent): void {
     super.onKeyDown(event);
-    this._controller.onKeyDown(event);
     this._active = this._controller.isActivated();
   }
 
-  doTick(deltaT, viewport) {
+  doTick(deltaT: number, _viewport: Viewport): void {
     if (this._active) {
       this._currentTime += deltaT;
       if (this._visibleT < this._currentTime) {
@@ -33,25 +37,24 @@ export class LookAtMode extends AppMode {
     }
   }
 
-  onRender(data) {
+  onRender(data: any): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
     this.drawTarget({
       viewport, canvasCtx,
-      style: this._active ? 'red' : 'yellow',
-      sign: this._controller.sign()
+      state: this._active ? 'active' : 'inactive'
     });
   }
 
-  accept() {
+  accept(): boolean {
     if (this._active) {
       return super.accept();
     }
     return false;
   }
 
-  getScore() {
+  getScore(): number | null {
     return this._controller.getScore();
   }
 }
