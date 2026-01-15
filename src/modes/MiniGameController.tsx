@@ -1,6 +1,7 @@
 import type { IGameController } from "../types/ControllerInterface";
 import type { Goal, GoalColors } from "../types/Goal";
-import { DEFAULT_GOAL, renderSymbol } from "../types/Goal";
+import { DEFAULT_GOAL, renderSymbol, ARROW_DISPLAY } from "../types/Goal";
+import { drawArrow } from "../utils/target";
 
 export default class MiniGameController implements IGameController {
   private _Signs: string[];
@@ -13,6 +14,7 @@ export default class MiniGameController implements IGameController {
   private _isActivated: boolean = false;
   private _score: number = 0;
   private _goalColors: GoalColors;
+  private _scaleFactor: number = 1; // Size scale factor (size / 100)
 
   constructor(goalSettings: Goal = DEFAULT_GOAL) {
     // Use provided symbols instead of hardcoded Z/A/S/X
@@ -27,6 +29,8 @@ export default class MiniGameController implements IGameController {
     this._score = 0;
     // Store colors for state-based rendering
     this._goalColors = goalSettings.colors;
+    // Calculate scale factor from size percentage (backward compatible with default 100)
+    this._scaleFactor = (goalSettings.size ?? 100) / 100;
 
     // Build arrow key mapping - maps arrow key codes to symbol indices
     this._arrowMapping = new Map<string, number>();
@@ -133,16 +137,18 @@ export default class MiniGameController implements IGameController {
   }
 
   drawTarget(canvasCtx: CanvasRenderingContext2D, position: { x: number; y: number }, state: 'active' | 'inactive' | 'paused' = 'active'): void {
-    // Draw goal target with controller's symbols and colors
-    const style = this._goalColors[state];
-    const sign = renderSymbol(this._Signs[this._currentSign]);
-
     const height = canvasCtx.canvas.height;
     const width = canvasCtx.canvas.width;
 
+    // Apply scale factor to all radii
+    const outerRadius = 20 * this._scaleFactor;
+    const borderRadius = 15 * this._scaleFactor;
+    const mainRadius = 10 * this._scaleFactor;
+    const centerRadius = 2 * this._scaleFactor;
+
     // draw dashed border circle (outer)
     canvasCtx.beginPath();
-    canvasCtx.ellipse(position.x, position.y, 20, 20, 0, 0, Math.PI * 2);
+    canvasCtx.ellipse(position.x, position.y, outerRadius, outerRadius, 0, 0, Math.PI * 2);
     canvasCtx.strokeStyle = 'red';
     canvasCtx.lineWidth = 2;
     canvasCtx.setLineDash([5, 5]);
@@ -150,32 +156,55 @@ export default class MiniGameController implements IGameController {
 
     // draw black border circle
     canvasCtx.beginPath();
-    canvasCtx.ellipse(position.x, position.y, 15, 15, 0, 0, Math.PI * 2);
+    canvasCtx.ellipse(position.x, position.y, borderRadius, borderRadius, 0, 0, Math.PI * 2);
     canvasCtx.fillStyle = 'black';
     canvasCtx.fill();
 
     // draw main circle with user's color
     canvasCtx.beginPath();
-    canvasCtx.ellipse(position.x, position.y, 10, 10, 0, 0, Math.PI * 2);
+    canvasCtx.ellipse(position.x, position.y, mainRadius, mainRadius, 0, 0, Math.PI * 2);
+    const style = this._goalColors[state];
     canvasCtx.fillStyle = style || this._goalColors.active;
     canvasCtx.fill();
 
     // draw center dot
     canvasCtx.beginPath();
-    canvasCtx.ellipse(position.x, position.y, 2, 2, 0, 0, Math.PI * 2);
+    canvasCtx.ellipse(position.x, position.y, centerRadius, centerRadius, 0, 0, Math.PI * 2);
     canvasCtx.fillStyle = this._goalColors.text;
     canvasCtx.fill();
 
-    // draw sign character at center with user's text color
-    if (sign) {
+    const sign = renderSymbol(this.sign());
+
+    const d = 10 * this._scaleFactor;
+    const x = Math.max(d, Math.min(width - d, position.x));
+    const y = Math.max(d, Math.min(height - d, position.y));
+
+    // Scale symbol/arrow size
+    const symbolSize = 16 * this._scaleFactor;
+
+    if (ARROW_DISPLAY[this.sign() as keyof typeof ARROW_DISPLAY]) {
+      // Draw arrow for arrow keys
+      const directions: Record<string, number> = {
+        'UpArrow': -Math.PI / 2,
+        'RightArrow': 0,
+        'DownArrow': Math.PI / 2,
+        'LeftArrow': Math.PI
+      };
+      const position = {x, y};
+      drawArrow({
+        position,
+        canvasCtx,
+        direction: directions[this.sign()] || 0,
+        size: symbolSize,
+        color: this._goalColors.text
+      });
+    } else {
+      // Draw text for other symbols
       canvasCtx.fillStyle = this._goalColors.text;
-      canvasCtx.font = 'bold 16px Arial';
+      canvasCtx.font = `bold ${symbolSize}px Arial`;
       canvasCtx.textAlign = 'center';
       canvasCtx.textBaseline = 'middle';
-      const d = 10;
-      const x = Math.max(d, Math.min(width - d, position.x));
-      const y = Math.max(d, Math.min(height - d, position.y));
-      canvasCtx.fillText(sign, x, y + 2);
+      canvasCtx.fillText(sign, x, y);
       // reset text alignment
       canvasCtx.textAlign = 'start';
       canvasCtx.textBaseline = 'alphabetic';

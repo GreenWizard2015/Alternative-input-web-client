@@ -42,6 +42,7 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
     dispatchSetGoalSettings({
       symbols: newSymbols,
       colors: currentGoal.colors,
+      size: currentGoal.size,
     });
   };
 
@@ -49,6 +50,15 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
     dispatchSetGoalSettings({
       symbols: currentGoal.symbols,
       colors: { ...currentGoal.colors, [state]: color },
+      size: currentGoal.size,
+    });
+  };
+
+  const handleSizeChange = (newSize: number) => {
+    dispatchSetGoalSettings({
+      symbols: currentGoal.symbols,
+      colors: currentGoal.colors,
+      size: newSize,
     });
   };
 
@@ -68,6 +78,7 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
       dispatchSetGoalSettings({
         symbols: newSymbols,
         colors: currentGoal.colors,
+        size: currentGoal.size,
       });
       return;
     }
@@ -108,6 +119,23 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
                 />
               </React.Fragment>
             ))}
+          </div>
+        </div>
+
+        {/* SIZE SLIDER */}
+        <div className="goal-section">
+          <h3>{t('dialogs.sizeLabel')}</h3>
+
+          <div className="size-control">
+            <input
+              type="range"
+              min="50"
+              max="300"
+              value={currentGoal.size}
+              onChange={(e) => handleSizeChange(Number(e.target.value))}
+              className="size-slider"
+            />
+            <span className="size-value">{currentGoal.size}%</span>
           </div>
         </div>
 

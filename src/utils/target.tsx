@@ -1,5 +1,59 @@
 import type { Position } from "../shared/Sample";
 
+export function drawArrow(
+  { position, canvasCtx, direction=0, size=20, color='white' }:
+  {
+    position: Position,
+    canvasCtx: CanvasRenderingContext2D,
+    direction?: number, // angle in radians
+    size?: number,
+    color?: string
+  }
+) {
+  const ctx = canvasCtx;
+  ctx.save();
+
+  // Translate to position and rotate
+  ctx.translate(position.x, position.y);
+  ctx.rotate(direction);
+
+  // Draw arrow shape
+  ctx.beginPath();
+  ctx.fillStyle = color;
+
+  // Arrow dimensions
+  const tipLength = size * 0.6;
+  const baseWidth = size * 0.75;
+  const stemWidth = size * 0.25;
+
+  // Move to stem base
+  ctx.moveTo(-tipLength + stemWidth/2, -stemWidth/2);
+
+  // Draw stem
+  ctx.lineTo(tipLength * 0.3, -stemWidth/2);
+  ctx.lineTo(tipLength * 0.3, -baseWidth/2);
+
+  // Draw arrow head
+  ctx.lineTo(tipLength, 0);
+  ctx.lineTo(tipLength * 0.3, baseWidth/2);
+
+  // Complete stem
+  ctx.lineTo(tipLength * 0.3, stemWidth/2);
+  ctx.lineTo(-tipLength + stemWidth/2, stemWidth/2);
+
+  // Close back to stem base
+  ctx.lineTo(-tipLength + stemWidth/2, -stemWidth/2);
+
+  ctx.fill();
+
+  // Add border for better visibility
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 export function drawTarget(
   { position, radius=10, canvasCtx, style, sign }:
   { 

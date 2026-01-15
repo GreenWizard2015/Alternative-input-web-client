@@ -8,6 +8,7 @@ export interface GoalColors {
 export interface Goal {
   symbols: [string, string, string, string];  // Replace Z, A, S, X (each max 1 char)
   colors: GoalColors;
+  size: number;  // Percentage scale: 50-300% (100 = default size)
 }
 
 // Default goal settings (current hardcoded colors)
@@ -18,7 +19,8 @@ export const DEFAULT_GOAL: Goal = {
     inactive: '#FFFF00',  // Yellow
     paused: '#808080',    // Gray
     text: '#00FF00'       // Lime
-  }
+  },
+  size: 100  // Default size (100% = normal)
 };
 
 export const GOAL_SYMBOL_MAX_LENGTH = 1;  // Single char per symbol
