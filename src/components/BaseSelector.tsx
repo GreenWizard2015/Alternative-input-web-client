@@ -14,6 +14,7 @@ export type BaseSelectorProps<T extends { uuid: string }> = {
   notSelectedKey?: string;
   confirmRemoveKey?: string;
   confirmRecreateKey?: string;
+  showRecreate?: boolean;
 };
 
 export default function BaseSelector<T extends { uuid: string }>({
@@ -29,6 +30,7 @@ export default function BaseSelector<T extends { uuid: string }>({
   notSelectedKey = 'menu.notSelected',
   confirmRemoveKey,
   confirmRecreateKey,
+  showRecreate = true,
 }: BaseSelectorProps<T>) {
   const { t } = useTranslation();
 
@@ -54,6 +56,7 @@ export default function BaseSelector<T extends { uuid: string }>({
 
   const currentItem = items.byId(selectedId);
   const canRemoveItem = currentItem && (canRemove ? canRemove(currentItem) : true);
+  const canRecreate = currentItem && (selectedId !== '');
 
   return (
     <div className='flex w100'>
@@ -86,7 +89,15 @@ export default function BaseSelector<T extends { uuid: string }>({
       >
         {t('menu.remove')}
       </button>
-      <button className='flex-grow m5' onClick={handleRecreate}>{t('menu.recreate')}</button>
+      {showRecreate && (
+        <button
+          className='flex-grow m5'
+          onClick={handleRecreate}
+          disabled={!canRecreate}
+        >
+          {t('menu.recreate')}
+        </button>
+      )}
     </div>
   );
 }

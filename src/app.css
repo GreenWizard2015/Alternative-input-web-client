@@ -525,6 +525,16 @@ select {
   cursor: not-allowed;
 }
 
+/* Recreate button hidden - recalibrate button widths */
+.no-recreate > .flex-grow:first-child,
+.no-recreate > .flex-grow:nth-child(2) {
+  flex-grow: 1.5;  /* Equal width for Add and Remove buttons when recreate is hidden */
+}
+
+.no-recreate > .flex-grow:nth-child(3) {
+  display: none;  /* This would be the recreate button when hidden */
+}
+
 .size-control {
   display: flex;
   align-items: center;
