@@ -3,14 +3,19 @@
  * Tests for worker cleanup functionality
  */
 
+import React from 'react';
 import FaceDetectorWorkerManager from '../FaceDetectorWorkerManager';
+import type { FpsData } from '../FaceDetectorHelpers';
+
+// ✅ REMOVED - No longer needed: getCameraState() provides public access
+// Use manager.getCameraState(cameraId) instead of type casting hacks
 
 // Mock Worker
 class MockWorker {
   onmessage: ((event: MessageEvent) => void) | null = null;
   terminated = false;
 
-  postMessage(_msg: any) {
+  postMessage(_msg: unknown) {
     // Mock post message
   }
 
@@ -39,8 +44,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
     });
 
     // Set fpsRef to avoid null reference errors in getStats()
-    const mockFpsRef = { current: new Map() };
-    manager.setFpsRef(mockFpsRef as any);
+    const mockFpsRef: React.RefObject<Map<string, FpsData>> = { current: new Map() };
+    manager.setFpsRef(mockFpsRef);
   });
 
   describe('removeCamera()', () => {
@@ -484,13 +489,13 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.setCaptureControllers(new Map([['cam-1', mockController]]));
 
       // Set stats with zero FPS (edge case)
-      const state = manager['cameras'].get('cam-1');
+      const state = manager['_cameras'].get('cam-1');
       if (state) {
         state.stats = {
           cameraId: 'cam-1',
           processingFps: 0,
           inputFps: 0,
-          samplesTotal: 0
+          samplesTotal: 0,
         };
       }
 
@@ -531,14 +536,16 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       const mockController1 = { updateRate: jest.fn(), cleanup: jest.fn() };
       const mockController2 = { updateRate: jest.fn(), cleanup: jest.fn() };
 
-      manager.setCaptureControllers(new Map([
-        [camera1, mockController1],
-        [camera2, mockController2]
-      ]));
+      manager.setCaptureControllers(
+        new Map([
+          [camera1, mockController1],
+          [camera2, mockController2],
+        ])
+      );
 
       // Simulate FPS data - set smoothedFps on camera states
-      const state1 = manager['cameras'].get(camera1);
-      const state2 = manager['cameras'].get(camera2);
+      const state1 = manager['_cameras'].get(camera1);
+      const state2 = manager['_cameras'].get(camera2);
       if (state1) state1.smoothedFps = 30;
       if (state2) state2.smoothedFps = 25;
 
@@ -555,7 +562,7 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       expect(mockController2.cleanup).toHaveBeenCalled();
 
       // All camera data should be cleared (includes smoothedFps, controller, stats, worker)
-      expect(manager['cameras'].size).toBe(0);
+      expect(manager['_cameras'].size).toBe(0);
     });
 
     it('should handle terminate with no workers', () => {
@@ -569,13 +576,13 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.addCamera('cam-1');
 
       // Set initial stats
-      const state = manager['cameras'].get('cam-1');
+      const state = manager['_cameras'].get('cam-1');
       if (state) {
         state.stats = {
           cameraId: 'cam-1',
           processingFps: 30,
           inputFps: 25,
-          samplesTotal: 100
+          samplesTotal: 100,
         };
       }
 
@@ -606,13 +613,13 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.addCamera('cam-1');
 
       // Set stats
-      const state = manager['cameras'].get('cam-1');
+      const state = manager['_cameras'].get('cam-1');
       if (state) {
         state.stats = {
           cameraId: 'cam-1',
           processingFps: 30,
           inputFps: 30,
-          samplesTotal: 100
+          samplesTotal: 100,
         };
       }
 
@@ -707,8 +714,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.addCamera(cameraId);
 
       // Access internal state to verify controller is null before registration
-      const internalState = (manager as any).cameras.get(cameraId);
-      expect(internalState.controller).toBeNull();
+      const internalState = manager.getCameraState(cameraId);
+      expect(internalState?.controller).toBeNull();
 
       // Now register controller (simulates Fix 1 working correctly)
       const mockController = {
@@ -720,9 +727,9 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.setCaptureControllers(controllersMap);
 
       // FIXED STATE: controller should now be registered
-      const stateAfterRegistration = (manager as any).cameras.get(cameraId);
-      expect(stateAfterRegistration.controller).toBe(mockController);
-      expect(stateAfterRegistration.controller).not.toBeNull();
+      const stateAfterRegistration = manager.getCameraState(cameraId);
+      expect(stateAfterRegistration?.controller).toBe(mockController);
+      expect(stateAfterRegistration?.controller).not.toBeNull();
     });
 
     it('should handle stats update with registered controller', () => {
@@ -739,8 +746,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
 
       // Simulate stats message arrival (would trigger updateCaptureRates)
       // For this test, we just verify controller is callable
-      const state = (manager as any).cameras.get(cameraId);
-      if (state.controller) {
+      const state = manager.getCameraState(cameraId);
+      if (state?.controller) {
         state.controller.updateRate(50);
       }
 
@@ -754,16 +761,16 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       manager.addCamera(cameraId);
 
       // Simulate calling updateCaptureRates when controller is null
-      const internalState = (manager as any).cameras.get(cameraId);
+      const internalState = manager.getCameraState(cameraId);
 
       // This is the BROKEN state: controller is null
-      if (internalState.controller) {
+      if (internalState?.controller) {
         internalState.controller.updateRate(50);
         // This would execute if controller exists
       } else {
         // BROKEN: This is silent failure in production
         // With Fix 2, we should log a warning
-        expect(internalState.controller).toBeNull();
+        expect(internalState?.controller).toBeNull();
       }
     });
 
@@ -790,8 +797,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
 
       manager.setCaptureControllers(controllersMap);
 
-      const state1 = (manager as any).cameras.get(camera1);
-      const state2 = (manager as any).cameras.get(camera2);
+      const state1 = manager.getCameraState(camera1);
+      const state2 = manager.getCameraState(camera2);
 
       expect(state1.controller).toBe(mockController1);
       expect(state2.controller).toBe(mockController2);
@@ -813,8 +820,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       const controllersMap = new Map([[camera1, mockController1]]);
       manager.setCaptureControllers(controllersMap);
 
-      const state1 = (manager as any).cameras.get(camera1);
-      const state2 = (manager as any).cameras.get(camera2);
+      const state1 = manager.getCameraState(camera1);
+      const state2 = manager.getCameraState(camera2);
 
       // camera1: registered
       expect(state1.controller).toBe(mockController1);
@@ -843,8 +850,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       // Simulate updateCaptureRates being called
       const targetInterval = 50;
 
-      const state1 = (manager as any).cameras.get(camera1);
-      const state2 = (manager as any).cameras.get(camera2);
+      const state1 = manager.getCameraState(camera1);
+      const state2 = manager.getCameraState(camera2);
 
       // With proper implementation, only camera1 should update
       if (state1.controller) {
@@ -858,8 +865,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
       expect(mockController1.updateRate).toHaveBeenCalledWith(targetInterval);
 
       // camera2 has no controller, so nothing should have been called
-      const state2Internal = (manager as any).cameras.get(camera2);
-      expect(state2Internal.controller).toBeNull();
+      const state2Internal = manager.getCameraState(camera2);
+      expect(state2Internal?.controller).toBeNull();
     });
 
     it('should handle re-registration of controllers', () => {
@@ -875,8 +882,8 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
 
       manager.setCaptureControllers(new Map([[cameraId, mockController1]]));
 
-      const state1 = (manager as any).cameras.get(cameraId);
-      expect(state1.controller).toBe(mockController1);
+      const state1 = manager.getCameraState(cameraId);
+      expect(state1?.controller).toBe(mockController1);
 
       // Re-register with different controller
       const mockController2 = {
@@ -886,10 +893,10 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
 
       manager.setCaptureControllers(new Map([[cameraId, mockController2]]));
 
-      const state2 = (manager as any).cameras.get(cameraId);
+      const state2 = manager.getCameraState(cameraId);
       // Should have new controller
-      expect(state2.controller).toBe(mockController2);
-      expect(state2.controller).not.toBe(mockController1);
+      expect(state2?.controller).toBe(mockController2);
+      expect(state2?.controller).not.toBe(mockController1);
     });
 
     it('should clear controller when empty map is registered', () => {
@@ -905,13 +912,13 @@ describe('FaceDetectorWorkerManager - Cleanup', () => {
 
       manager.setCaptureControllers(new Map([[cameraId, mockController]]));
 
-      const stateWithController = (manager as any).cameras.get(cameraId);
-      expect(stateWithController.controller).toBe(mockController);
+      const stateWithController = manager.getCameraState(cameraId);
+      expect(stateWithController?.controller).toBe(mockController);
 
       // Register empty map
       manager.setCaptureControllers(new Map());
 
-      const stateAfterClearing = (manager as any).cameras.get(cameraId);
+      const stateAfterClearing = manager.getCameraState(cameraId);
       // Controller should remain (setCaptureControllers doesn't remove, just doesn't update)
       // This tests the current behavior - Fix might change this
       expect(stateAfterClearing).toBeDefined();

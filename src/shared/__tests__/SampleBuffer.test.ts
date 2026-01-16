@@ -11,19 +11,21 @@ describe('CameraSampleBucket', () => {
 
   beforeEach(() => {
     bucket = new CameraSampleBucket();
-    samples = Array.from({ length: 5 }, (_, i) =>
-      new Sample({
-        time: 1000 + i * 100,
-        leftEye: new Uint8ClampedArray(2304).fill(128),
-        rightEye: new Uint8ClampedArray(2304).fill(100),
-        points: new Float32Array(956).fill(0.5),
-        goal: { x: 0, y: 0 },
-        userId: 'user1',
-        placeId: 'place1',
-        screenId: 'screen1',
-        cameraId: 'cam1',
-        monitorId: 'monitor1',
-      })
+    samples = Array.from(
+      { length: 5 },
+      (_, i) =>
+        new Sample({
+          time: 1000 + i * 100,
+          leftEye: new Uint8ClampedArray(2304).fill(128),
+          rightEye: new Uint8ClampedArray(2304).fill(100),
+          points: new Float32Array(956).fill(0.5),
+          goal: { x: 0, y: 0 },
+          userId: 'user1',
+          placeId: 'place1',
+          screenId: 'screen1',
+          cameraId: 'cam1',
+          monitorId: 'monitor1',
+        })
     );
   });
 
@@ -78,19 +80,21 @@ describe('SampleBuffer', () => {
 
   beforeEach(() => {
     buffer = new SampleBuffer();
-    samples = Array.from({ length: 10 }, (_, i) =>
-      new Sample({
-        time: 1000 + i * 50,
-        leftEye: new Uint8ClampedArray(2304).fill(128),
-        rightEye: new Uint8ClampedArray(2304).fill(100),
-        points: new Float32Array(956).fill(0.5),
-        goal: { x: 0, y: 0 },
-        userId: `user${i % 2}`,
-        placeId: `place${i % 3}`,
-        screenId: 'screen1',
-        cameraId: `cam${i % 2}`,
-        monitorId: 'monitor1',
-      })
+    samples = Array.from(
+      { length: 10 },
+      (_, i) =>
+        new Sample({
+          time: 1000 + i * 50,
+          leftEye: new Uint8ClampedArray(2304).fill(128),
+          rightEye: new Uint8ClampedArray(2304).fill(100),
+          points: new Float32Array(956).fill(0.5),
+          goal: { x: 0, y: 0 },
+          userId: `user${i % 2}`,
+          placeId: `place${i % 3}`,
+          screenId: 'screen1',
+          cameraId: `cam${i % 2}`,
+          monitorId: 'monitor1',
+        })
     );
   });
 
@@ -134,7 +138,8 @@ describe('SampleBuffer', () => {
     test('extracts and removes samples from bucket', () => {
       samples.slice(0, 5).forEach(s => buffer.addSample(s));
       const key = samples[0].bucket();
-      const bucket = buffer.getBucket(key)!;
+      const bucket = buffer.getBucket(key);
+      if (!bucket) throw new Error('Bucket not found');
 
       const before = buffer.getTotalSampleCount();
       buffer.extractFromBucket(bucket, 1000, 1500, 10);

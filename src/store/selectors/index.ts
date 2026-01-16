@@ -1,11 +1,11 @@
-import { createSelector } from "@reduxjs/toolkit";
-import { RootState } from "../index";
-import type { CameraEntity } from "../../types/camera";
-import { fromJSON, toJSON } from "../json";
-import type { UUIDed } from "../../shared/Sample";
-import { byId } from "../../shared/Sample";
-import type { Goal } from "../../types/Goal";
-import { DEFAULT_GOAL } from "../../types/Goal";
+import { createSelector } from '@reduxjs/toolkit';
+import { RootState } from '../index';
+import type { CameraEntity } from '../../types/camera';
+import { fromJSON, toJSON } from '../json';
+import type { UUIDed } from '../../shared/Sample';
+import { byId } from '../../shared/Sample';
+import type { Goal } from '../../types/Goal';
+import { DEFAULT_GOAL } from '../../types/Goal';
 
 /**
  * Base selectors - extract raw state values (no memoization needed)
@@ -27,9 +27,8 @@ export const selectCameras = createSelector(
 );
 
 // Selected cameras - memoized to prevent unnecessary re-renders
-export const selectSelectedCameras = createSelector(
-  selectCameras,
-  (cameras) => Object.values(cameras).filter((cam: CameraEntity) => cam.isSelected)
+export const selectSelectedCameras = createSelector(selectCameras, cameras =>
+  Object.values(cameras).filter((cam: CameraEntity) => cam.isSelected)
 );
 
 // Sorted device IDs from selected cameras - for stable array references
@@ -39,7 +38,7 @@ export const selectSortedDeviceIds = createSelector(
     const ids = cameras.map(cam => cam.deviceId).sort();
     return toJSON(ids);
   },
-  (ids) => fromJSON<string[]>(ids, [])
+  ids => fromJSON<string[]>(ids, [])
 );
 
 /**
@@ -53,12 +52,9 @@ export const selectUsersList = createSelector(
 );
 
 // Users with byId helper stored as JSON string, parsed only when accessed
-export const selectUsers = createSelector(
-  selectUsersList,
-  (users) => {
-    return Object.assign([], users, { byId: (id: string) => byId(users, id) });
-  }
-);
+export const selectUsers = createSelector(selectUsersList, users => {
+  return Object.assign([], users, { byId: (id: string) => byId(users, id) });
+});
 
 // Places with byId helper stored as JSON string, parsed only when accessed
 export const selectPlaces = createSelector(
@@ -76,12 +72,9 @@ export const selectMonitorsList = createSelector(
 );
 
 // Monitors with byId helper stored as JSON string, parsed only when accessed
-export const selectMonitors = createSelector(
-  selectMonitorsList,
-  (monitors) => {
-    return Object.assign([], monitors, { byId: (id: string) => byId(monitors, id) });
-  }
-);
+export const selectMonitors = createSelector(selectMonitorsList, monitors => {
+  return Object.assign([], monitors, { byId: (id: string) => byId(monitors, id) });
+});
 
 // Goal settings stored as JSON string, parsed only when accessed
 export const selectGoalSettings = createSelector(

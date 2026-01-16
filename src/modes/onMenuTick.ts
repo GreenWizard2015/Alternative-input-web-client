@@ -1,9 +1,9 @@
-import i18n from "../i18n";
-import { grayscale2image, decodeLandmarks } from "../utils/MP";
-import { DetectionResult } from "../components/FaceDetector";
-import type { Position } from "../shared/Sample";
-import type { AppMode } from "./AppMode";
-import type { IGameController } from "../types/ControllerInterface";
+import i18n from '../i18n';
+import { grayscale2image, decodeLandmarks } from '../utils/mediaPipe';
+import { DetectionResult } from '../components/FaceDetector';
+import type { Position } from '../shared/Sample';
+import type { AppMode } from './AppMode';
+import type { IGameController } from '../types/ControllerInterface';
 
 type MenuTickData = {
   canvas: HTMLCanvasElement;
@@ -21,9 +21,7 @@ type MenuTickData = {
   controller: IGameController;
 };
 
-export function onMenuTick({
-  viewport, canvasCtx, detections, controller
-}: MenuTickData) {
+export function onMenuTick({ viewport, canvasCtx, detections, controller }: MenuTickData) {
   const { t } = i18n;
   // Draw all camera frames in grid layout
   if (detections && detections.size > 0) {
@@ -55,7 +53,7 @@ export function onMenuTick({
 
       // Draw landmarks for this camera (normalized 0-1 range)
       if (detection.sample && detection.sample.points) {
-        canvasCtx.strokeStyle = "red";
+        canvasCtx.strokeStyle = 'red';
         canvasCtx.lineWidth = 1;
         // Convert Float32Array to NormalizedLandmark format for decodeLandmarks
         const landmarks = [];
@@ -63,7 +61,8 @@ export function onMenuTick({
           landmarks.push({
             x: detection.sample.points[i],
             y: detection.sample.points[i + 1],
-            visibility: detection.sample.points[i] >= 0 && detection.sample.points[i + 1] >= 0 ? 1 : 0
+            visibility:
+              detection.sample.points[i] >= 0 && detection.sample.points[i + 1] >= 0 ? 1 : 0,
           });
         }
 
@@ -71,7 +70,7 @@ export function onMenuTick({
         const points = decodeLandmarks(landmarks, {
           width: cellWidth,
           height: cellHeight,
-          visibilityThreshold: 0.5
+          visibilityThreshold: 0.5,
         });
 
         // Draw landmark points
@@ -93,21 +92,13 @@ export function onMenuTick({
         if (detection.sample.leftEye) {
           const leftEyeImage = grayscale2image(detection.sample.leftEye, SIZE);
           // Draw left eye crop
-          canvasCtx.putImageData(
-            leftEyeImage,
-            eyeX + 5,
-            eyeY
-          );
+          canvasCtx.putImageData(leftEyeImage, eyeX + 5, eyeY);
         }
 
         if (detection.sample.rightEye) {
           const rightEyeImage = grayscale2image(detection.sample.rightEye, SIZE);
           // Draw right eye crop next to left eye
-          canvasCtx.putImageData(
-            rightEyeImage,
-            eyeX + 5 + SIZE + 3,
-            eyeY
-          );
+          canvasCtx.putImageData(rightEyeImage, eyeX + 5 + SIZE + 3, eyeY);
         }
       }
 
@@ -115,8 +106,8 @@ export function onMenuTick({
     });
   } else {
     // No cameras connected
-    canvasCtx.fillStyle = "black";
-    canvasCtx.font = "36px Arial";
+    canvasCtx.fillStyle = 'black';
+    canvasCtx.font = '36px Arial';
     canvasCtx.fillText(t('canvas.notConnected'), 10, 50);
     return null;
   }
@@ -130,7 +121,7 @@ export function onMenuTick({
   // TEXT "This is how target looks like"
   const textColor = controller.getGoalTextColor();
   canvasCtx.fillStyle = textColor;
-  canvasCtx.font = "21px Arial";
+  canvasCtx.font = '21px Arial';
   canvasCtx.fillText(t('canvas.targetHelp'), targetPos.x - 120, targetPos.y - 70);
 
   // rectangle around the target

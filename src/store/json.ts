@@ -5,7 +5,6 @@
  * Parse them ONLY when accessed via selectors.
  */
 
-
 /**
  * Convert any data to JSON string for storage
  */
@@ -26,4 +25,3 @@ export function fromJSON<T>(json: string, fallback: T): T {
     return fallback;
   }
 }
-

@@ -55,12 +55,8 @@ export class CameraSampleBucket {
     maxSize: number
   ): { sent: Sample[]; remaining: Sample[] } {
     // Partition: filter by time range, sort, then reassemble
-    const inRange = this.samples.filter((s) =>
-      s.time >= minTime && s.time < maxTime
-    );
-    const outOfRange = this.samples.filter((s) =>
-      s.time < minTime || s.time >= maxTime
-    );
+    const inRange = this.samples.filter(s => s.time >= minTime && s.time < maxTime);
+    const outOfRange = this.samples.filter(s => s.time < minTime || s.time >= maxTime);
 
     inRange.sort((a, b) => a.time - b.time);
 
@@ -78,7 +74,6 @@ export class CameraSampleBucket {
   clear(): void {
     this.samples = [];
   }
-
 }
 
 /**
@@ -114,10 +109,12 @@ export class SampleBuffer {
    */
   private getBucketOrCreate(sample: Sample): CameraSampleBucket {
     const key = sample.bucket();
-    if (!this.buckets.has(key)) {
-      this.buckets.set(key, new CameraSampleBucket());
+    let bucket = this.buckets.get(key);
+    if (!bucket) {
+      bucket = new CameraSampleBucket();
+      this.buckets.set(key, bucket);
     }
-    return this.buckets.get(key)!;
+    return bucket;
   }
 
   /**
@@ -158,7 +155,6 @@ export class SampleBuffer {
     this.buckets.clear();
     this.totalCount = 0;
   }
-
 
   /**
    * Extract samples from specific bucket within time range

@@ -1,5 +1,5 @@
 /* eslint-env worker */
-/* eslint-disable no-restricted-globals */  // Worker code needs access to 'self'
+/* eslint-disable no-restricted-globals */ // Worker code needs access to 'self'
 
 /**
  * data.worker.ts - Sample upload worker (simplified for pre-serialized buffers)
@@ -46,22 +46,18 @@ type UploadMessage = {
 
 type ErrorWithCode = Error & { code?: number };
 
-let queue: QueueItem[] = [];
+const queue: QueueItem[] = [];
 let isRunning = false;
 
 /**
  * Upload with exponential backoff for transient failures
  */
-async function uploadWithRetry(
-  fd: FormData,
-  endpoint: string,
-  maxRetries = 3
-): Promise<any> {
+async function uploadWithRetry(fd: FormData, endpoint: string, maxRetries = 3): Promise<unknown> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        body: fd
+        body: fd,
       });
       if (response.ok) return response.json();
 
@@ -109,9 +105,12 @@ function processQueue(): void {
 
   // Create FormData with serialized buffer
   const fd = new FormData();
-  fd.append('chunk', new Blob([new Uint8Array(serializedBuffer)], {
-    type: 'application/octet-stream'
-  }));
+  fd.append(
+    'chunk',
+    new Blob([new Uint8Array(serializedBuffer)], {
+      type: 'application/octet-stream',
+    })
+  );
 
   const startTime = Date.now();
   uploadWithRetry(fd, endpoint)
@@ -131,7 +130,7 @@ function processQueue(): void {
       self.postMessage({
         status: 'error',
         error: error.message,
-        code: error.code || null
+        code: error.code || null,
       });
       // Put item back at front of queue for retry
       queue.unshift(item);
@@ -147,7 +146,7 @@ function processQueue(): void {
  *
  * Expects pre-serialized ArrayBuffer (no grouping/serialization needed)
  */
-self.onmessage = function(event: MessageEvent<UploadMessage>) {
+self.onmessage = function (event: MessageEvent<UploadMessage>) {
   const { samples, endpoint, userId, placeId, count } = event.data;
 
   // Simply queue the pre-serialized buffer
@@ -164,3 +163,6 @@ self.onmessage = function(event: MessageEvent<UploadMessage>) {
     processQueue();
   }
 };
+
+// Export for TypeScript module resolution
+export default null;

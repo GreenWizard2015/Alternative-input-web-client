@@ -19,159 +19,451 @@
 ```typescript
 // 1. Imports (external, then internal)
 import React, { useCallback } from 'react';
-import { hash128Hex } from '../utils';
 import type { Position } from '../shared/Sample';
 
 // 2. Constants
 const READINESS_TIMEOUT = 3000;
-const DEFAULT_SETTINGS = { /* ... */ };
 
 // 3. Types/Interfaces
 interface Props { /* ... */ }
-type DetectionResult = { /* ... */ }
+type Point = { x: number; y: number };
 
 // 4. Main component/function/class
 export function MyComponent(props: Props) { /* ... */ }
-
-// 5. Exports
-export default MyComponent;
 ```
 
 ## TypeScript Patterns
 
-- **Explicit annotations** on function parameters and returns
-- **Use `type`** for unions, simple aliases: `type Position = { x: number; y: number }`
-- **Use `interface`** for complex objects needing extension
-- **Typed refs**: `useRef<HTMLVideoElement | null>(null)`
-- **Typed Maps**: `new Map<string, WorkerStats>()`
-- **Avoid `any`** — import proper types instead
+- **All parameters and returns typed** - No `any` or `unknown` in signatures
+- **Type definitions first** - Define types before functions, not in signatures
+- **`type` for unions/simple aliases** - `type Position = { x: number; y: number }`
+- **`interface` for complex extensible objects**
+- **Typed refs** - `useRef<HTMLVideoElement | null>(null)`
+- **Typed Maps** - `new Map<string, WorkerStats>()`
+- **No casting unless `unknown`** - Always cast through `unknown`: `value as unknown as Type`
 
 ## React Patterns
 
-- **Functional components only** with hooks
-- **Props destructured** with explicit typing: `function Component({ prop1, prop2 }: Props)`
-- **Multiple effects** for separate concerns, not one large effect
-- **Refs for objects** that shouldn't trigger re-renders (managers, workers)
-- **useCallback** for event handlers passed to other components — wrap with dependencies
-- **Redux**: Use selectors and `connect()` HOC, destructure props
-- **Dependencies** explicitly listed in useEffect deps array
-- **Double-check effect dependencies**: Are all values used in effect included? Are unnecessary deps causing extra runs?
-  - ✅ `useEffect(() => { foo(); }, [foo])` — foo is stable/memoized
-  - ❌ `useEffect(() => { foo(bar); }, [foo])` — missing bar, stale closure
-  - ❌ `useEffect(() => { setValue(state => state.count); }, [])` — works but check for unintended behavior
-- **useCallback best practices**:
-  - ✅ Memoize callbacks passed to child components to prevent child re-renders
-  - ✅ Include all dependencies: `useCallback((x) => handler(x, dep), [dep])`
-  - ❌ Don't memoize callbacks only used locally — overhead > benefit
-  - ❌ Missing dependencies causes stale closures: `useCallback(() => use(prop), [])`
-  - ❌ Too many deps defeats purpose: `useCallback(fn, [dep1, dep2, dep3, ...])`
+- Functional components + hooks only
+- Props destructured with typing: `function Component({ prop1, prop2 }: Props)`
+- Multiple effects for separate concerns
+- Refs for non-render-triggering objects (managers, workers, refs)
+- `useCallback` for callbacks passed to children (include all deps)
+- **Redux**: Use `connect()` HOC (not hooks), inline simple mappers
+- Effect dependencies explicit and complete (no stale closures)
 
-## Error Handling
+**Redux State Pattern**: Store nested objects as JSON strings, parse in selectors:
+```typescript
+// Redux state
+configJson: '{"key":"value"}'
 
-- **Validation in constructors** with throw for data integrity
-- **try-catch** for async operations with detailed error messages
-- **Graceful degradation**: Log and continue when possible
-- **Error context**: `[ComponentName] Description: ${error.message}`
-- **Null checks**: Explicit before operations — `if (!instance) return`
-- **Optional chaining**: `obj?.property?.value`
-- **Nullish coalescing**: `value ?? defaultValue`
+// Selector (memoized)
+export const selectConfig = (state) => JSON.parse(state.app.configJson);
+```
+
+## Error Handling & Null Safety
+
+- Validation in constructors with throw
+- try-catch for async with error context
+- Explicit null checks before operations: `if (!instance) return`
+- Never use `!` non-null assertions - use proper checks instead
+- Optional chaining: `obj?.property?.value`
+- Nullish coalescing: `value ?? defaultValue`
 
 ## Code Organization
 
-- **Section dividers**: Only for complex files with many sections
-- **Sections**: Constants → Types → Helpers → Hooks → Main → Exports
-- **One concern per file** — extract helpers to separate files
-- **Comments above** non-obvious logic (explain *why*, not *what*)
-- **JSDoc headers** on files explaining purpose
-- **Avoid obvious comments** — "Fresh controller for this session" is noise if code is clear
+- Constants → Types → Helpers → Main → Exports
+- One concern per file
+- Comments explain *why*, not *what*
+- No magic numbers (extract to constants)
+- JSDoc headers on files
 
-## Constants & Config
+## File Size Limits: Refactor & Split
 
-- **UPPERCASE_SNAKE_CASE** for all constants
-- **Extract magic numbers** to named constants
-- **Settings objects**: Use spread pattern `{ ...DEFAULT, override: value }`
-- **Local constants** in files where used; shared in utility files
+**The Core Rule**: Files must not exceed 500 lines. Files over 500 lines are candidates for refactoring and splitting into focused modules.
+
+```typescript
+// ❌ WRONG - 750-line monolithic file
+// FaceDetectorWorkerManager.ts (all concerns mixed)
+export class FaceDetectorWorkerManager {
+  // Message routing (100 lines)
+  // Stats aggregation (100 lines)
+  // Worker lifecycle (100 lines)
+  // Config broadcasting (100 lines)
+  // Rate limiting (100 lines)
+  // ... 250 more lines of mixed concerns
+}
+
+// ✅ CORRECT - Split into focused modules
+// FaceDetectorWorkerManager.ts (220 lines - main orchestrator)
+// FaceDetectorWorkerManager/messageHandler.ts (80 lines)
+// FaceDetectorWorkerManager/statsAggregator.ts (90 lines)
+// FaceDetectorWorkerManager/configBroadcaster.ts (70 lines)
+```
+
+**Why 500-Line Limit**:
+- 500 lines = ~20-30 minutes to read thoroughly
+- Easier to understand one concern per file
+- Smaller files have fewer reasons to change
+- Reduced cognitive load in code reviews
+- Tests become faster and more focused
+- Easier to refactor and maintain
+
+**Warning Signs - File Needs Splitting**:
+- ❌ Class has 5+ main responsibilities (methods that could be helper classes)
+- ❌ Over 100 lines of imports (too many dependencies)
+- ❌ Test file has 10+ describe blocks (too many concerns)
+- ❌ One method/function is 100+ lines (extract helpers)
+- ❌ Multiple developers editing same file frequently (merge conflicts)
+- ❌ File doesn't fit on 2 screens (vertical scrolling beyond reason)
+
+**Refactoring Strategies**:
+
+**1. Extract Helper Classes**
+```typescript
+// Before (500+ lines in one class)
+export class Manager {
+  private stats: Map<string, WorkerStats>;
+
+  // 100 lines of stats aggregation logic
+  updateStats(workerId: string, data: StatsData) { /* ... */ }
+  getStats(): AggregatedStats { /* ... */ }
+  aggregateFromMultipleWorkers() { /* ... */ }
+}
+
+// After (split concerns)
+// manager.ts (200 lines - orchestration only)
+export class Manager {
+  private statsAggregator: StatsAggregator;
+  getStats() { return this.statsAggregator.getStats(); }
+}
+
+// statsAggregator.ts (100 lines - stats logic only)
+export class StatsAggregator {
+  private stats: Map<string, WorkerStats>;
+  updateStats(workerId: string, data: StatsData) { /* ... */ }
+  getStats(): AggregatedStats { /* ... */ }
+}
+```
+
+**2. Extract Utility Functions**
+```typescript
+// Before (200 lines of unrelated functions in utils.ts)
+export function calculateDistance() { /* 30 lines */ }
+export function interpolatePoints() { /* 40 lines */ }
+export function optimizePath() { /* 50 lines */ }
+export function validateBounds() { /* 30 lines */ }
+export function formatOutput() { /* 20 lines */ }
+
+// After (split by domain)
+// geometry.ts (60 lines)
+export function calculateDistance() { /* ... */ }
+export function interpolatePoints() { /* ... */ }
+
+// validation.ts (60 lines)
+export function validateBounds() { /* ... */ }
+export function optimizePath() { /* ... */ }
+
+// formatting.ts (20 lines)
+export function formatOutput() { /* ... */ }
+```
+
+**3. Extract Message Handlers**
+```typescript
+// Before (300+ lines handling multiple message types)
+export class Manager {
+  private onWorkerMessage(event: MessageEvent) {
+    if (data.type === 'frame') { /* 60 lines */ }
+    if (data.type === 'stats') { /* 50 lines */ }
+    if (data.type === 'error') { /* 40 lines */ }
+    if (data.type === 'config') { /* 50 lines */ }
+    // ... more handlers
+  }
+}
+
+// After (delegated to handler classes)
+// manager.ts (100 lines)
+export class Manager {
+  private handlers = new Map<string, MessageHandler>();
+
+  private onWorkerMessage(event: MessageEvent) {
+    const handler = this.handlers.get(event.data.type);
+    handler?.handle(event.data);
+  }
+}
+
+// handlers/frameHandler.ts (60 lines)
+export class FrameHandler implements MessageHandler {
+  handle(data: FrameData) { /* ... */ }
+}
+```
+
+**How to Refactor Without Breaking**:
+
+1. **Create new file** with extracted code (unchanged logic)
+2. **Update imports** in main file to use new module
+3. **Run tests** - all should pass (logic hasn't changed)
+4. **Delete** old code from main file
+5. **Verify** imports are clean, no unused dependencies
+
+**Real Example from This Project**:
+
+`FaceDetectorWorkerManager.ts` approaches 400 lines. Before hitting 500, candidates for extraction:
+- Stats aggregation logic → `StatsAggregator` class
+- Message type routing → `MessageHandlers` map
+- Config broadcasting → `ConfigBroadcaster` class
+- Camera lifecycle → `CameraManager` class
+
+This keeps main manager at ~150 lines (pure orchestration).
+
+**File Size Checklist**:
+- [ ] Does file exceed 500 lines?
+- [ ] Can any class be extracted to its own file?
+- [ ] Can utility functions be grouped by domain?
+- [ ] Are there 5+ test describe blocks (split test file)?
+- [ ] Would another developer need to read 30+ minutes to understand?
+- [ ] Do unrelated features live in same file?
+
+If yes to any: **Refactor and split**. Small, focused files are easier to maintain.
 
 ## Resource Management
 
-- **Explicit cleanup** functions for streams, workers, intervals
-- **useEffect return** cleanup functions for unmount
-- **Track resources** in Maps/Sets (workers, controllers, streams)
-- **Idempotent cleanup** — safe to call multiple times
-- **Close/stop resources** when done: `frame.close()`, `stream.stop()`, `worker.terminate()`
+- Explicit cleanup: `frame.close()`, `stream.stop()`, `worker.terminate()`
+- useEffect return cleanup functions for unmount
+- Track resources in Maps/Sets
+- Cleanup should be idempotent (safe to call multiple times)
 
-## Redux Patterns
+## Anti-Patterns
 
-- **Slices** with actions and reducers co-located
-- **Selectors** extracted to `selectors.ts` and memoized
-- **mapStateToProps** extracting only needed selectors
-- **Typed state**: `state: RootState` not `state: any`
-- **Action types** auto-generated by createSlice
-- **Always use `connect()` HOC** (not useSelector/useDispatch hooks) for Redux integration
-- **Inline `connect()` mappers**: For simple cases, inline mapStateToProps and mapDispatchToProps directly in `connect()` to reduce boilerplate
-  - ✅ `connect((state: RootState) => ({ value: selector(state) }), { action })(Component)`
-  - ❌ useSelector/useDispatch hooks — use `connect()` instead
-  - ❌ Separate named functions when mappers have complex logic — keep file readable
-- **Complex state as JSON**: Store nested objects/arrays as JSON strings in Redux to prevent re-renders. Only parse to objects in selectors when needed.
-  - ✅ `configJson: '{"key":"value"}'` → parse in selector → memoized comparison on string
-  - ❌ `config: { key: "value" }` → object identity changes → memoization fails, re-renders cascade
-  - Example: `export const selectConfig = (state) => JSON.parse(state.app.configJson)`
+❌ `any` types in production — define proper types instead
+❌ Complex single effects — split into multiple
+❌ Non-null assertions (`!`) — use proper null checks
+❌ Array indices as React keys — use stable identifiers
+❌ Memoized callbacks used only locally — overhead > benefit
+❌ Silent failures — log or throw with context
 
-## What to Avoid
+---
 
-- ❌ `any` types — use proper imports
-- ❌ Complex single effects — split into multiple
-- ❌ Magic numbers — extract to constants
-- ❌ Inline types in component props — use separate type definitions
-- ❌ Large single files — extract helpers/utils
-- ❌ Silent failures — log or throw errors with context
-- ❌ Mutable default parameters — use destructuring with defaults
+# Type Safety Essentials
 
-## React State & Callbacks Anti-Pattern: Setting Functions Directly
-
-### Problem
-When storing a callback function in React state, **always wrap it in a setter function**. Setting it directly causes React to treat it as a state initializer, not the actual value.
+## 1. All Function Parameters Must Be Typed
 
 ```typescript
-// ❌ WRONG - React treats this as a state initializer function
-setCallback(onConfirm);  // onConfirm gets called, its return value becomes state
+// ❌ WRONG
+function uniform(min, max) { return min + Math.random() * (max - min); }
+function clip(value, min, max) { if (value < min) return min; /* ... */ }
 
-// ✅ CORRECT - Wrap in arrow function to store the callback itself
-setCallback(() => onConfirm);  // Callback is stored as state value
+// ✅ CORRECT
+function uniform(min: number, max: number): number { /* ... */ }
+function clip(value: number, min: number, max: number): number { /* ... */ }
+
+// ✅ Arrays typed by items
+function calcDistance(points: Point[]): number[] { /* ... */ }
 ```
 
-### Why This Matters
-React's `setState` has special handling: if you pass a function, it assumes it's an initializer and calls it to get the initial state. This caused `onGameStartConfirm` to always be `false` (the return value of a function).
-
-### Real Example (Fixed in this project)
-In `useDialogStateMachine.ts`, the game confirmation dialog callback wasn't rendering:
+## 2. Never Use Non-Null Assertions (`!`)
 
 ```typescript
-// ❌ ORIGINAL - Callback never stored
+// ❌ WRONG
+const bucket = this.buckets.get(key)!;
+
+// ✅ CORRECT
+const bucket = this.buckets.get(key);
+if (!bucket) return;
+// Now safe to use bucket
+```
+
+## 3. Casting Through `unknown` (2-Step Pattern)
+
+```typescript
+// ❌ WRONG - Direct cast fails
+gameMode.onKeyDown(event as KeyboardEvent);
+
+// ✅ CORRECT - Cast through unknown
+gameMode.onKeyDown(event as unknown as KeyboardEvent);
+```
+
+**Browser APIs with vendor prefixes:**
+```typescript
+function enableFullscreen(canvas: HTMLElement): void {
+  const el = canvas as unknown as {
+    requestFullscreen?: () => Promise<void>;
+    mozRequestFullScreen?: () => void;
+    webkitRequestFullscreen?: () => void;
+  };
+  if (el.requestFullscreen) { el.requestFullscreen(); }
+  else if (el.mozRequestFullScreen) { el.mozRequestFullScreen(); }
+}
+```
+
+## 4. Typed Message Handlers (Workers)
+
+```typescript
+// ❌ WRONG
+const handleFrame = (data: any) => { /* ... */ };
+
+// ✅ CORRECT
+type FrameMessage = { frame: VideoFrame; time: number; goal: Position | null };
+const handleFrame = ({ frame, time, goal }: FrameMessage) => { /* ... */ };
+```
+
+## 5. Web Worker Imports
+
+```typescript
+// In worker file
+export default null;  // ✅ REQUIRED for TypeScript
+
+// In main file
+import Worker from './FaceDetector.worker';  // ✅ NO .ts extension
+```
+
+## 6. Canvas Type Safety
+
+```typescript
+// ✅ Canvas-compatible images must extend CanvasImageSource
+type FrameData = CanvasImageSource & { height: number; width: number };
+
+function processImage(image: FrameData, canvas: OffscreenCanvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0);  // Type-safe
+}
+```
+
+## 7. Define Types, Don't Use `unknown` in Signatures
+
+```typescript
+// ❌ WRONG - Using unknown as cop-out
+function results2sample(results: unknown, frame: unknown): SampleData | null {
+  const typedResults = results as FaceLandmarkerResult;  // Still unsafe
+  // ...
+}
+
+// ✅ CORRECT - Define proper types upfront
+type FaceLandmarkerResult = { faceLandmarks: NormalizedLandmark[][] };
+type FrameData = { height: number; width: number };
+
+function results2sample(
+  results: FaceLandmarkerResult,
+  frame: FrameData
+): SampleData | null {
+  if (!results.faceLandmarks) return null;  // Type-safe
+  // ...
+}
+```
+
+**Type sources:**
+1. Define yourself: `type Sample = { time: number; goal: Position }`
+2. Import from libraries: `import type { FaceLandmarkerResult } from '@mediapipe/tasks-vision'`
+3. Derive from existing: `type SampleData = ConstructorParameters<typeof Sample>[0]`
+4. Extend existing: `type MyMessage = BaseMessage & { extra: string }`
+
+## 8. Avoid Dynamic Property Access Without Types
+
+```typescript
+// ❌ WRONG
+const reducers: Record<string, any> = {};
+
+// ✅ CORRECT
+const reducers: Record<string, unknown> = {};
+```
+
+(`unknown` = "I don't know", `any` = "I don't care")
+
+## 9. Collections Must Have Item Types
+
+```typescript
+// ❌ WRONG
+const items: any[] = [];
+const map = new Map<string, any>();
+
+// ✅ CORRECT
+type ManagerMessageHandler = (cameraId: string, data: WorkerMessageData) => void;
+const map = new Map<string, ManagerMessageHandler>();
+```
+
+## 10. Test Data Types Must Match Production
+
+```typescript
+// ✅ Type test data exactly like production
+type SampleConstructorData = ConstructorParameters<typeof Sample>[0];
+let sampleData: SampleConstructorData = {
+  time: 1000,
+  leftEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(128),
+};
+
+// ✅ For incomplete test objects, explicit casting
+const incomplete = { uuid: 'abc-123' } as unknown as { uuid: string; samples: number };
+```
+
+---
+
+# Linting & Code Quality
+
+## Never Use Lint Disable Comments
+
+```typescript
+// ❌ WRONG - Hiding the problem
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = () => {};
+
+// ✅ CORRECT - Make intent explicit
+// Intentionally empty - used as default handler
+const noop = () => {};
+
+// ✅ CORRECT - Extract to constant with clear name
+const NO_OP = async () => {};
+```
+
+**For empty function patterns, extract to module constant:**
+```typescript
+// ✅ Define once, use many times
+const emptyAsyncFn = async () => {};  // Intentionally empty - used for testing
+
+// In tests
+jest.fn(emptyAsyncFn);  // Clean, reusable
+jest.fn(emptyAsyncFn);
+jest.fn(emptyAsyncFn);
+```
+
+**Problem-specific fixes:**
+
+| Problem | Wrong | Right |
+|---------|-------|-------|
+| Unused param | `// eslint-disable` | `const test = (_event) => { }` |
+| Type assertion | `data as any; // @ts-ignore` | `type DataShape = {...}; data as DataShape` |
+| Empty function | `// eslint-disable-next-line` | Comment above explaining *why* |
+| `any` type | `// eslint-disable` | Define proper type instead |
+
+**Acceptable disable comments (rare):**
+```typescript
+// ✅ With clear explanation
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => setupStream(), []);  // Intentionally empty - effect runs once on mount
+```
+
+---
+
+# React State & Callbacks
+
+## Setting Callback Functions in State
+
+```typescript
+// ❌ WRONG - React treats it as state initializer
+setCallback(onConfirm);  // onConfirm gets called immediately
+
+// ✅ CORRECT - Wrap in function to store callback
+setCallback(() => onConfirm);  // Callback stored as state value
+```
+
+Real example from this project:
+```typescript
+// ❌ ORIGINAL
 const openGameConfirmDialog = useCallback((gameMode, onConfirm) => {
-  setPendingGameMode(gameMode);
-  setOnGameStartConfirm(onConfirm);  // React treats onConfirm as initializer!
-  dispatch(openGameConfirmDialogAction());
-}, [dispatch]);
+  setOnGameStartConfirm(onConfirm);  // ❌ Treated as initializer
+}, []);
 
-// ✅ FIXED - Wrap callback in setter function
+// ✅ FIXED
 const openGameConfirmDialog = useCallback((gameMode, onConfirm) => {
-  setPendingGameMode(gameMode);
-  setOnGameStartConfirm(() => onConfirm);  // Wraps callback so it's stored as value
-  dispatch(openGameConfirmDialogAction());
-}, [dispatch]);
+  setOnGameStartConfirm(() => onConfirm);  // ✅ Stored as value
+}, []);
 ```
-
-### Debugging Tip
-When state containing functions is `undefined` or `null` unexpectedly, suspect this pattern. Add logs:
-
-```typescript
-useEffect(() => {
-  console.log('[Hook] onGameStartConfirm:', !!onGameStartConfirm);
-  if (onGameStartConfirm) {
-    console.log('[Hook] Callback:', onGameStartConfirm.toString());
-  }
-}, [onGameStartConfirm]);
-```
-
-This will reveal if the state is never being set (always `false`/`null`) despite calling the setter.

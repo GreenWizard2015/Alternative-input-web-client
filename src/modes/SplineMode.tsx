@@ -1,8 +1,8 @@
-import Spline from "cubic-spline";
-import { AppMode } from "./AppMode";
-import { calcDistance, clip, generatePoints, uniform } from "./utils";
-import type { IGameController } from "../types/ControllerInterface";
-import type { Viewport } from "./AppMode";
+import Spline from 'cubic-spline';
+import { AppMode, type AppModeRenderData } from './AppMode';
+import { calcDistance, clip, generatePoints, uniform } from './utils';
+import type { IGameController } from '../types/ControllerInterface';
+import type { Viewport } from './AppMode';
 
 export class SplineMode extends AppMode {
   _currentTime: number = 0;
@@ -12,7 +12,7 @@ export class SplineMode extends AppMode {
 
   constructor(controller: IGameController) {
     super(controller);
-    this._pos = { x: 0.5, y: 0.5 }
+    this._pos = { x: 0.5, y: 0.5 };
     this._points = null;
     this._currentTime = 0;
     this._newSpline({ extend: false });
@@ -23,9 +23,12 @@ export class SplineMode extends AppMode {
     const N = 3;
     let points = generatePoints(4);
     if (extend && this._points) {
-        points = this._points.slice(-N).concat(points);
+      points = this._points.slice(-N).concat(points);
     }
-    this._points = points = points.map(({ x, y }) => ({ x: clip(x, -0.5, 1.5), y: clip(y, -0.5, 1.5) }));
+    this._points = points = points.map(({ x, y }) => ({
+      x: clip(x, -0.5, 1.5),
+      y: clip(y, -0.5, 1.5),
+    }));
     let distance = calcDistance(points);
     // I'm already prepended a zero
     const speed = uniform(0.15, 1.0);
@@ -36,12 +39,18 @@ export class SplineMode extends AppMode {
 
     const shift = extend ? distance[N - 1] : 0.0;
     const splines = {
-        x: new Spline(distance, points.map(point => point.x)),
-        y: new Spline(distance, points.map(point => point.y))
+      x: new Spline(
+        distance,
+        points.map(point => point.x)
+      ),
+      y: new Spline(
+        distance,
+        points.map(point => point.y)
+      ),
     };
     this._getPoint = t => ({
-        x: splines.x.at(t * (1 - shift) + shift),
-        y: splines.y.at(t * (1 - shift) + shift)
+      x: splines.x.at(t * (1 - shift) + shift),
+      y: splines.y.at(t * (1 - shift) + shift),
     });
   }
 
@@ -52,21 +61,23 @@ export class SplineMode extends AppMode {
     let pos = this._getPoint(this._currentTime / this._maxT);
     pos = {
       x: clip(pos.x, 0.0, 1.0),
-      y: clip(pos.y, 0.0, 1.0)
+      y: clip(pos.y, 0.0, 1.0),
     };
 
-    if (!isNaN(pos.x) && !isNaN(pos.y)) { // sometimes it's NaN, ignore it
+    if (!isNaN(pos.x) && !isNaN(pos.y)) {
+      // sometimes it's NaN, ignore it
       this._pos = pos;
     }
   }
 
-  onRender(data: any): void {
+  onRender(data: AppModeRenderData): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
     this.drawTarget({
-      viewport, canvasCtx,
-      state: this._controller.isActivated() ? 'active' : 'inactive'
+      viewport,
+      canvasCtx,
+      state: this._controller.isActivated() ? 'active' : 'inactive',
     });
   }
 
@@ -79,7 +90,7 @@ export class SplineMode extends AppMode {
   }
 
   accept(): boolean {
-    if(!this._controller.isActivated()) {
+    if (!this._controller.isActivated()) {
       return false;
     }
     return super.accept();

@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
-import { DEFAULT_SETTINGS } from '../utils/MP';
-import { Sample, type Position } from "../shared/Sample";
-import FaceDetectorWorkerManager, { ManagerConfig, type AggregatedStats } from './FaceDetectorWorkerManager';
+import { DEFAULT_SETTINGS } from '../utils/mediaPipe';
+import { Sample, type Position } from '../shared/Sample';
+import FaceDetectorWorkerManager, {
+  ManagerConfig,
+  type AggregatedStats,
+} from './FaceDetectorWorkerManager';
 import { hash128Hex } from '../utils';
 import DataWorker from './DataWorker';
-import { selectUserId, selectMonitorId, selectSelectedCameras, selectSortedDeviceIds } from '../store/selectors';
+import {
+  selectUserId,
+  selectMonitorId,
+  selectSelectedCameras,
+  selectSortedDeviceIds,
+} from '../store/selectors';
 import type { CameraEntity } from '../types/camera';
 import type { RootState } from '../store';
 import {
@@ -87,12 +95,29 @@ function FaceDetectorComponent({
         sendingFPS,
       };
 
-      console.log('[FaceDetector] Creating new FaceDetectorWorkerManager with config:', { userId, monitorId, screenId, isPaused, accept, sendingFPS });
+      console.log('[FaceDetector] Creating new FaceDetectorWorkerManager with config:', {
+        userId,
+        monitorId,
+        screenId,
+        isPaused,
+        accept,
+        sendingFPS,
+      });
       managerRef.current = new FaceDetectorWorkerManager(config);
       managerRef.current.setCallbacks(onDetect, onStatsUpdate);
       managerRef.current.setFpsRef(finalFpsRef);
     }
-  }, [userId, monitorId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, finalFpsRef]);
+  }, [
+    userId,
+    monitorId,
+    screenId,
+    isPaused,
+    accept,
+    sendingFPS,
+    onDetect,
+    onStatsUpdate,
+    finalFpsRef,
+  ]);
 
   // Keep fpsRef in sync with manager
   useEffect(() => {
@@ -103,7 +128,16 @@ function FaceDetectorComponent({
 
   // Update config when settings change
   useEffect(() => {
-    console.log('[FaceDetector] Config update effect - userId:', userId, 'monitorId:', monitorId, 'screenId:', screenId, 'selectedCameras:', selectedCameras);
+    console.log(
+      '[FaceDetector] Config update effect - userId:',
+      userId,
+      'monitorId:',
+      monitorId,
+      'screenId:',
+      screenId,
+      'selectedCameras:',
+      selectedCameras
+    );
     if (!managerRef.current) return;
 
     // Update global config first
@@ -130,7 +164,17 @@ function FaceDetectorComponent({
 
     console.log('[FaceDetector] Config updated for manager');
     managerRef.current.setCallbacks(onDetect, onStatsUpdate);
-  }, [userId, monitorId, screenId, isPaused, accept, sendingFPS, onDetect, onStatsUpdate, selectedCameras]);
+  }, [
+    userId,
+    monitorId,
+    screenId,
+    isPaused,
+    accept,
+    sendingFPS,
+    onDetect,
+    onStatsUpdate,
+    selectedCameras,
+  ]);
 
   // Set up streams and frame capture
   useEffect(() => {
@@ -148,10 +192,17 @@ function FaceDetectorComponent({
     (async () => {
       console.log('[FaceDetector] Initializing streams for cameras:', sortedDeviceIds);
       streams = await initializeStreams(sortedDeviceIds, videosRef.current, manager);
-      console.log('[FaceDetector] Streams initialized, starting capture for', streams.size, 'cameras');
+      console.log(
+        '[FaceDetector] Streams initialized, starting capture for',
+        streams.size,
+        'cameras'
+      );
       // Start per-camera frame capture
       for (const [normalizedCameraId] of streams) {
-        const fpsData = fpsRef.current.get(normalizedCameraId) || { frames: 0, lastTime: Date.now() };
+        const fpsData = fpsRef.current.get(normalizedCameraId) || {
+          frames: 0,
+          lastTime: Date.now(),
+        };
         fpsRef.current.set(normalizedCameraId, fpsData);
 
         const cameraDeps: CameraCaptureDeps = {
@@ -176,9 +227,11 @@ function FaceDetectorComponent({
       if (managerRef.current) {
         managerRef.current.setCaptureControllers(new Map());
       }
-      controllers.forEach((controller) => controller.cleanup());
+      controllers.forEach(controller => controller.cleanup());
       controllers.clear();
-      streams.forEach((stream: MediaStream) => stream.getTracks().forEach((t: MediaStreamTrack) => t.stop()));
+      streams.forEach((stream: MediaStream) =>
+        stream.getTracks().forEach((t: MediaStreamTrack) => t.stop())
+      );
     };
   }, [sortedDeviceIds, goal, fpsRef, onStatsUpdate]);
 
@@ -198,7 +251,7 @@ function FaceDetectorComponent({
       {sortedDeviceIds.map((cameraId: string) => (
         <video
           key={cameraId}
-          ref={(el) => {
+          ref={el => {
             if (el) {
               videosRef.current.set(hash128Hex(cameraId), el);
             }

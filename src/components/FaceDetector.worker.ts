@@ -38,20 +38,39 @@
  *   Periodic statistics report (~1.5s intervals)
  */
 
-import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision";
-import { results2sample, DEFAULT_SETTINGS } from "../utils/MP";
+import { FilesetResolver, FaceLandmarker } from '@mediapipe/tasks-vision';
+import { results2sample, DEFAULT_SETTINGS } from '../utils/mediaPipe';
 
 // Import shared modules for worker use
-import { Sample, sampleSize } from "../shared/Sample";
-import { SampleBuffer } from "../shared/SampleBuffer";
-import { serialize } from "../shared/Serialization";
-import type { WorkerConfig, WorkerStats } from "./FaceDetectorWorkerManager";
+import { Sample, sampleSize, type Position } from '../shared/Sample';
+import { SampleBuffer } from '../shared/SampleBuffer';
+import { serialize } from '../shared/Serialization';
+import type { WorkerConfig, WorkerStats } from './FaceDetectorWorkerManager';
+
+// ============================================================================
+// Message Types
+// ============================================================================
+
+type FrameMessage = {
+  frame: VideoFrame;
+  time: number;
+  goal: Position | null;
+};
+
+type InitMessage = {
+  id: string;
+  config: WorkerConfig;
+};
+
+type UpdateConfigMessage = {
+  partial: Partial<WorkerConfig>;
+};
 
 // ============================================================================
 // Worker State
 // ============================================================================
 
-let frameQueue: Array<{ frame: VideoFrame; time: number; goal: any }> = [];
+let frameQueue: FrameMessage[] = [];
 let isProcessing = false;
 let faceLandmarker: FaceLandmarker | null = null;
 let offscreenCanvas: OffscreenCanvas | null = null;
@@ -79,16 +98,16 @@ const initFaceLandmarker = async () => {
   offscreenCanvas = new OffscreenCanvas(1, 1);
 
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
   );
   faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
     baseOptions: {
       modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-      delegate: "GPU"
+      delegate: 'GPU',
     },
     outputFaceBlendshapes: false,
-    runningMode: "VIDEO",
-    numFaces: 1
+    runningMode: 'VIDEO',
+    numFaces: 1,
   });
 };
 
@@ -96,7 +115,10 @@ const processQueue = async () => {
   isProcessing = frameQueue.length > 0;
   if (!isProcessing) return;
 
-  const { frame, time, goal } = frameQueue.shift()!;
+  const frameData = frameQueue.shift();
+  if (!frameData) return;
+
+  const { frame, time, goal } = frameData;
 
   if (!faceLandmarker) {
     frame.close();
@@ -116,9 +138,9 @@ const processQueue = async () => {
       // Constructor validates goal position
       const sample = new Sample({
         time: time,
-        leftEye: (sampleData as any).leftEye || null,
-        rightEye: (sampleData as any).rightEye || null,
-        points: (sampleData as any).points || new Float32Array(478 * 2),
+        leftEye: sampleData.leftEye || null,
+        rightEye: sampleData.rightEye || null,
+        points: sampleData.points || new Float32Array(478 * 2),
         goal: goal,
         userId: config.userId,
         placeId: config.placeId,
@@ -127,7 +149,7 @@ const processQueue = async () => {
         monitorId: config.monitorId,
       });
 
-       // Buffer sample only if accepting AND not paused AND goal is valid AND passes minTime filter
+      // Buffer sample only if accepting AND not paused AND goal is valid AND passes minTime filter
       if (config.accept && !config.isPaused && buffer && sample.goal && minTime < sample.time) {
         buffer.addSample(sample);
 
@@ -187,14 +209,17 @@ const flushBuckets = (minSamples: number = 0) => {
         try {
           const serialized = serialize(sent);
           const first = sent[0];
-          self.postMessage({
-            type: 'sendToDataWorker',
-            serializedBuffer: serialized,
-            userId: first.userId,
-            placeId: first.placeId,
-            monitorId: first.monitorId,
-            count: sent.length
-          }, [serialized]);
+          self.postMessage(
+            {
+              type: 'sendToDataWorker',
+              serializedBuffer: serialized,
+              userId: first.userId,
+              placeId: first.placeId,
+              monitorId: first.monitorId,
+              count: sent.length,
+            },
+            [serialized]
+          );
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           workerError('Flush error:', errorMsg);
@@ -203,7 +228,9 @@ const flushBuckets = (minSamples: number = 0) => {
 
       // Log warning if we hit attempt limit (indicates a problem)
       if (attempts >= maxAttempts) {
-        workerError(`flushBuckets: Hit max attempts (${maxAttempts}) for bucket with count ${bucket.getCount()}`);
+        workerError(
+          `flushBuckets: Hit max attempts (${maxAttempts}) for bucket with count ${bucket.getCount()}`
+        );
       }
     }
   } catch (error) {
@@ -278,7 +305,7 @@ let detectionReportInterval = 1000 / 30; // default 30 FPS
 
 // Stats reporting throttling (~1.5 seconds)
 let lastStatsReportTime = 0;
-let statsReportInterval = 1500;
+const statsReportInterval = 1500;
 /**
  * Drop frames from queue that are older than threshold
  * Prevents memory bloat when processing can't keep up with incoming frames
@@ -287,7 +314,7 @@ const dropOldFrames = (threshold: number) => {
   const now = Date.now();
   const cutoffTime = now - threshold;
 
-  const keptFrames: Array<{ frame: VideoFrame; time: number; goal: any }> = [];
+  const keptFrames: FrameMessage[] = [];
   let droppedCount = 0;
 
   for (const item of frameQueue) {
@@ -310,7 +337,7 @@ const dropOldFrames = (threshold: number) => {
 // Worker Logger (sends to main thread console)
 // ============================================================================
 
-const workerError = (...args: any[]) => {
+const workerError = (...args: unknown[]) => {
   self.postMessage({
     type: 'log',
     level: 'error',
@@ -319,7 +346,7 @@ const workerError = (...args: any[]) => {
         return JSON.stringify(arg, null, 2);
       }
       return String(arg);
-    })
+    }),
   });
 };
 
@@ -327,7 +354,7 @@ const workerError = (...args: any[]) => {
 // Message Handlers
 // ============================================================================
 
-const handleFrame = ({ frame, time, goal }: any) => {
+const handleFrame = ({ frame, time, goal }: FrameMessage) => {
   try {
     frameQueue.push({ frame, time, goal });
     dropOldFrames(SAMPLE_THRESHOLD);
@@ -338,19 +365,19 @@ const handleFrame = ({ frame, time, goal }: any) => {
   }
 };
 
-const handleInit = async ({ id, config: incomingConfig }: any) => {
+const handleInit = async ({ id, config: incomingConfig }: InitMessage) => {
   try {
     config = { ...incomingConfig, cameraId: id };
     buffer = new SampleBuffer();
     await initFaceLandmarker();
 
-    handleUpdateConfig({partial: config});
+    handleUpdateConfig({ partial: config });
   } catch (error) {
     workerError('Error in handleInit:', error);
   }
 };
 
-const handleUpdateConfig = ({ partial }: any) => {
+const handleUpdateConfig = ({ partial }: UpdateConfigMessage) => {
   try {
     if (config && partial) {
       const oldIsPaused = config.isPaused;
@@ -394,16 +421,16 @@ const handleStop = () => {
   }
 };
 
-type MessageHandler = (data: any) => void;
+type MessageHandler = (data: FrameMessage | InitMessage | UpdateConfigMessage | undefined) => void;
 
 const messageHandlers: Record<string, MessageHandler> = {
-  frame: handleFrame,
-  init: handleInit,
-  updateConfig: handleUpdateConfig,
-  stop: handleStop,
+  frame: handleFrame as MessageHandler,
+  init: handleInit as MessageHandler,
+  updateConfig: handleUpdateConfig as MessageHandler,
+  stop: handleStop as MessageHandler,
 };
 
-self.onmessage = function({ data }) {
+self.onmessage = function ({ data }) {
   try {
     const { type } = data;
     const handler = messageHandlers[type];
@@ -421,3 +448,6 @@ self.onmessage = function({ data }) {
     workerError('Fatal error in message handler:', error);
   }
 };
+
+// Export for TypeScript module resolution
+export default null;

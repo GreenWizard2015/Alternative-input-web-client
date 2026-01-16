@@ -1,35 +1,37 @@
-import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import type { UUIDed } from "../../shared/Sample";
-import { SampleValidation } from "../../shared/SampleValidation";
-import { toJSON, fromJSON } from "../json";
-import { cleanupPlaceFromCameras } from "./App";
-import type { Goal } from "../../types/Goal";
-import { DEFAULT_GOAL } from "../../types/Goal";
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import type { UUIDed } from '../../shared/Sample';
+import { SampleValidation } from '../../shared/SampleValidation';
+import { toJSON, fromJSON } from '../json';
+import { cleanupPlaceFromCameras } from './App';
+import type { Goal } from '../../types/Goal';
+import { DEFAULT_GOAL } from '../../types/Goal';
 
 interface UIState {
-  userId: string,
-  monitorId: string,
+  userId: string;
+  monitorId: string;
 
   // Stored as JSON strings - parse only when needed
-  users: string;              // JSON string of UUIDed[]
-  places: string;             // JSON string of UUIDed[]
-  monitors: string;           // JSON string of UUIDed[]
-  goalSettings: string;       // JSON string of Goal
-};
+  users: string; // JSON string of UUIDed[]
+  places: string; // JSON string of UUIDed[]
+  monitors: string; // JSON string of UUIDed[]
+  goalSettings: string; // JSON string of Goal
+}
 
 const mainMonitorUUID = crypto.randomUUID();
 
 const initialState: UIState = {
   userId: '',
   monitorId: mainMonitorUUID,
-  users: JSON.stringify([]),           // JSON string
-  places: JSON.stringify([]),          // JSON string
-  monitors: JSON.stringify([{
-    name: 'main',
-    uuid: mainMonitorUUID,
-    samples: 0,
-  }]),
-  goalSettings: JSON.stringify(DEFAULT_GOAL),  // JSON string of Goal
+  users: JSON.stringify([]), // JSON string
+  places: JSON.stringify([]), // JSON string
+  monitors: JSON.stringify([
+    {
+      name: 'main',
+      uuid: mainMonitorUUID,
+      samples: 0,
+    },
+  ]),
+  goalSettings: JSON.stringify(DEFAULT_GOAL), // JSON string of Goal
 };
 
 // Thunk action to remove place and cleanup cameras that reference it
@@ -45,7 +47,7 @@ export const removePlace = createAsyncThunk(
 
 // PERSISTED slice
 export const UISlice = createSlice({
-  name: "UI",
+  name: 'UI',
   initialState,
   reducers: {
     setUser: (state, action: PayloadAction<string | null>) => {
@@ -109,7 +111,10 @@ export const UISlice = createSlice({
 
       // Log if place not found
       if (!placeFound && placeId) {
-        console.warn(`[incrementStats] Place NOT FOUND: ${placeId}, `, places.map(p => p.uuid));
+        console.warn(
+          `[incrementStats] Place NOT FOUND: ${placeId}, `,
+          places.map(p => p.uuid)
+        );
       }
 
       // Update user if exists
@@ -125,7 +130,10 @@ export const UISlice = createSlice({
 
       // Log if user not found
       if (!userFound && userId) {
-        console.warn(`[incrementStats] User NOT FOUND: ${userId}, `, users.map(u => u.uuid));
+        console.warn(
+          `[incrementStats] User NOT FOUND: ${userId}, `,
+          users.map(u => u.uuid)
+        );
       }
 
       // Update monitor if exists
@@ -141,7 +149,10 @@ export const UISlice = createSlice({
 
       // Log if monitor not found
       if (!monitorFound && monitorId) {
-        console.warn(`[incrementStats] Monitor NOT FOUND: ${monitorId}, `, monitors.map(m => m.uuid));
+        console.warn(
+          `[incrementStats] Monitor NOT FOUND: ${monitorId}, `,
+          monitors.map(m => m.uuid)
+        );
       }
 
       state.places = toJSON(places);
@@ -154,26 +165,30 @@ export const UISlice = createSlice({
       state.userId = '';
     },
     // recreate user - keep name, generate new uuid, clear samples
-    recreateUser: (state) => {
+    recreateUser: state => {
       const users: UUIDed[] = fromJSON(state.users, []);
-      state.users = toJSON(users.map(u => {
-        if (u.uuid === state.userId) {
-          const newUuid = crypto.randomUUID();
-          state.userId = newUuid;
-          return { ...u, uuid: newUuid, samples: 0 };
-        }
-        return u;
-      }));
+      state.users = toJSON(
+        users.map(u => {
+          if (u.uuid === state.userId) {
+            const newUuid = crypto.randomUUID();
+            state.userId = newUuid;
+            return { ...u, uuid: newUuid, samples: 0 };
+          }
+          return u;
+        })
+      );
     },
     recreatePlace: (state, action: PayloadAction<{ uuid: string }>) => {
       // Recreate place - keep name, generate new uuid, clear samples
       const places: UUIDed[] = fromJSON(state.places, []);
-      state.places = toJSON(places.map(p => {
-        if (p.uuid === action.payload.uuid) {
-          return { ...p, uuid: crypto.randomUUID(), samples: 0 };
-        }
-        return p;
-      }));
+      state.places = toJSON(
+        places.map(p => {
+          if (p.uuid === action.payload.uuid) {
+            return { ...p, uuid: crypto.randomUUID(), samples: 0 };
+          }
+          return p;
+        })
+      );
     },
 
     // Monitor reducers (mirror user pattern)
@@ -236,22 +251,25 @@ export const UISlice = createSlice({
     recreateMonitor: (state, action: PayloadAction<{ uuid: string }>) => {
       // Recreate monitor - keep name, generate new uuid, clear samples
       const monitors: UUIDed[] = fromJSON(state.monitors, []);
-      state.monitors = toJSON(monitors.map(m => {
-        if (m.uuid === action.payload.uuid) {
-          return { ...m, uuid: crypto.randomUUID(), samples: 0 };
-        }
-        return m;
-      }));
+      state.monitors = toJSON(
+        monitors.map(m => {
+          if (m.uuid === action.payload.uuid) {
+            return { ...m, uuid: crypto.randomUUID(), samples: 0 };
+          }
+          return m;
+        })
+      );
     },
 
-    selectDefaultValues: (state) => {
+    selectDefaultValues: state => {
       const users: UUIDed[] = fromJSON(state.users, []);
       const places: UUIDed[] = fromJSON(state.places, []);
       let monitors: UUIDed[] = fromJSON(state.monitors, []);
 
       if (users.length > 0) {
         const user = users.find(u => u.uuid === state.userId);
-        if (undefined === user) { // if user not found, select first user
+        if (undefined === user) {
+          // if user not found, select first user
           state.userId = users[0].uuid;
         }
         state.users = toJSON(users.filter(u => SampleValidation.validateUUIDed(u)));
@@ -263,11 +281,13 @@ export const UISlice = createSlice({
       // Ensure "main" monitor exists - auto-add if empty
       if (monitors.length === 0) {
         const mainMonitorUUID = crypto.randomUUID();
-        monitors = [{
-          name: 'main',
-          uuid: mainMonitorUUID,
-          samples: 0,
-        }];
+        monitors = [
+          {
+            name: 'main',
+            uuid: mainMonitorUUID,
+            samples: 0,
+          },
+        ];
         state.monitorId = mainMonitorUUID;
       } else {
         // Auto-select "main" monitor if no monitor is selected
@@ -286,9 +306,8 @@ export const UISlice = createSlice({
     setGoalSettings: (state, action: PayloadAction<Goal>) => {
       state.goalSettings = toJSON(action.payload);
     },
-
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder.addCase(removePlace.fulfilled, (state, action) => {
       const placeId = action.payload;
       const places: UUIDed[] = fromJSON(state.places, []);

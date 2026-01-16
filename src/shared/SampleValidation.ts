@@ -24,9 +24,7 @@ export class SampleValidation {
    * Get validation error for goal position
    * @returns Error message if invalid, null if valid
    */
-  static getGoalValidationError(
-    goal: Position | null | undefined
-  ): string | null {
+  static getGoalValidationError(goal: Position | null | undefined): string | null {
     if (!goal) return 'Goal is missing';
     // Validate inclusive bounds [-2, 2]
     if (!(this.GOAL_MIN <= goal.x && goal.x <= this.GOAL_MAX)) {
@@ -60,13 +58,7 @@ export class SampleValidation {
    * @returns true if valid, false otherwise
    */
   static validateUUIDed(obj: UUIDed | null): boolean {
-    return !!(
-      obj &&
-      obj.name &&
-      obj.uuid &&
-      obj.name.length > 0 &&
-      obj.uuid.length > 0
-    );
+    return !!(obj && obj.name && obj.uuid && obj.name.length > 0 && obj.uuid.length > 0);
   }
 }
 

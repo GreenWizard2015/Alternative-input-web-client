@@ -43,8 +43,12 @@ export default function GenericInputDialog({
         </div>
       ))}
       <div>
-        <button onClick={handleConfirm} disabled={isAnyEmpty}>{t('common.ok')}</button>
-        <button className='ms-2' onClick={onCancel}>{t('common.cancel')}</button>
+        <button onClick={handleConfirm} disabled={isAnyEmpty}>
+          {t('common.ok')}
+        </button>
+        <button className="ms-2" onClick={onCancel}>
+          {t('common.cancel')}
+        </button>
       </div>
     </>
   );

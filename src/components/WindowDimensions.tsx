@@ -27,7 +27,4 @@ const WindowDimensions = ({ updateScreen }) => {
   return null;
 };
 
-export default connect(
-  null,
-  { updateScreen }
-)(WindowDimensions);
+export default connect(null, { updateScreen })(WindowDimensions);

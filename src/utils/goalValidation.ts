@@ -11,19 +11,19 @@ export function findDuplicateSymbolIndices(symbols: [string, string, string, str
 
   symbols.forEach((symbol, index) => {
     // Normalize: uppercase for chars, keep as-is for arrows (UpArrow, LeftArrow, etc.)
-    const normalized = /^(Up|Down|Left|Right)Arrow$/.test(symbol)
-      ? symbol
-      : symbol.toUpperCase();
+    const normalized = /^(Up|Down|Left|Right)Arrow$/.test(symbol) ? symbol : symbol.toUpperCase();
 
-    if (!seen.has(normalized)) {
-      seen.set(normalized, []);
+    let indices = seen.get(normalized);
+    if (!indices) {
+      indices = [];
+      seen.set(normalized, indices);
     }
-    seen.get(normalized)!.push(index);
+    indices.push(index);
   });
 
   // Collect indices of duplicates (all indices where count > 1)
   const duplicates: number[] = [];
-  seen.forEach((indices) => {
+  seen.forEach(indices => {
     if (indices.length > 1) {
       duplicates.push(...indices);
     }

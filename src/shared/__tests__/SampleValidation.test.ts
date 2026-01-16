@@ -107,13 +107,13 @@ describe('SampleValidation', () => {
     });
 
     test('rejects object without name', () => {
-      const obj = { uuid: 'abc-123', samples: 10 };
-      expect(SampleValidation.validateUUIDed(obj as any)).toBe(false);
+      const obj = JSON.parse('{"uuid":"abc-123","samples":10}');
+      expect(SampleValidation.validateUUIDed(obj)).toBe(false);
     });
 
     test('rejects object without uuid', () => {
-      const obj = { name: 'Test', samples: 10 };
-      expect(SampleValidation.validateUUIDed(obj as any)).toBe(false);
+      const obj = JSON.parse('{"name":"Test","samples":10}');
+      expect(SampleValidation.validateUUIDed(obj)).toBe(false);
     });
 
     test('rejects null', () => {

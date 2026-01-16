@@ -14,7 +14,7 @@ type CameraPlaceSelectorProps = {
   places: Place[] & { byId: (id: string) => Place | undefined };
   doSetCameraPlace: (payload: { deviceId: string; placeId: string }) => void;
   doRecreatePlace: (payload: { uuid: string }) => void;
-  doRemovePlace: (placeId: string) => any;
+  doRemovePlace: (placeId: string) => void;
   onAddPlace: (cameraId: string) => void;
 };
 
@@ -41,12 +41,12 @@ function CameraPlaceSelector({
     <BaseSelector<Place>
       selectedId={selectedPlaceId}
       items={filteredPlaces}
-      onSelect={(place) => doSetCameraPlace({ deviceId: cameraId, placeId: place ? place.uuid : '' })}
+      onSelect={place => doSetCameraPlace({ deviceId: cameraId, placeId: place ? place.uuid : '' })}
       onAdd={() => onAddPlace(cameraId)}
       onRemove={() => doRemovePlace(selectedPlaceId)}
       onRecreate={() => doRecreatePlace({ uuid: selectedPlaceId })}
       labelKey="menu.place"
-      renderItemLabel={(place) => `${withoutPrefix(place.name)} (${place.samples} samples)`}
+      renderItemLabel={place => `${withoutPrefix(place.name)} (${place.samples} samples)`}
       confirmRemoveKey="dialogs.confirmRemovePlace"
       confirmRecreateKey="dialogs.confirmRecreatePlace"
     />

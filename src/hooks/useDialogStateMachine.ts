@@ -1,7 +1,6 @@
-import { useSelector, useDispatch } from 'react-redux';
 import { useState, useCallback, useEffect } from 'react';
-import type { RootState } from '../store';
 import type { AppMode } from '../modes/AppMode';
+import type { Dispatch } from 'redux';
 import {
   openUserDialog as openUserDialogAction,
   openPlaceDialog as openPlaceDialogAction,
@@ -14,14 +13,23 @@ import {
   setTempCameraId as setTempCameraIdAction,
 } from '../store/slices/App';
 
-export function useDialogStateMachine() {
-  const dispatch = useDispatch();
-  const [pendingGameMode, setPendingGameMode] = useState<AppMode | null>(null);
-  const [onGameStartConfirm, setOnGameStartConfirm] = useState<((mode: AppMode) => void) | null>(null);
+interface DialogStateMachineProps {
+  dialogType: string;
+  tempName: string;
+  tempCameraId: string;
+  dispatch: Dispatch;
+}
 
-  const dialogType = useSelector((state: RootState) => state.App.dialogType);
-  const tempName = useSelector((state: RootState) => state.App.tempName);
-  const tempCameraId = useSelector((state: RootState) => state.App.tempCameraId);
+export function useDialogStateMachine({
+  dialogType,
+  tempName,
+  tempCameraId,
+  dispatch,
+}: DialogStateMachineProps) {
+  const [pendingGameMode, setPendingGameMode] = useState<AppMode | null>(null);
+  const [onGameStartConfirm, setOnGameStartConfirm] = useState<((mode: AppMode) => void) | null>(
+    null
+  );
 
   useEffect(() => {
     if (dialogType === 'IDLE') {
@@ -39,16 +47,19 @@ export function useDialogStateMachine() {
   const isGameConfirmDialog = dialogType === 'GAME_CONFIRM_DIALOG';
   const isGoalDialog = dialogType === 'GOAL_DIALOG';
 
-  const openGameConfirmDialog = useCallback((gameMode: AppMode, onConfirm: (mode: AppMode) => void) => {
-    // Store gameMode and callback FIRST, then dispatch Redux action
-    // This ensures React state is updated before Redux triggers re-renders
-    setPendingGameMode(gameMode);
-    setOnGameStartConfirm(() => onConfirm);
-    // Use setTimeout to ensure state updates are processed before Redux dispatch
-    setTimeout(() => {
-      dispatch(openGameConfirmDialogAction());
-    }, 0);
-  }, [dispatch]);
+  const openGameConfirmDialog = useCallback(
+    (gameMode: AppMode, onConfirm: (mode: AppMode) => void) => {
+      // Store gameMode and callback FIRST, then dispatch Redux action
+      // This ensures React state is updated before Redux triggers re-renders
+      setPendingGameMode(gameMode);
+      setOnGameStartConfirm(() => onConfirm);
+      // Use setTimeout to ensure state updates are processed before Redux dispatch
+      setTimeout(() => {
+        dispatch(openGameConfirmDialogAction());
+      }, 0);
+    },
+    [dispatch]
+  );
 
   const closeDialog = useCallback(() => {
     dispatch(closeDialogAction());

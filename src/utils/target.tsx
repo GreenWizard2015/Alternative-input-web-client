@@ -1,15 +1,18 @@
-import type { Position } from "../shared/Sample";
+import type { Position } from '../shared/Sample';
 
-export function drawArrow(
-  { position, canvasCtx, direction=0, size=20, color='white' }:
-  {
-    position: Position,
-    canvasCtx: CanvasRenderingContext2D,
-    direction?: number, // angle in radians
-    size?: number,
-    color?: string
-  }
-) {
+export function drawArrow({
+  position,
+  canvasCtx,
+  direction = 0,
+  size = 20,
+  color = 'white',
+}: {
+  position: Position;
+  canvasCtx: CanvasRenderingContext2D;
+  direction?: number; // angle in radians
+  size?: number;
+  color?: string;
+}) {
   const ctx = canvasCtx;
   ctx.save();
 
@@ -27,22 +30,22 @@ export function drawArrow(
   const stemWidth = size * 0.25;
 
   // Move to stem base
-  ctx.moveTo(-tipLength + stemWidth/2, -stemWidth/2);
+  ctx.moveTo(-tipLength + stemWidth / 2, -stemWidth / 2);
 
   // Draw stem
-  ctx.lineTo(tipLength * 0.3, -stemWidth/2);
-  ctx.lineTo(tipLength * 0.3, -baseWidth/2);
+  ctx.lineTo(tipLength * 0.3, -stemWidth / 2);
+  ctx.lineTo(tipLength * 0.3, -baseWidth / 2);
 
   // Draw arrow head
   ctx.lineTo(tipLength, 0);
-  ctx.lineTo(tipLength * 0.3, baseWidth/2);
+  ctx.lineTo(tipLength * 0.3, baseWidth / 2);
 
   // Complete stem
-  ctx.lineTo(tipLength * 0.3, stemWidth/2);
-  ctx.lineTo(-tipLength + stemWidth/2, stemWidth/2);
+  ctx.lineTo(tipLength * 0.3, stemWidth / 2);
+  ctx.lineTo(-tipLength + stemWidth / 2, stemWidth / 2);
 
   // Close back to stem base
-  ctx.lineTo(-tipLength + stemWidth/2, -stemWidth/2);
+  ctx.lineTo(-tipLength + stemWidth / 2, -stemWidth / 2);
 
   ctx.fill();
 
@@ -54,14 +57,19 @@ export function drawArrow(
   ctx.restore();
 }
 
-export function drawTarget(
-  { position, radius=10, canvasCtx, style, sign }:
-  { 
-    position: Position,
-    radius: number,
-    canvasCtx: CanvasRenderingContext2D, style?: string, sign?: string
-  }
-) {
+export function drawTarget({
+  position,
+  radius = 10,
+  canvasCtx,
+  style,
+  sign,
+}: {
+  position: Position;
+  radius: number;
+  canvasCtx: CanvasRenderingContext2D;
+  style?: string;
+  sign?: string;
+}) {
   const height = canvasCtx.canvas.height;
   const width = canvasCtx.canvas.width;
   // draw just border of red circle, not filled
@@ -105,4 +113,4 @@ export function drawTarget(
     canvasCtx.textAlign = 'start';
     canvasCtx.textBaseline = 'alphabetic';
   }
-};
+}

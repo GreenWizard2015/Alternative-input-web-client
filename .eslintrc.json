@@ -1,0 +1,61 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "react",
+    "react-hooks"
+  ],
+  "ignorePatterns": [
+    "build/**/*",
+    "dist/**/*",
+    "node_modules/**/*",
+    "*.min.js",
+    "*.svg",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif"
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "react/prop-types": "off",
+    "react/jsx-uses-react": "off",
+    "react/jsx-uses-vars": "error",
+    "react/jsx-key": "error",
+    "react/no-unescaped-entities": "warn",
+    "react/require-default-props": "off",
+    "react/no-array-index-key": "warn",
+    "prefer-const": "warn"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

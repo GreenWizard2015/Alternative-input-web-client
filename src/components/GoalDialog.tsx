@@ -109,13 +109,15 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
           <h3>{t('dialogs.colorsLabel')}</h3>
 
           <div className="colors-grid">
-            {(['active', 'inactive', 'paused', 'text'] as const).map((colorKey) => (
+            {(['active', 'inactive', 'paused', 'text'] as const).map(colorKey => (
               <React.Fragment key={colorKey}>
-                <div>{t(`dialogs.color${colorKey.charAt(0).toUpperCase()}${colorKey.slice(1)}`)}</div>
+                <div>
+                  {t(`dialogs.color${colorKey.charAt(0).toUpperCase()}${colorKey.slice(1)}`)}
+                </div>
                 <input
                   type="color"
                   value={currentGoal.colors[colorKey]}
-                  onChange={(e) => handleColorChange(colorKey, e.target.value)}
+                  onChange={e => handleColorChange(colorKey, e.target.value)}
                 />
               </React.Fragment>
             ))}
@@ -132,7 +134,7 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
               min="50"
               max="300"
               value={currentGoal.size}
-              onChange={(e) => handleSizeChange(Number(e.target.value))}
+              onChange={e => handleSizeChange(Number(e.target.value))}
               className="size-slider"
             />
             <span className="size-value">{currentGoal.size}%</span>
@@ -144,15 +146,17 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
           <h3>{t('dialogs.symbolsLabel')}</h3>
 
           <div className="symbols-grid">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3].map(i => (
               <React.Fragment key={i}>
                 <div>{t(`dialogs.symbol${i + 1}`)}</div>
                 <input
-                  ref={(el) => { symbolInputRefs.current[i] = el; }}
+                  ref={el => {
+                    symbolInputRefs.current[i] = el;
+                  }}
                   type="text"
                   value={renderSymbol(currentGoal.symbols[i])}
-                  onChange={(e) => handleSymbolChange(i, e.target.value)}
-                  onKeyDown={(e) => handleSymbolKeyDown(i, e)}
+                  onChange={e => handleSymbolChange(i, e.target.value)}
+                  onKeyDown={e => handleSymbolKeyDown(i, e)}
                   maxLength={GOAL_SYMBOL_MAX_LENGTH}
                   className={`symbol-input ${duplicateIndices.has(i) ? 'error' : ''}`}
                 />
@@ -166,11 +170,7 @@ const GoalDialogComponent: React.FC<GoalDialogProps> = ({
         </div>
 
         {/* Just close button - disabled when duplicates exist */}
-        <button
-          onClick={handleClose}
-          className="button-close"
-          disabled={duplicateIndices.size > 0}
-        >
+        <button onClick={handleClose} className="button-close" disabled={duplicateIndices.size > 0}>
           {t('common.close')}
         </button>
       </div>

@@ -1,0 +1,13 @@
+build/
+dist/
+node_modules/
+*.min.js
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.gif
+.vscode/
+.idea/
+*.log
+.DS_Store

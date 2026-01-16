@@ -14,7 +14,7 @@ import { Sample, EYE_SIZE, sampleSize } from './Sample';
  * Used to validate that all samples in a batch have the same userId, placeId, etc.
  */
 function accumulateUnique(key: keyof Sample) {
-  return (array: any[], value: Sample) => {
+  return (array: unknown[], value: Sample) => {
     const val = value[key];
     if (!array.includes(val)) {
       array.push(val);
@@ -92,9 +92,7 @@ export function serialize(samples: Sample[]): ArrayBuffer {
   const saveString = (str: string, name: string) => {
     const encoded = encoder.encode(str);
     if (36 !== encoded.length) {
-      throw new Error(
-        `Invalid ${name} size. Expected 36, got ${encoded.length}`
-      );
+      throw new Error(`Invalid ${name} size. Expected 36, got ${encoded.length}`);
     }
     for (let i = 0; i < 36; i++) {
       view.setUint8(offset, encoded[i]);
@@ -117,9 +115,7 @@ export function serialize(samples: Sample[]): ArrayBuffer {
   const saveEye = (eye: Uint8ClampedArray | null) => {
     const eyeData = eye ?? EMPTY_EYE;
     if (eyeData.length !== EYE_SIZE * EYE_SIZE) {
-      throw new Error(
-        `Invalid eye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${eyeData.length}`
-      );
+      throw new Error(`Invalid eye size. Expected ${EYE_SIZE}x${EYE_SIZE}, got ${eyeData.length}`);
     }
     for (let i = 0; i < EYE_SIZE * EYE_SIZE; i++) {
       view.setUint8(offset, eyeData[i]);
@@ -128,7 +124,7 @@ export function serialize(samples: Sample[]): ArrayBuffer {
   };
 
   // Write per-sample data
-  samples.forEach((s) => {
+  samples.forEach(s => {
     // Store timestamp as uint64 (8 bytes) using BigInt
     // This supports full range of Date.now() values without overflow
     const timestamp = BigInt(s.time);
@@ -142,7 +138,7 @@ export function serialize(samples: Sample[]): ArrayBuffer {
     if (s.points.length !== 2 * 478) {
       throw new Error('Invalid points size. Expected 2x478, got ' + s.points.length);
     }
-    s.points.forEach((value) => {
+    s.points.forEach(value => {
       view.setFloat32(offset, value);
       offset += 4;
     });

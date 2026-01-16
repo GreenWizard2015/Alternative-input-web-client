@@ -1,8 +1,8 @@
-import { add, distance, multiplyScalar, normalize, subtract } from "../utils/pointOperations";
-import { AppMode } from "./AppMode";
-import type { IGameController } from "../types/ControllerInterface";
-import type { Viewport } from "./AppMode";
-import type { Position } from "../shared/Sample";
+import { add, distance, multiplyScalar, normalize, subtract } from '../utils/pointOperations';
+import { AppMode, type AppModeRenderData } from './AppMode';
+import type { IGameController } from '../types/ControllerInterface';
+import type { Viewport } from './AppMode';
+import type { Position } from '../shared/Sample';
 
 export class MoveToGoal extends AppMode {
   _speed: number = 55 * 2 * 2;
@@ -19,7 +19,7 @@ export class MoveToGoal extends AppMode {
   }
 
   doTick(deltaT: number, viewport: Viewport): void {
-    if(!this._active) {
+    if (!this._active) {
       return;
     }
 
@@ -32,22 +32,23 @@ export class MoveToGoal extends AppMode {
     const res = add(pos, multiplyScalar(vec, this._speed * deltaT));
     this._pos = AppMode.makeRelative({
       position: res,
-      viewport
+      viewport,
     });
 
     const dist = distance(subtract(goal, pos));
-    if(dist < 3.0) {
+    if (dist < 3.0) {
       this._goal = this._nextGoal(this._goal);
       this._currentTime = 0; // reset timer on goal change
     }
   }
 
-  onRender(data: any): void {
+  onRender(data: AppModeRenderData): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
     this.drawTarget({
-      viewport, canvasCtx,
-      state: this._active ? 'active' : 'paused'
+      viewport,
+      canvasCtx,
+      state: this._active ? 'active' : 'paused',
     });
   }
 

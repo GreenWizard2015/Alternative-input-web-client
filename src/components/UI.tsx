@@ -11,10 +11,12 @@ import { connect } from 'react-redux';
 import { useDialogStateMachine } from '../hooks/useDialogStateMachine';
 import { selectUserId, selectSelectedCameras } from '../store/selectors';
 import type { RootState } from '../store';
+import type { AppMode } from '../modes/AppMode';
+import type { Dispatch } from 'redux';
 
 type UIProps = {
   goFullscreen: () => void;
-  onStart: (mode: any) => void;
+  onStart: (mode: AppMode) => void;
   canStart: boolean;
   selectDefaultValues: () => void;
   doAddPlace: (name: string) => void;
@@ -23,6 +25,10 @@ type UIProps = {
   userId?: string;
   selectedCameras?: Array<{ deviceId: string; placeId?: string; label?: string }>;
   screenId?: string;
+  dialogType: string;
+  tempName: string;
+  tempCameraId: string;
+  dispatch: Dispatch;
 };
 
 function UI({
@@ -36,6 +42,10 @@ function UI({
   userId = '',
   selectedCameras = [],
   screenId = '',
+  dialogType,
+  tempName,
+  tempCameraId,
+  dispatch,
 }: UIProps) {
   const {
     isIdle,
@@ -45,8 +55,6 @@ function UI({
     isStartDialog,
     isGameConfirmDialog,
     isGoalDialog,
-    tempName,
-    tempCameraId,
     pendingGameMode,
     onGameStartConfirm,
     openUserDialog,
@@ -57,7 +65,7 @@ function UI({
     openGoalDialog,
     closeDialog,
     setTempName,
-  } = useDialogStateMachine();
+  } = useDialogStateMachine({ dialogType, tempName, tempCameraId, dispatch });
 
   useEffect(() => {
     selectDefaultValues();
@@ -65,15 +73,19 @@ function UI({
 
   return (
     <>
-      {isStartDialog && <UIStart onStart={(mode) => openGameConfirmDialog(mode, onStart)} onBack={closeDialog} />}
+      {isStartDialog && (
+        <UIStart onStart={mode => openGameConfirmDialog(mode, onStart)} onBack={closeDialog} />
+      )}
 
-      {isGameConfirmDialog && pendingGameMode && onGameStartConfirm && <StartConfirmDialog gameMode={pendingGameMode} onConfirm={onGameStartConfirm} />}
+      {isGameConfirmDialog && pendingGameMode && onGameStartConfirm && (
+        <StartConfirmDialog gameMode={pendingGameMode} onConfirm={onGameStartConfirm} />
+      )}
 
       {isUserDialog && (
         <UserDialog
           tempName={tempName}
           setTempName={setTempName}
-          onConfirm={(name) => {
+          onConfirm={name => {
             // Create user and select it, then close
             doSetUser(name);
             closeDialog();
@@ -87,7 +99,7 @@ function UI({
           cameraId={tempCameraId || ''}
           tempName={tempName}
           setTempName={setTempName}
-          onConfirm={(placeName) => {
+          onConfirm={placeName => {
             // Create place (placeName already has camera prefix)
             // UUID is generated in Redux reducer
             doAddPlace(placeName);
@@ -101,7 +113,7 @@ function UI({
         <MonitorDialog
           tempName={tempName}
           setTempName={setTempName}
-          onConfirm={(name) => {
+          onConfirm={name => {
             // Create monitor
             // UUID is generated in Redux reducer
             doAddMonitor(name);
@@ -111,11 +123,7 @@ function UI({
         />
       )}
 
-      {isGoalDialog && (
-        <GoalDialog
-          onClose={closeDialog}
-        />
-      )}
+      {isGoalDialog && <GoalDialog onClose={closeDialog} />}
 
       {isIdle && (
         <MainMenu
@@ -142,13 +150,21 @@ export default connect(
 
     return {
       userId,
-      selectedCameras: selectedCameras.map(cam => ({ deviceId: cam.deviceId, placeId: cam.placeId, label: cam.label })),
+      selectedCameras: selectedCameras.map(cam => ({
+        deviceId: cam.deviceId,
+        placeId: cam.placeId,
+        label: cam.label,
+      })),
+      dialogType: state.App.dialogType,
+      tempName: state.App.tempName,
+      tempCameraId: state.App.tempCameraId,
     };
   },
-  {
-    selectDefaultValues,
-    doAddPlace: addPlace,
-    doSetUser: setUser,
-    doAddMonitor: addMonitor,
-  }
+  (dispatch: Dispatch) => ({
+    selectDefaultValues: () => dispatch(selectDefaultValues()),
+    doAddPlace: (name: string) => dispatch(addPlace(name)),
+    doSetUser: (name: string) => dispatch(setUser(name)),
+    doAddMonitor: (name: string) => dispatch(addMonitor(name)),
+    dispatch,
+  })
 )(UI);

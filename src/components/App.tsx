@@ -1,24 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { useTranslation } from "react-i18next";
-import { connect } from "react-redux";
-import { toggleFullscreen } from "../utils/canvas";
-import { hash128Hex } from "../utils";
-import UI from "./UI";
-import { onMenuTick } from "../modes/onMenuTick";
-import { AppMode } from "../modes/AppMode";
-import FaceDetector, { DetectionResult } from "./FaceDetector";
-import { Intro } from "./Intro";
-import { AggregatedStats } from "./FaceDetectorWorkerManager";
-import UploadsNotification from "./uploadsNotification";
-import ErrorNotification from "./errorNotification";
-import FPSDisplay from "./FPSDisplay";
-import { setMode } from "../store/slices/App";
-import { selectAppProps, selectSortedDeviceIds, selectGoalSettings } from "../store/selectors";
-import type { RootState } from "../store";
-import type { Position } from "../shared/Sample";
-import type { CameraEntity } from "../types/camera";
-import type { IGameController } from "../types/ControllerInterface";
-import MiniGameController from "../modes/MiniGameController";
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
+import { toggleFullscreen } from '../utils/canvas';
+import { hash128Hex } from '../utils';
+import UI from './UI';
+import { onMenuTick } from '../modes/onMenuTick';
+import { AppMode } from '../modes/AppMode';
+import FaceDetector, { DetectionResult } from './FaceDetector';
+import { Intro } from './Intro';
+import { AggregatedStats } from './FaceDetectorWorkerManager';
+import UploadsNotification from './UploadsNotification';
+import ErrorNotification from './ErrorNotification';
+import FPSDisplay from './FPSDisplay';
+import { setMode } from '../store/slices/App';
+import { selectAppProps, selectSortedDeviceIds, selectGoalSettings } from '../store/selectors';
+import type { RootState } from '../store';
+import type { Position, UUIDed } from '../shared/Sample';
+import type { CameraEntity } from '../types/camera';
+import type { IGameController } from '../types/ControllerInterface';
+import type { Goal } from '../types/Goal';
+import MiniGameController from '../modes/MiniGameController';
 
 type TickData = {
   canvas: HTMLCanvasElement;
@@ -39,7 +40,9 @@ type TickData = {
 // Helper function to check if any eyes are detected from multiple cameras
 function areEyesDetected(detections: Map<string, DetectionResult>): boolean {
   return Array.from(detections.values()).some(
-    detection => detection.sample != null && (detection.sample.leftEye != null || detection.sample.rightEye != null)
+    detection =>
+      detection.sample != null &&
+      (detection.sample.leftEye != null || detection.sample.rightEye != null)
   );
 }
 
@@ -48,34 +51,46 @@ function onGameTick(data: TickData) {
   return data.gameMode.process(data);
 }
 
+type UsersWithHelper = UUIDed[] & { byId: (id: string) => UUIDed | undefined };
+
 type AppSettings = {
-  mode: string,
-  setMode: (mode: string) => void,
-  userId: string,
-  monitorId: string,
-  activeUploads: number,
-  meanUploadDuration: number,
-  selectedCameras: CameraEntity[], // Memoized selected cameras from Redux
-  sortedDeviceIds: string[], // Sorted device IDs of selected cameras
-  currentUser?: any, // Current user object
-  users?: any[], // Users array
-  goalSettings: any, // Goal settings from Redux
+  mode: string;
+  setMode: (mode: string) => void;
+  userId: string;
+  monitorId: string;
+  activeUploads: number;
+  meanUploadDuration: number;
+  selectedCameras: CameraEntity[]; // Memoized selected cameras from Redux
+  sortedDeviceIds: string[]; // Sorted device IDs of selected cameras
+  currentUser?: UUIDed; // Current user object
+  users: UsersWithHelper; // Users array with byId helper
+  goalSettings: Goal; // Goal settings from Redux
 };
 
-function AppComponent(
-  { mode, setMode, userId, monitorId, activeUploads, meanUploadDuration, selectedCameras, sortedDeviceIds, goalSettings }: AppSettings
-) {
+function AppComponent({
+  mode,
+  setMode,
+  userId,
+  monitorId,
+  activeUploads,
+  meanUploadDuration,
+  selectedCameras,
+  sortedDeviceIds,
+  goalSettings,
+}: AppSettings) {
   const { t } = useTranslation();
 
   // Create menu controller with current goal settings
-  const menuController = React.useMemo(
-    () => new MiniGameController(goalSettings),
-    [goalSettings]
-  );
+  const menuController = React.useMemo(() => new MiniGameController(goalSettings), [goalSettings]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionsByCamera = useRef<Map<string, DetectionResult>>(new Map());
   const goalPosition = useRef<Position | null>(null);
-  const prevViewportRef = useRef<{ width: number; height: number; left: number; top: number } | null>(null);
+  const prevViewportRef = useRef<{
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  } | null>(null);
   const collectedSampleCountsRef = useRef<Record<string, number>>({});
   const tickStateRef = useRef({ userId, activeUploads, meanUploadDuration, screenId: '' });
   const [gameMode, setGameMode] = React.useState<AppMode | null>(null);
@@ -84,15 +99,13 @@ function AppComponent(
   const [score, setScore] = React.useState<number | null>(null);
   const [workerStats, setWorkerStats] = React.useState<AggregatedStats | null>(null);
 
-  const [screenId, setScreenId] = React.useState<string>("");
+  const [screenId, setScreenId] = React.useState<string>('');
 
-  const onDetect = useCallback(
-    function (frame: DetectionResult) {
-      // Store detection result for this camera (including frames with null sample)
-      // Null sample indicates face detected but no eyes - treat as eyes not detected
-      detectionsByCamera.current.set(frame.cameraId, frame);
-    }, []
-  );
+  const onDetect = useCallback(function (frame: DetectionResult) {
+    // Store detection result for this camera (including frames with null sample)
+    // Null sample indicates face detected but no eyes - treat as eyes not detected
+    detectionsByCamera.current.set(frame.cameraId, frame);
+  }, []);
 
   // Update tick state ref when any tick-related prop changes
   useEffect(() => {
@@ -149,23 +162,23 @@ function AppComponent(
       }
 
       if (gameMode) {
-        gameMode.onKeyDown(event as any);
+        gameMode.onKeyDown(event.nativeEvent);
       }
-    }
+    };
   }
 
   const onTick = useCallback(
     (data: TickData): Position | null => {
       switch (mode) {
-        case "menu":
+        case 'menu':
           return onMenuTick(data);
-        case "game":
+        case 'game':
           canvasRef.current?.focus();
           return onGameTick(data);
-        case "intro":
+        case 'intro':
           return null;
         default:
-          throw new Error("Unknown mode: " + mode);
+          throw new Error('Unknown mode: ' + mode);
       }
     },
     [mode]
@@ -185,7 +198,8 @@ function AppComponent(
       };
 
       // Only hash if viewport dimensions changed (avoid unnecessary hashing every frame)
-      const viewportChanged = !prevViewportRef.current ||
+      const viewportChanged =
+        !prevViewportRef.current ||
         prevViewportRef.current.width !== viewport.width ||
         prevViewportRef.current.height !== viewport.height ||
         prevViewportRef.current.left !== viewport.left ||
@@ -214,13 +228,15 @@ function AppComponent(
     if (!canvasElement) return;
 
     // Prepare canvas
-    if (canvasElement.width !== canvasElement.clientWidth ||
-        canvasElement.height !== canvasElement.clientHeight) {
+    if (
+      canvasElement.width !== canvasElement.clientWidth ||
+      canvasElement.height !== canvasElement.clientHeight
+    ) {
       canvasElement.width = canvasElement.clientWidth;
       canvasElement.height = canvasElement.clientHeight;
     }
 
-    const canvasCtx = canvasElement.getContext("2d");
+    const canvasCtx = canvasElement.getContext('2d');
     if (!canvasCtx) return;
 
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -274,7 +290,9 @@ function AppComponent(
     };
     animationFrameId.current = requestAnimationFrame(frameLoop);
 
-    return () => { cancelAnimationFrame(animationFrameId.current); };
+    return () => {
+      cancelAnimationFrame(animationFrameId.current);
+    };
   }, [doTick]);
 
   // Track eye detection from detection results
@@ -300,7 +318,7 @@ function AppComponent(
 
   useEffect(() => {
     if (gameMode) {
-      setMode("game");
+      setMode('game');
     }
   }, [gameMode, setMode]);
 
@@ -326,15 +344,17 @@ function AppComponent(
     content = (
       <div id="UI">
         <div className="UI-wrapper">
-          {(0 < activeUploads) ? (
+          {0 < activeUploads ? (
             <div className="w-100 mx-auto text-center error-message-red">
-              {t('notifications.activeUploads', { count: activeUploads })}<br />
+              {t('notifications.activeUploads', { count: activeUploads })}
+              <br />
               {t('notifications.waitUploads')}
             </div>
           ) : null}
           {eyesVisible ? null : (
             <div className="w-100 mx-auto text-center error-message-red">
-              {t('notifications.webcamProblem')}<br />
+              {t('notifications.webcamProblem')}
+              <br />
               {t('notifications.eyesNotDetected')}
             </div>
           )}
@@ -346,9 +366,11 @@ function AppComponent(
           <UI
             onStart={startGame}
             canStart={canStart}
-            goFullscreen={() => toggleFullscreen(
-              document.getElementById("root") ?? document.body // app root element
-            )}
+            goFullscreen={() =>
+              toggleFullscreen(
+                document.getElementById('root') ?? document.body // app root element
+              )
+            }
             screenId={screenId}
           />
         </div>
@@ -371,9 +393,14 @@ function AppComponent(
         accept={gameMode?.accept() ?? false}
         sendingFPS={mode === 'game' ? 5 : -1}
       />
-      <canvas tabIndex={0} ref={canvasRef} id="canvas" onKeyDown={onKeyDown(() => {
-        setMode('menu');
-      })} />
+      <canvas
+        tabIndex={0}
+        ref={canvasRef}
+        id="canvas"
+        onKeyDown={onKeyDown(() => {
+          setMode('menu');
+        })}
+      />
     </>
   );
 }

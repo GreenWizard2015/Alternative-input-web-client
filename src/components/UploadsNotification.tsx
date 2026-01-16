@@ -4,7 +4,11 @@ import i18n from '../i18n';
 import { connect } from 'react-redux';
 import { RootState } from '../store';
 
-function UploadsNotification({ activeUploads }) {
+type Props = {
+  activeUploads: number;
+};
+
+function UploadsNotification({ activeUploads }: Props) {
   // show confirmation dialog before leaving the page if there are active uploads
   const activeUploadsRef = useRef(activeUploads);
   useEffect(() => {
@@ -12,11 +16,11 @@ function UploadsNotification({ activeUploads }) {
   }, [activeUploads]);
 
   useEffect(() => {
-    function handleBeforeUnload(event) {
+    function handleBeforeUnload(event: BeforeUnloadEvent): void {
       if (activeUploadsRef.current > 0) {
         const { t } = i18n;
         const answer = window.confirm(
-          t('notifications.leaveWarning', { count: activeUploadsRef.current }),
+          t('notifications.leaveWarning', { count: activeUploadsRef.current })
         );
 
         if (!answer) {
@@ -38,5 +42,5 @@ export default connect(
   (state: RootState) => ({
     activeUploads: state.App.activeUploads,
   }),
-  {},
+  {}
 )(UploadsNotification);

@@ -74,10 +74,14 @@ export class Sample {
     // Validate goal position if provided (inclusive bounds)
     if (data.goal) {
       if (!(Sample.GOAL_MIN <= data.goal.x && data.goal.x <= Sample.GOAL_MAX)) {
-        throw new Error(`Invalid goal.x: ${data.goal.x} (must be in range [${Sample.GOAL_MIN}, ${Sample.GOAL_MAX}])`);
+        throw new Error(
+          `Invalid goal.x: ${data.goal.x} (must be in range [${Sample.GOAL_MIN}, ${Sample.GOAL_MAX}])`
+        );
       }
       if (!(Sample.GOAL_MIN <= data.goal.y && data.goal.y <= Sample.GOAL_MAX)) {
-        throw new Error(`Invalid goal.y: ${data.goal.y} (must be in range [${Sample.GOAL_MIN}, ${Sample.GOAL_MAX}])`);
+        throw new Error(
+          `Invalid goal.y: ${data.goal.y} (must be in range [${Sample.GOAL_MIN}, ${Sample.GOAL_MAX}])`
+        );
       }
     }
 
@@ -121,11 +125,11 @@ export const EYE_SIZE = 48;
  */
 export function sampleSize(): number {
   return (
-    8 // time: uint64 milliseconds since Unix epoch
-    + EYE_SIZE * EYE_SIZE * 1 // leftEye: 48x48 grayscale pixels (uint8)
-    + EYE_SIZE * EYE_SIZE * 1 // rightEye: 48x48 grayscale pixels (uint8)
-    + 4 * 2 * 478 // points: 478 face landmarks, x,y coordinates (float32 each)
-    + 4 // goal.x: target position x (float32, normalized)
-    + 4 // goal.y: target position y (float32, normalized)
+    8 + // time: uint64 milliseconds since Unix epoch
+    EYE_SIZE * EYE_SIZE * 1 + // leftEye: 48x48 grayscale pixels (uint8)
+    EYE_SIZE * EYE_SIZE * 1 + // rightEye: 48x48 grayscale pixels (uint8)
+    4 * 2 * 478 + // points: 478 face landmarks, x,y coordinates (float32 each)
+    4 + // goal.x: target position x (float32, normalized)
+    4 // goal.y: target position y (float32, normalized)
   );
 }

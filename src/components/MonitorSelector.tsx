@@ -26,13 +26,13 @@ function MonitorSelector({
     <BaseSelector<UUIDed>
       selectedId={monitorId}
       items={monitors}
-      onSelect={(monitor) => doSetMonitor(monitor ? monitor.name : null)}
+      onSelect={monitor => doSetMonitor(monitor?.name || null)}
       onAdd={onAdd}
       onRemove={() => doRemoveMonitor({ uuid: monitorId })}
       onRecreate={() => doRecreateMonitor({ uuid: monitorId })}
       labelKey="menu.monitor"
-      renderItemLabel={(monitor) => `${monitor.name}`}
-      canRemove={(monitor) => monitor.name !== 'main'}
+      renderItemLabel={monitor => `${monitor.name}`}
+      canRemove={monitor => monitor.name !== 'main'}
       confirmRemoveKey="dialogs.confirmRemoveMonitor"
       confirmRecreateKey="dialogs.confirmRecreateMonitor"
     />

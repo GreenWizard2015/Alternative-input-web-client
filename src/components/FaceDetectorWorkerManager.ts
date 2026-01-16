@@ -15,12 +15,12 @@
 
 import React from 'react';
 
-// @ts-ignore - worker-loader transforms this into a Worker constructor
-import FaceDetectorWorkerModule from './FaceDetector.worker.ts';
+import FaceDetectorWorkerModule from './FaceDetector.worker';
 import { DetectionResult } from './FaceDetector';
-import { DEFAULT_SETTINGS } from '../utils/MP';
+import { DEFAULT_SETTINGS } from '../utils/mediaPipe';
 import { FpsData } from './FaceDetectorHelpers.js';
 import type { CaptureRateController } from './CameraFrameCaptureController';
+import type { Position, Sample } from '../shared/Sample';
 
 // ============================================================================
 // Type Definitions
@@ -43,8 +43,8 @@ export interface ManagerConfig extends Omit<Omit<WorkerConfig, 'cameraId'>, 'pla
 
 export interface WorkerStats {
   cameraId: string;
-  processingFps: number;           // Detection/processing FPS from worker
-  inputFps: number;                // Input/capture FPS from camera stream
+  processingFps: number; // Detection/processing FPS from worker
+  inputFps: number; // Input/capture FPS from camera stream
   samplesTotal: number;
 }
 
@@ -61,7 +61,22 @@ interface CameraState {
 // FaceDetectorWorkerManager
 // ============================================================================
 
-type ManagerMessageHandler = (this: FaceDetectorWorkerManager, cameraId: string, data: any) => void;
+type WorkerMessageData = {
+  type: string;
+  sample?: Sample | null;
+  serializedBuffer?: ArrayBuffer;
+  userId?: string;
+  placeId?: string;
+  monitorId?: string;
+  count?: number;
+  stats?: WorkerStats;
+};
+
+type ManagerMessageHandler = (
+  this: FaceDetectorWorkerManager,
+  cameraId: string,
+  data: WorkerMessageData
+) => void;
 
 // EMA smoothing for processing FPS
 const SMOOTHING_FACTOR = 0.1;
@@ -70,7 +85,7 @@ const SMOOTHING_FACTOR = 0.1;
 export const HEADROOM_FACTOR = 1.1; // Multiply interval by 1.1 (capture at ~91% of avg processing)
 
 export class FaceDetectorWorkerManager {
-  private cameras: Map<string, CameraState> = new Map(); // All per-camera state grouped by cameraId
+  _cameras: Map<string, CameraState> = new Map(); // All per-camera state grouped by cameraId
   private config: ManagerConfig;
   private uploadEndpoint: string;
   private dataWorker: Worker | null = null;
@@ -81,10 +96,7 @@ export class FaceDetectorWorkerManager {
   onStatsUpdate: ((stats: AggregatedStats) => void) | null = null;
   onError: ((error: string) => void) | null = null;
 
-  constructor(
-    config: ManagerConfig,
-    uploadEndpoint: string = '/handle_upload.php'
-  ) {
+  constructor(config: ManagerConfig, uploadEndpoint: string = '/handle_upload.php') {
     this.config = { ...config };
     this.uploadEndpoint = uploadEndpoint;
   }
@@ -101,8 +113,9 @@ export class FaceDetectorWorkerManager {
    */
   addCamera(cameraId: string): Worker {
     // Don't add duplicate cameras
-    if (this.cameras.has(cameraId)) {
-      return this.cameras.get(cameraId)!.worker;
+    const existingState = this._cameras.get(cameraId);
+    if (existingState) {
+      return existingState.worker;
     }
 
     // Create worker instance
@@ -111,10 +124,10 @@ export class FaceDetectorWorkerManager {
       worker,
       stats: null,
       smoothedFps: 0,
-      controller: null
+      controller: null,
     };
 
-    this.cameras.set(cameraId, state);
+    this._cameras.set(cameraId, state);
 
     // Setup message handler
     worker.onmessage = (event: MessageEvent) => {
@@ -125,7 +138,7 @@ export class FaceDetectorWorkerManager {
     worker.postMessage({
       type: 'init',
       id: cameraId,
-      config: { ...this.config, cameraId }
+      config: { ...this.config, cameraId },
     });
 
     return worker;
@@ -135,12 +148,12 @@ export class FaceDetectorWorkerManager {
    * Remove a camera worker
    */
   removeCamera(cameraId: string): void {
-    const state = this.cameras.get(cameraId);
+    const state = this._cameras.get(cameraId);
     if (state) {
       state.worker.postMessage({ type: 'stop' });
       state.worker.terminate();
       state.controller?.cleanup();
-      this.cameras.delete(cameraId);
+      this._cameras.delete(cameraId);
     }
   }
 
@@ -151,9 +164,9 @@ export class FaceDetectorWorkerManager {
     cameraId: string,
     frame: ImageBitmap | VideoFrame,
     time: number,
-    goal: any
+    goal: Position | null
   ): void {
-    const state = this.cameras.get(cameraId);
+    const state = this._cameras.get(cameraId);
     if (!state) {
       console.warn(`Camera ${cameraId} not found`);
       return;
@@ -164,7 +177,7 @@ export class FaceDetectorWorkerManager {
         type: 'frame',
         frame,
         time,
-        goal
+        goal,
       },
       [frame] // Transfer VideoFrame ownership
     );
@@ -177,10 +190,10 @@ export class FaceDetectorWorkerManager {
     this.config = { ...this.config, ...partial };
 
     // Broadcast to all workers
-    for (const state of this.cameras.values()) {
+    for (const state of this._cameras.values()) {
       state.worker.postMessage({
         type: 'updateConfig',
-        partial
+        partial,
       });
     }
   }
@@ -193,18 +206,18 @@ export class FaceDetectorWorkerManager {
   updateCameraConfigs(cameraConfigMap: Record<string, { placeId: string }>): void {
     // Send per-camera config updates to each camera state
     for (const [cameraId, cameraConfig] of Object.entries(cameraConfigMap)) {
-      const state = this.cameras.get(cameraId);
+      const state = this._cameras.get(cameraId);
       if (state) {
         state.worker.postMessage({
           type: 'updateConfig',
-          partial: { placeId: cameraConfig.placeId }
+          partial: { placeId: cameraConfig.placeId },
         });
       }
     }
 
     // Cleanup: Remove cameras no longer in the config
     const configuredCameras = new Set(Object.keys(cameraConfigMap));
-    for (const cameraId of this.cameras.keys()) {
+    for (const cameraId of this._cameras.keys()) {
       if (!configuredCameras.has(cameraId)) {
         console.log('[FaceDetectorWorkerManager] Removing orphaned camera:', cameraId);
         this.removeCamera(cameraId);
@@ -227,7 +240,7 @@ export class FaceDetectorWorkerManager {
   setCaptureControllers(controllers: Map<string, CaptureRateController>): void {
     // Assign each controller to its corresponding camera state
     for (const [cameraId, controller] of controllers) {
-      const state = this.cameras.get(cameraId);
+      const state = this._cameras.get(cameraId);
       if (state) {
         state.controller = controller;
       }
@@ -239,20 +252,22 @@ export class FaceDetectorWorkerManager {
    * Formula: targetInterval = (1000 / avgProcessingFps) * HEADROOM_FACTOR
    */
   private updateCaptureRates(): void {
-    if (this.cameras.size === 0) return;
+    if (this._cameras.size === 0) return;
 
     const targetFps = this.getTargetFps() * HEADROOM_FACTOR;
 
     // Guard against invalid FPS values that would result in invalid intervals
     if (targetFps === 0 || !isFinite(1000 / targetFps)) {
-      console.warn('[FaceDetectorWorkerManager] Skipping capture rate update: invalid FPS', { targetFps });
+      console.warn('[FaceDetectorWorkerManager] Skipping capture rate update: invalid FPS', {
+        targetFps,
+      });
       return;
     }
 
     // Calculate target interval with headroom factor
     const targetInterval = 1000 / targetFps;
 
-    for (const state of this.cameras.values()) {
+    for (const state of this._cameras.values()) {
       if (state.controller) {
         state.controller.updateRate(targetInterval);
       }
@@ -282,7 +297,7 @@ export class FaceDetectorWorkerManager {
    * Get current camera IDs (for cleanup and monitoring)
    */
   getWorkerIds(): string[] {
-    return Array.from(this.cameras.keys());
+    return Array.from(this._cameras.keys());
   }
 
   /**
@@ -293,7 +308,7 @@ export class FaceDetectorWorkerManager {
   getStats(): AggregatedStats {
     const byCamera = new Map<string, WorkerStats>();
 
-    for (const [cameraId, state] of this.cameras) {
+    for (const [cameraId, state] of this._cameras) {
       if (state.stats) {
         // Create copy instead of returning reference to prevent state mutations
         // fpsRef.current is always set when used in production
@@ -303,7 +318,7 @@ export class FaceDetectorWorkerManager {
           cameraId: state.stats.cameraId,
           processingFps: state.stats.processingFps,
           inputFps,
-          samplesTotal: state.stats.samplesTotal
+          samplesTotal: state.stats.samplesTotal,
         };
 
         byCamera.set(cameraId, statsCopy);
@@ -311,6 +326,14 @@ export class FaceDetectorWorkerManager {
     }
 
     return byCamera;
+  }
+
+  /**
+   * Get camera state for testing/debugging
+   * Exposed for test access without type casting hacks
+   */
+  getCameraState(cameraId: string): CameraState | undefined {
+    return this._cameras.get(cameraId);
   }
 
   /**
@@ -322,7 +345,7 @@ export class FaceDetectorWorkerManager {
 
     let minFps = Infinity;
     for (const [cameraId, workerStats] of stats) {
-      const state = this.cameras.get(cameraId);
+      const state = this._cameras.get(cameraId);
       if (!state) continue;
 
       const rawFps = workerStats.processingFps;
@@ -333,14 +356,13 @@ export class FaceDetectorWorkerManager {
     return minFps === Infinity ? 0 : minFps;
   }
 
-
   /**
    * Terminate all cameras and cleanup
    */
   terminate(): void {
     // Use removeCamera() to ensure complete cleanup of all resources:
     // workers, controllers, stats, and smoothed FPS data
-    const cameraIds = Array.from(this.cameras.keys());
+    const cameraIds = Array.from(this._cameras.keys());
     for (const cameraId of cameraIds) {
       this.removeCamera(cameraId);
     }
@@ -382,18 +404,21 @@ export class FaceDetectorWorkerManager {
    */
   private messageHandlers = new Map<string, ManagerMessageHandler>(
     Object.entries({
-      detected: function(cameraId: string, data: any) {
-        const { sample } = data;
+      detected: function (cameraId: string, data: WorkerMessageData) {
+        const sample = data.sample;
         if (this.onDetect && sample !== null) {
           this.onDetect({
             cameraId,
             sample,
-            settings: DEFAULT_SETTINGS
+            settings: DEFAULT_SETTINGS,
           });
         }
       },
-      sendToDataWorker: function(_cameraId: string, data: any) {
-        const { serializedBuffer, userId, placeId, count } = data;
+      sendToDataWorker: function (_cameraId: string, data: WorkerMessageData) {
+        const serializedBuffer = data.serializedBuffer;
+        const userId = data.userId;
+        const placeId = data.placeId;
+        const count = data.count;
 
         if (!this.dataWorker) {
           throw new Error('Data worker not set - cannot send samples to data worker');
@@ -401,7 +426,9 @@ export class FaceDetectorWorkerManager {
 
         // Validate required fields for upload
         if (!(serializedBuffer instanceof ArrayBuffer)) {
-          throw new Error(`Invalid serializedBuffer: expected ArrayBuffer, got ${typeof serializedBuffer}`);
+          throw new Error(
+            `Invalid serializedBuffer: expected ArrayBuffer, got ${typeof serializedBuffer}`
+          );
         }
         if (!userId || typeof userId !== 'string') {
           throw new Error('Invalid userId in message');
@@ -413,17 +440,20 @@ export class FaceDetectorWorkerManager {
           throw new Error('Invalid count in message');
         }
 
-        this.dataWorker.postMessage({
-          samples: serializedBuffer,
-          userId,
-          placeId,
-          endpoint: this.uploadEndpoint,
-          count
-        }, [serializedBuffer]); // Transfer ownership
+        this.dataWorker.postMessage(
+          {
+            samples: serializedBuffer,
+            userId,
+            placeId,
+            endpoint: this.uploadEndpoint,
+            count,
+          },
+          [serializedBuffer]
+        ); // Transfer ownership
       },
-      stats: function(cameraId: string, data: any) {
-        const { stats } = data;
-        const state = this.cameras.get(cameraId);
+      stats: function (cameraId: string, data: WorkerMessageData) {
+        const stats = data.stats;
+        const state = this._cameras.get(cameraId);
         if (state && stats && typeof stats === 'object') {
           state.stats = stats;
           // Report aggregated stats
@@ -433,19 +463,19 @@ export class FaceDetectorWorkerManager {
           this.updateCaptureRates();
         }
       },
-      log: function(cameraId: string, data: any) {
-        const { level, args } = data;
-        const message = `[Worker ${cameraId}] ${args?.join(' ') || ''}`;
-        if (level === 'error') {
+      log: function (cameraId: string, data: WorkerMessageData) {
+        const logData = data as WorkerMessageData & { level?: string; args?: string[] };
+        const message = `[Worker ${cameraId}] ${logData.args?.join(' ') || ''}`;
+        if (logData.level === 'error') {
           console.error(message);
         } else {
           console.log(message);
         }
       },
-      error: function(cameraId: string, data: any) {
-        const { error } = data;
-        this.onError?.(`Worker error from ${cameraId}: ${String(error)}`);
-      }
+      error: function (cameraId: string, data: WorkerMessageData) {
+        const errorData = data as WorkerMessageData & { error?: unknown };
+        this.onError?.(`Worker error from ${cameraId}: ${String(errorData.error)}`);
+      },
     } as Record<string, ManagerMessageHandler>)
   );
 }

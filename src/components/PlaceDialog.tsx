@@ -14,16 +14,19 @@ export default function PlaceDialog({
   tempName,
   setTempName,
   onConfirm,
-  onCancel
+  onCancel,
 }: PlaceDialogProps) {
-  const fields = useMemo(() => [
-    {
-      key: 'name',
-      label: 'dialogs.enterPlaceName',
-      value: tempName,
-      onChange: setTempName,
-    },
-  ], [tempName, setTempName]);
+  const fields = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'dialogs.enterPlaceName',
+        value: tempName,
+        onChange: setTempName,
+      },
+    ],
+    [tempName, setTempName]
+  );
 
   const handleConfirm = (values: { name: string }) => {
     // Add camera prefix to place name
@@ -31,11 +34,5 @@ export default function PlaceDialog({
     onConfirm(prefixedName);
   };
 
-  return (
-    <GenericInputDialog
-      fields={fields}
-      onConfirm={handleConfirm}
-      onCancel={onCancel}
-    />
-  );
+  return <GenericInputDialog fields={fields} onConfirm={handleConfirm} onCancel={onCancel} />;
 }

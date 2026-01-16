@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
 import UserSelector from './UserSelector';
 import MonitorSelector from './MonitorSelector';
 import WebcamSelector from './WebcamSelector';
 import { hash128Hex } from '../utils';
 import { selectMonitorId } from '../store/selectors';
-import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 
 type MainMenuProps = {
@@ -18,9 +18,10 @@ type MainMenuProps = {
   userId?: string;
   selectedCameras?: Array<{ deviceId: string; placeId?: string }>;
   screenId?: string;
+  monitorId: string;
 };
 
-export default function MainMenu({
+function MainMenu({
   canStart,
   onAddUser,
   onAddPlace,
@@ -30,10 +31,10 @@ export default function MainMenu({
   onGoalSettings,
   userId = '',
   selectedCameras = [],
-  screenId = ''
+  screenId = '',
+  monitorId,
 }: MainMenuProps) {
   const { t } = useTranslation();
-  const monitorId = useSelector((state: RootState) => selectMonitorId(state));
 
   // Build debug info
   const debugInfo = [
@@ -41,7 +42,7 @@ export default function MainMenu({
     `Monitor: ${monitorId}`,
     ...selectedCameras.map((cam, idx) => `Camera ${idx + 1}: ${hash128Hex(cam.deviceId)}`),
     ...selectedCameras.map((cam, idx) => `Place camera ${idx + 1}: ${cam.placeId || ''}`),
-    `Screen: ${screenId}`
+    `Screen: ${screenId}`,
   ].join('\n');
 
   return (
@@ -50,17 +51,24 @@ export default function MainMenu({
       <MonitorSelector onAdd={onAddMonitor} />
       <WebcamSelector onAddPlace={onAddPlace} />
 
-      <button
-        className='w100'
-        onClick={onStart}
-        disabled={!canStart}
-      >
+      <button className="w100" onClick={onStart} disabled={!canStart}>
         {t('common.start')}
       </button>
-      <button className='w100' onClick={onFullscreen}>{t('menu.fullscreen')}</button>
-      <button className='w100' onClick={onGoalSettings}>{t('dialogs.goalSettings')}</button>
+      <button className="w100" onClick={onFullscreen}>
+        {t('menu.fullscreen')}
+      </button>
+      <button className="w100" onClick={onGoalSettings}>
+        {t('dialogs.goalSettings')}
+      </button>
 
       <textarea className="debug-info-textarea" value={debugInfo} readOnly />
     </>
   );
 }
+
+export default connect(
+  (state: RootState) => ({
+    monitorId: selectMonitorId(state),
+  }),
+  {}
+)(MainMenu);

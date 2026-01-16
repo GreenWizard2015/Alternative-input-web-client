@@ -4,11 +4,11 @@
  */
 
 export type CameraEntity = {
-  deviceId: string;      // MediaDeviceInfo.deviceId (unique hardware ID)
-  label: string;         // Camera name/label for UI
-  isSelected: boolean;   // Is this camera currently selected?
-  placeId: string;       // Which place is assigned to this camera
-  placeName?: string;    // Cache of place name for display
+  deviceId: string; // MediaDeviceInfo.deviceId (unique hardware ID)
+  label: string; // Camera name/label for UI
+  isSelected: boolean; // Is this camera currently selected?
+  placeId: string; // Which place is assigned to this camera
+  placeName?: string; // Cache of place name for display
 };
 
 export type CameraConfig = {
@@ -18,10 +18,7 @@ export type CameraConfig = {
 /**
  * Add or update camera
  */
-export function setCameraEntity(
-  config: CameraConfig,
-  camera: CameraEntity
-): CameraConfig {
+export function setCameraEntity(config: CameraConfig, camera: CameraEntity): CameraConfig {
   return {
     ...config,
     [camera.deviceId]: camera,
@@ -53,10 +50,7 @@ export function setCameraPlace(
 /**
  * Toggle camera selection
  */
-export function toggleCamera(
-  config: CameraConfig,
-  deviceId: string
-): CameraConfig {
+export function toggleCamera(config: CameraConfig, deviceId: string): CameraConfig {
   const camera = config[deviceId];
   if (!camera) return config;
 
@@ -72,12 +66,10 @@ export function toggleCamera(
 /**
  * Remove camera
  */
-export function removeCamera(
-  config: CameraConfig,
-  deviceId: string
-): CameraConfig {
-  const { [deviceId]: _, ...rest } = config;
-  return rest;
+export function removeCamera(config: CameraConfig, deviceId: string): CameraConfig {
+  const newConfig = { ...config };
+  delete newConfig[deviceId];
+  return newConfig;
 }
 
 /**

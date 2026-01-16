@@ -1,6 +1,6 @@
-import { AppMode } from "./AppMode";
-import type { IGameController } from "../types/ControllerInterface";
-import type { Viewport } from "./AppMode";
+import { AppMode, type AppModeRenderData } from './AppMode';
+import type { IGameController } from '../types/ControllerInterface';
+import type { Viewport } from './AppMode';
 
 export class LookAtMode extends AppMode {
   _visibleT: number = 5.0;
@@ -37,13 +37,14 @@ export class LookAtMode extends AppMode {
     }
   }
 
-  onRender(data: any): void {
+  onRender(data: AppModeRenderData): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
     this.drawTarget({
-      viewport, canvasCtx,
-      state: this._active ? 'active' : 'inactive'
+      viewport,
+      canvasCtx,
+      state: this._active ? 'active' : 'inactive',
     });
   }
 

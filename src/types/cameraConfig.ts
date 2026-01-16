@@ -61,4 +61,3 @@ export function getUsedPlaceIds(cameraConfigMap: CameraConfigMap): Set<string> {
   });
   return placeIds;
 }
-

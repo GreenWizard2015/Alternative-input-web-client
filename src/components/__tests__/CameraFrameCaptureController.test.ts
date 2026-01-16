@@ -5,24 +5,36 @@
  * Verifies FPS control issues and fixes
  */
 
-import { CameraFrameCaptureController, CAPTURE_INTERVAL, MIN_CAPTURE_INTERVAL, MAX_CAPTURE_INTERVAL } from '../CameraFrameCaptureController';
+import {
+  CameraFrameCaptureController,
+  CAPTURE_INTERVAL,
+  MIN_CAPTURE_INTERVAL,
+  MAX_CAPTURE_INTERVAL,
+} from '../CameraFrameCaptureController';
+
+const emptyAsyncFn = async () => {
+  // Intentionally empty - used for testing capture function interface
+};
 
 describe('CameraFrameCaptureController', () => {
   let setIntervalSpy: jest.SpyInstance;
   let clearIntervalSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    setIntervalSpy = jest.spyOn(global, 'setInterval').mockReturnValue(123 as any);
+    jest.useFakeTimers();
+    setIntervalSpy = jest.spyOn(global, 'setInterval');
     clearIntervalSpy = jest.spyOn(global, 'clearInterval');
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
   describe('Initialization', () => {
     test('should create controller instance', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(controller).toBeDefined();
@@ -33,7 +45,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should set up interval on construction', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(global.setInterval).toHaveBeenCalled();
@@ -43,7 +55,7 @@ describe('CameraFrameCaptureController', () => {
 
   describe('Rate Updates', () => {
     test('should accept updateRate calls', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -54,7 +66,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle multiple rate updates', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -67,7 +79,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle edge case values', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -82,7 +94,7 @@ describe('CameraFrameCaptureController', () => {
 
   describe('Cleanup', () => {
     test('should cleanup without errors', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -91,7 +103,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should call clearInterval on cleanup', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       controller.cleanup();
@@ -99,7 +111,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle multiple cleanups', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -111,7 +123,7 @@ describe('CameraFrameCaptureController', () => {
 
   describe('ISSUE: updateRate() not actually updating interval', () => {
     test('CRITICAL: should update interval when updateRate() is called with significant change', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       // setInterval called once in constructor
@@ -134,7 +146,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should NOT update if change is less than 5% threshold', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
@@ -151,7 +163,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should clamp to MIN_CAPTURE_INTERVAL when requested interval is too small', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
@@ -167,7 +179,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should clamp to MAX_CAPTURE_INTERVAL when requested interval is too large', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
@@ -183,7 +195,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle negative intervals gracefully', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
@@ -199,16 +211,16 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should create new interval each time updateRate causes actual update', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
       clearIntervalSpy.mockClear();
 
       // Call updateRate 3 times with significant changes (>5%)
-      controller.updateRate(50);   // First update
-      controller.updateRate(60);   // Second update
-      controller.updateRate(40);   // Third update
+      controller.updateRate(50); // First update
+      controller.updateRate(60); // Second update
+      controller.updateRate(40); // Third update
 
       // Should have cleared 3 times and set 3 times
       expect(clearIntervalSpy).toHaveBeenCalledTimes(3);
@@ -218,7 +230,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should verify 5% threshold calculation', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       setIntervalSpy.mockClear();
@@ -241,7 +253,7 @@ describe('CameraFrameCaptureController', () => {
 
   describe('Realistic Scenarios', () => {
     test('should handle adaptive FPS changes', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -254,7 +266,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle rapid fluctuations', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {
@@ -268,7 +280,7 @@ describe('CameraFrameCaptureController', () => {
     });
 
     test('should handle continuous performance monitoring', () => {
-      const mockCapture = jest.fn(async () => {});
+      const mockCapture = jest.fn(emptyAsyncFn);
       const controller = new CameraFrameCaptureController(mockCapture);
 
       expect(() => {

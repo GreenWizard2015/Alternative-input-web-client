@@ -37,21 +37,24 @@ function WebcamSelector({
     // Mark as initialized IMMEDIATELY to prevent re-running in Strict Mode
     initializeRef.current = true;
 
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log('[WebcamSelector] Found video devices:', videoDevices.length);
-      setWebcams(videoDevices);
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then(devices => {
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        console.log('[WebcamSelector] Found video devices:', videoDevices.length);
+        setWebcams(videoDevices);
 
-      // Initialize cameras in Redux
-      doInitializeCameras(
-        videoDevices.map(d => ({
-          deviceId: d.deviceId,
-          label: d.label,
-        }))
-      );
-    }).catch((err: Error) => {
-      console.error('[WebcamSelector] Failed to enumerate devices:', err);
-    });
+        // Initialize cameras in Redux
+        doInitializeCameras(
+          videoDevices.map(d => ({
+            deviceId: d.deviceId,
+            label: d.label,
+          }))
+        );
+      })
+      .catch((err: Error) => {
+        console.error('[WebcamSelector] Failed to enumerate devices:', err);
+      });
   }, [doInitializeCameras]);
 
   // Auto-select first camera if none are selected
@@ -106,7 +109,10 @@ function WebcamSelector({
         )}
       </div>
       <div className="webcam-selector-stats">
-        {t('webcam.selected', { count: selectedCameras.length, plural: selectedCameras.length !== 1 ? 's' : '' })}
+        {t('webcam.selected', {
+          count: selectedCameras.length,
+          plural: selectedCameras.length !== 1 ? 's' : '',
+        })}
       </div>
     </div>
   );

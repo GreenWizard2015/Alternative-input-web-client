@@ -144,7 +144,12 @@ describe('GoalDialog - Manual Integration Scenarios', () => {
     });
 
     it('allows different arrow assignments', () => {
-      const symbols: [string, string, string, string] = ['UpArrow', 'DownArrow', 'LeftArrow', 'RightArrow'];
+      const symbols: [string, string, string, string] = [
+        'UpArrow',
+        'DownArrow',
+        'LeftArrow',
+        'RightArrow',
+      ];
       const duplicates = findDuplicateSymbolIndices(symbols);
 
       expect(duplicates).toHaveLength(0);

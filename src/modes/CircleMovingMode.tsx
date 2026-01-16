@@ -1,8 +1,8 @@
-import { add, addScalar, multiplyScalar, subtract } from "../utils/pointOperations";
-import { AppMode } from "./AppMode";
-import { calcDistance, uniform } from "./utils";
-import type { IGameController } from "../types/ControllerInterface";
-import type { Viewport } from "./AppMode";
+import { add, addScalar, multiplyScalar, subtract } from '../utils/pointOperations';
+import { AppMode, type AppModeRenderData } from './AppMode';
+import { calcDistance, uniform } from './utils';
+import type { IGameController } from '../types/ControllerInterface';
+import type { Viewport } from './AppMode';
 
 export class CircleMovingMode extends AppMode {
   _maxLevel: number = 25;
@@ -23,18 +23,18 @@ export class CircleMovingMode extends AppMode {
     if (this._active) {
       this._currentTime += deltaT;
     }
-    const dt = this._active ? Math.max(
-      0,
-      Math.min(1, this._currentTime / this._maxT)
-    ) : 0;
-    if ((1 === dt) && this._active) { // if we reached the end, randomly set level for next iteration
+    const dt = this._active ? Math.max(0, Math.min(1, this._currentTime / this._maxT)) : 0;
+    if (1 === dt && this._active) {
+      // if we reached the end, randomly set level for next iteration
       this._level = Math.floor(Math.random() * this._maxLevel);
       this._reset(false);
     }
-    if(0 === dt) { // if we are at the start
+    if (0 === dt) {
+      // if we are at the start
       this._pos = this._path[0];
     }
-    if ((0 < dt) && (dt < 1)) { // if we are in the middle
+    if (0 < dt && dt < 1) {
+      // if we are in the middle
       // find the segment
       let i = 0;
       while (i < this._distances.length - 1 && this._distances[i] < dt) {
@@ -53,14 +53,15 @@ export class CircleMovingMode extends AppMode {
     }
   }
 
-  onRender(data: any): void {
+  onRender(data: AppModeRenderData): void {
     super.onRender(data);
     const { viewport, canvasCtx } = data;
 
     // draw it with controller (respects user's goal settings)
     this.drawTarget({
-      viewport, canvasCtx,
-      state: this._controller.isActivated() ? 'active' : 'inactive'
+      viewport,
+      canvasCtx,
+      state: this._controller.isActivated() ? 'active' : 'inactive',
     });
   }
 
@@ -97,12 +98,10 @@ export class CircleMovingMode extends AppMode {
       { x: 1, y: 1 },
       { x: 1, y: -1 },
       { x: -1, y: -1 },
-      { x: -1, y: 1 }
+      { x: -1, y: 1 },
     ];
     const lvl = (this._maxLevel - this._level) / (2 * this._maxLevel);
-    this._path = path.map(
-      point => addScalar(multiplyScalar(point, lvl), 0.5)
-    );
+    this._path = path.map(point => addScalar(multiplyScalar(point, lvl), 0.5));
     // calculate an array of distances between points
     this._distances = calcDistance(this._path);
     const totalDistance = this._distances[this._distances.length - 1];

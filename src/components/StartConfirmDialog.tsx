@@ -1,25 +1,40 @@
 import { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { connect } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import type { AppMode } from '../modes/AppMode';
-import { selectUserId, selectMonitorId, selectSelectedCameras, selectUsers, selectMonitors } from '../store/selectors';
+import {
+  selectUserId,
+  selectMonitorId,
+  selectSelectedCameras,
+  selectUsers,
+  selectMonitors,
+} from '../store/selectors';
 import { closeDialog } from '../store/slices/App';
+import type { RootState } from '../store';
+import type { Dispatch } from 'redux';
 
 interface StartConfirmDialogProps {
   gameMode: AppMode;
   onConfirm: (mode: AppMode) => void;
+  userId: string;
+  monitorId: string;
+  selectedCameras: ReturnType<typeof selectSelectedCameras>;
+  users: ReturnType<typeof selectUsers>;
+  monitors: ReturnType<typeof selectMonitors>;
+  onCloseDialog: () => void;
 }
 
-export default function StartConfirmDialog({ gameMode, onConfirm }: StartConfirmDialogProps) {
+function StartConfirmDialog({
+  gameMode,
+  onConfirm,
+  userId,
+  monitorId,
+  selectedCameras,
+  users,
+  monitors,
+  onCloseDialog,
+}: StartConfirmDialogProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-
-  // Get data from Redux
-  const userId = useSelector(selectUserId);
-  const monitorId = useSelector(selectMonitorId);
-  const selectedCameras = useSelector(selectSelectedCameras);
-  const users = useSelector(selectUsers);
-  const monitors = useSelector(selectMonitors);
 
   // Lookup user and monitor names
   const userName = users.byId(userId)?.name || '';
@@ -29,12 +44,12 @@ export default function StartConfirmDialog({ gameMode, onConfirm }: StartConfirm
   // Redux actions
   const handleConfirm = useCallback(() => {
     onConfirm(gameMode);
-    dispatch(closeDialog());
-  }, [gameMode, onConfirm, dispatch]);
+    onCloseDialog();
+  }, [gameMode, onConfirm, onCloseDialog]);
 
   const handleCancel = useCallback(() => {
-    dispatch(closeDialog());
-  }, [dispatch]);
+    onCloseDialog();
+  }, [onCloseDialog]);
 
   return (
     <div className="dialog-overlay">
@@ -57,8 +72,8 @@ export default function StartConfirmDialog({ gameMode, onConfirm }: StartConfirm
             <div className="camera-list">
               {cameraLabels.length > 0 ? (
                 <ul>
-                  {cameraLabels.map((label, idx) => (
-                    <li key={idx}>{label}</li>
+                  {cameraLabels.map(label => (
+                    <li key={label}>{label}</li>
                   ))}
                 </ul>
               ) : (
@@ -80,3 +95,16 @@ export default function StartConfirmDialog({ gameMode, onConfirm }: StartConfirm
     </div>
   );
 }
+
+export default connect(
+  (state: RootState) => ({
+    userId: selectUserId(state),
+    monitorId: selectMonitorId(state),
+    selectedCameras: selectSelectedCameras(state),
+    users: selectUsers(state),
+    monitors: selectMonitors(state),
+  }),
+  (dispatch: Dispatch) => ({
+    onCloseDialog: () => dispatch(closeDialog()),
+  })
+)(StartConfirmDialog);

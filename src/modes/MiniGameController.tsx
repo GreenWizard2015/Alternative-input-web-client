@@ -1,7 +1,7 @@
-import type { IGameController } from "../types/ControllerInterface";
-import type { Goal, GoalColors } from "../types/Goal";
-import { DEFAULT_GOAL, renderSymbol, ARROW_DISPLAY } from "../types/Goal";
-import { drawArrow } from "../utils/target";
+import type { IGameController } from '../types/ControllerInterface';
+import type { Goal, GoalColors } from '../types/Goal';
+import { DEFAULT_GOAL, renderSymbol, ARROW_DISPLAY } from '../types/Goal';
+import { drawArrow } from '../utils/target';
 
 export default class MiniGameController implements IGameController {
   private _Signs: string[];
@@ -35,10 +35,10 @@ export default class MiniGameController implements IGameController {
     // Build arrow key mapping - maps arrow key codes to symbol indices
     this._arrowMapping = new Map<string, number>();
     const arrowCodeMap: Record<string, string> = {
-      'ArrowUp': 'UpArrow',
-      'ArrowDown': 'DownArrow',
-      'ArrowLeft': 'LeftArrow',
-      'ArrowRight': 'RightArrow',
+      ArrowUp: 'UpArrow',
+      ArrowDown: 'DownArrow',
+      ArrowLeft: 'LeftArrow',
+      ArrowRight: 'RightArrow',
     };
 
     goalSettings.symbols.forEach((symbol, index) => {
@@ -70,7 +70,7 @@ export default class MiniGameController implements IGameController {
 
     // Original character key handling
     const key = event.key.toLowerCase();
-    if(this._mapping.includes(key)) {
+    if (this._mapping.includes(key)) {
       const correct = this._mapping[this._currentSign] === key;
       if (correct) {
         this.reset();
@@ -106,7 +106,7 @@ export default class MiniGameController implements IGameController {
   }
 
   isActivated(): boolean {
-    const activated = this._isActivated && (this._elapsedSinceActivation < this._activeTime);
+    const activated = this._isActivated && this._elapsedSinceActivation < this._activeTime;
     return activated;
   }
 
@@ -136,7 +136,11 @@ export default class MiniGameController implements IGameController {
     return this._goalColors.text;
   }
 
-  drawTarget(canvasCtx: CanvasRenderingContext2D, position: { x: number; y: number }, state: 'active' | 'inactive' | 'paused' = 'active'): void {
+  drawTarget(
+    canvasCtx: CanvasRenderingContext2D,
+    position: { x: number; y: number },
+    state: 'active' | 'inactive' | 'paused' = 'active'
+  ): void {
     const height = canvasCtx.canvas.height;
     const width = canvasCtx.canvas.width;
 
@@ -185,18 +189,18 @@ export default class MiniGameController implements IGameController {
     if (ARROW_DISPLAY[this.sign() as keyof typeof ARROW_DISPLAY]) {
       // Draw arrow for arrow keys
       const directions: Record<string, number> = {
-        'UpArrow': -Math.PI / 2,
-        'RightArrow': 0,
-        'DownArrow': Math.PI / 2,
-        'LeftArrow': Math.PI
+        UpArrow: -Math.PI / 2,
+        RightArrow: 0,
+        DownArrow: Math.PI / 2,
+        LeftArrow: Math.PI,
       };
-      const position = {x, y};
+      const position = { x, y };
       drawArrow({
         position,
         canvasCtx,
         direction: directions[this.sign()] || 0,
         size: symbolSize,
-        color: this._goalColors.text
+        color: this._goalColors.text,
       });
     } else {
       // Draw text for other symbols

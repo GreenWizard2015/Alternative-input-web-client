@@ -11,7 +11,7 @@ export default function MonitorDialog({
   tempName,
   setTempName,
   onConfirm,
-  onCancel
+  onCancel,
 }: MonitorDialogProps) {
   return (
     <BaseDialog

@@ -11,7 +11,7 @@ export default function UserDialog({
   tempName,
   setTempName,
   onConfirm,
-  onCancel
+  onCancel,
 }: UserDialogProps) {
   return (
     <BaseDialog

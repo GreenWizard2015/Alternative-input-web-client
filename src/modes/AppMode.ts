@@ -1,13 +1,13 @@
-import i18n from "../i18n";
-import { grayscale2image } from "../utils/MP";
-import CBackground from "./CBackground";
-import CRandomIllumination from "./CRandomIllumination";
-import { DetectionResult } from "../components/FaceDetector";
-import type { Position } from "../shared/Sample";
-import type { FPSData } from "../types/fps";
-import type { IGameController } from "../types/ControllerInterface";
+import i18n from '../i18n';
+import { grayscale2image } from '../utils/mediaPipe';
+import CBackground from './CBackground';
+import CRandomIllumination from './CRandomIllumination';
+import { DetectionResult } from '../components/FaceDetector';
+import type { Position } from '../shared/Sample';
+import type { FPSData } from '../types/fps';
+import type { IGameController } from '../types/ControllerInterface';
 export type { FPSData };
-export type Viewport = { width: number, height: number }
+export type Viewport = { width: number; height: number };
 
 export type AppModeOverlayData = {
   canvasCtx: CanvasRenderingContext2D;
@@ -32,14 +32,15 @@ export type AppModeRenderData = {
   meanUploadDuration: number;
   eyesDetected: boolean;
   fps?: FPSData;
+  collectedSampleCounts?: Record<string, number>;
   detections: Map<string, DetectionResult>;
 };
 const TRANSITION_TIME = 100;
 
 function clamp(val: number, min: number, max: number) {
-  if(val < min) return min
-  if(val > max) return max
-  return val
+  if (val < min) return min;
+  if (val > max) return max;
+  return val;
 }
 
 const MAX_UPLOADS = 10;
@@ -102,16 +103,25 @@ export class AppMode {
     this._illumination.onRender(canvasCtx, viewport.width, viewport.height);
 
     // Draw metrics (FPS, eyes, goals) on top
-    const fps = (data as any).fps || {};
-    const collectedSampleCounts = (data as any).collectedSampleCounts || {};
+    const fps = data.fps || {};
+    const collectedSampleCounts = data.collectedSampleCounts || {};
     this.drawMetrics(canvasCtx, fps, collectedSampleCounts, detections);
   }
 
   onOverlay(data: AppModeOverlayData) {
-    const { canvasCtx, viewport, activeUploads, meanUploadDuration, fps = {}, collectedSampleCounts = {}, detections } = data;
+    const {
+      canvasCtx,
+      viewport,
+      activeUploads,
+      meanUploadDuration,
+      fps = {},
+      collectedSampleCounts = {},
+      detections,
+    } = data;
 
     const isOverflowed = MAX_UPLOADS < activeUploads;
-    if(this._overflowed && (0 === activeUploads)) { // Reset
+    if (this._overflowed && 0 === activeUploads) {
+      // Reset
       this._overflowed = false;
     }
 
@@ -120,18 +130,25 @@ export class AppMode {
       this._setPaused(true);
     }
 
-    if(this._overflowed) { // Show overlay when overflowed
+    if (this._overflowed) {
+      // Show overlay when overflowed
       canvasCtx.fillStyle = `rgba(0, 0, 0, 0.5)`;
       canvasCtx.fillRect(0, 0, viewport.width, viewport.height);
-      const estimatedTime = activeUploads * meanUploadDuration / 1000;
-      const minutes = Math.floor(estimatedTime / 60).toString().padStart(2, '0');
-      const seconds = Math.floor(estimatedTime % 60).toString().padStart(2, '0');
+      const estimatedTime = (activeUploads * meanUploadDuration) / 1000;
+      const minutes = Math.floor(estimatedTime / 60)
+        .toString()
+        .padStart(2, '0');
+      const seconds = Math.floor(estimatedTime % 60)
+        .toString()
+        .padStart(2, '0');
       const { t } = i18n;
       const text = t('canvas.uploadsInProgress', { count: activeUploads, minutes, seconds });
       this.drawText({
         text,
-        viewport, canvasCtx, color: 'white',
-        style: '16px Roboto'
+        viewport,
+        canvasCtx,
+        color: 'white',
+        style: '16px Roboto',
       });
       return;
     }
@@ -142,22 +159,28 @@ export class AppMode {
     const easedTransition = realTransition; // Maybe add some easing
 
     if (easedTransition > 0) {
-      canvasCtx.fillStyle = `rgba(0, 0, 0, ${0.5 * easedTransition})`
-      canvasCtx.fillRect(0, 0, viewport.width, viewport.height)
+      canvasCtx.fillStyle = `rgba(0, 0, 0, ${0.5 * easedTransition})`;
+      canvasCtx.fillRect(0, 0, viewport.width, viewport.height);
 
       // Show appropriate message based on why we're paused
       const { t } = i18n;
       const pauseText = t('canvas.paused');
       this.drawText({
-        text: pauseText, viewport, canvasCtx, color: 'white',
-        style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
+        text: pauseText,
+        viewport,
+        canvasCtx,
+        color: 'white',
+        style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto',
       });
     } else {
-      if(!this._eyesDetected) {
+      if (!this._eyesDetected) {
         const { t } = i18n;
         this.drawText({
-          text: t('canvas.eyesNotVisible'), viewport, canvasCtx, color: 'white',
-          style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto'
+          text: t('canvas.eyesNotVisible'),
+          viewport,
+          canvasCtx,
+          color: 'white',
+          style: (48 + (1 - easedTransition) * 12).toString() + 'px Roboto',
         });
       }
     }
@@ -182,7 +205,11 @@ export class AppMode {
     for (const [cameraId, fpsData] of Object.entries(fps)) {
       // cameraId is already normalized (hashed), don't hash again
       const collectedCount = collectedSampleCounts[cameraId] || 0;
-      const fpsText = t('canvas.fpsMetric', { index: cameraIndex, fps: fpsData.camera.toFixed(1), collected: collectedCount });
+      const fpsText = t('canvas.fpsMetric', {
+        index: cameraIndex,
+        fps: fpsData.camera.toFixed(1),
+        collected: collectedCount,
+      });
       canvasCtx.fillText(fpsText, 10, yOffset);
       yOffset += 18;
       cameraIndex++;
@@ -238,43 +265,52 @@ export class AppMode {
     return !this._paused && this._eyesDetected;
   }
 
-  static makeAbsolute({ position, viewport }: { position: Position, viewport: Viewport }) {
-    return { 
+  static makeAbsolute({ position, viewport }: { position: Position; viewport: Viewport }) {
+    return {
       x: position.x * viewport.width,
-      y: position.y * viewport.height
-    }
+      y: position.y * viewport.height,
+    };
   }
 
-  static makeRelative({ position, viewport }: { position: Position, viewport: Viewport }) {
+  static makeRelative({ position, viewport }: { position: Position; viewport: Viewport }) {
     return {
       x: position.x / viewport.width,
-      y: position.y / viewport.height
-    }
+      y: position.y / viewport.height,
+    };
   }
 
-  drawTarget(
-    { viewport, canvasCtx, state='active' }:
-    {
-      viewport: Viewport,
-      canvasCtx: CanvasRenderingContext2D,
-      state?: 'active' | 'inactive' | 'paused'
-    }
-  ) {
+  drawTarget({
+    viewport,
+    canvasCtx,
+    state = 'active',
+  }: {
+    viewport: Viewport;
+    canvasCtx: CanvasRenderingContext2D;
+    state?: 'active' | 'inactive' | 'paused';
+  }) {
     const absolutePosition = AppMode.makeAbsolute({ position: this._pos, viewport });
     // Delegate to controller for goal rendering with user's symbols and colors
     this._controller.drawTarget(canvasCtx, absolutePosition, state);
   }
 
-  drawText({ text, viewport, canvasCtx, color, style }: { text: string, viewport: Viewport, canvasCtx: CanvasRenderingContext2D, color?: string, style?:string }) {
+  drawText({
+    text,
+    viewport,
+    canvasCtx,
+    color,
+    style,
+  }: {
+    text: string;
+    viewport: Viewport;
+    canvasCtx: CanvasRenderingContext2D;
+    color?: string;
+    style?: string;
+  }) {
     canvasCtx.font = style || '48px Roboto';
     canvasCtx.fillStyle = color || 'red';
     canvasCtx.textBaseline = 'middle';
     const size = canvasCtx.measureText(text);
-    canvasCtx.fillText(
-      text,
-      (viewport.width - size.width) / 2,
-      (viewport.height) / 2
-    );
+    canvasCtx.fillText(text, (viewport.width - size.width) / 2, viewport.height / 2);
   }
 
   isPaused() {
@@ -286,13 +322,13 @@ export class AppMode {
   }
 
   getGoal() {
-    return {...this._pos};
+    return { ...this._pos };
   }
 
   getScore() {
     return null;
   }
-  
+
   onPause() {
     this._paused = true;
   }

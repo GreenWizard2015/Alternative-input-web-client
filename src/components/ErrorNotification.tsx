@@ -1,7 +1,6 @@
 // errorNotification component
 import { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { RootState } from '../store';
 
 interface ErrorMessage {
   message: string;
@@ -50,7 +49,4 @@ function ErrorNotification() {
   );
 }
 
-export default connect(
-  (state: RootState) => ({}),
-  {},
-)(ErrorNotification);
+export default connect(() => ({}), {})(ErrorNotification);

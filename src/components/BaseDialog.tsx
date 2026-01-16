@@ -27,7 +27,7 @@ export default function BaseDialog({
   return (
     <GenericInputDialog
       fields={fields}
-      onConfirm={(values) => {
+      onConfirm={values => {
         onConfirm(values.name);
       }}
       onCancel={onCancel}

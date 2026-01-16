@@ -8,7 +8,7 @@ import { hash128Hex } from '../utils';
 import { type Position } from '../shared/Sample';
 import {
   CameraFrameCaptureController,
-  type CaptureRateController
+  type CaptureRateController,
 } from './CameraFrameCaptureController';
 
 // ============================================================================
@@ -40,7 +40,7 @@ export const waitForVideoReady = async (
   video: HTMLVideoElement,
   timeout: number
 ): Promise<void> => {
-  return new Promise<void>((resolve) => {
+  return new Promise<void>(resolve => {
     let done = false;
     const timer = setInterval(() => {
       if (!done && video.readyState >= video.HAVE_ENOUGH_DATA) {
@@ -76,12 +76,12 @@ export const initializeStreams = async (
       manager.addCamera(normalizedCameraId);
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: cameraId } }
+        video: { deviceId: { exact: cameraId } },
       });
 
       streams.set(normalizedCameraId, stream);
       video.srcObject = stream;
-      await video.play().catch(() => {});
+      await video.play().catch(console.error);
       await waitForVideoReady(video, READINESS_TIMEOUT);
     } catch (error) {
       // Log stream initialization errors with context
@@ -145,7 +145,7 @@ export const useFpsTracking = (cameraIds: string[]) => {
     }
   }, [cameraIds]);
 
-  return {fpsRef, finalFpsRef};
+  return { fpsRef, finalFpsRef };
 };
 
 // ============================================================================

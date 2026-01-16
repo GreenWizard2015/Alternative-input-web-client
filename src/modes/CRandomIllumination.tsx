@@ -1,7 +1,7 @@
 import Spline from 'cubic-spline';
 import { calcDistance, clip, generatePoints, uniform } from './utils';
 
-type Point = { x: number, y: number };
+type Point = { x: number; y: number };
 
 class CIlluminationSource {
   radius: number;
@@ -30,9 +30,9 @@ class CIlluminationSource {
       const lastNPoints = this.points.slice(-N);
       points = [...lastNPoints, ...points];
     }
-    this.points = points = points.map(({ x, y }) => ({ 
-      x: clip(x, -0.5, 1.5), 
-      y: clip(y, -0.5, 1.5)
+    this.points = points = points.map(({ x, y }) => ({
+      x: clip(x, -0.5, 1.5),
+      y: clip(y, -0.5, 1.5),
     }));
     let distance = calcDistance(points);
     // I'm already prepended a zero
@@ -41,16 +41,22 @@ class CIlluminationSource {
     const T = fullDistance / speed;
     this.maxT = clip(T, 20, 40);
     distance = distance.map(dist => dist / fullDistance);
-    
-    const shift = extend ? distance[N - 1] : 0.0;    
+
+    const shift = extend ? distance[N - 1] : 0.0;
     const splines = {
-      x: new Spline(distance, points.map(point => point.x)),
-      y: new Spline(distance, points.map(point => point.y))
+      x: new Spline(
+        distance,
+        points.map(point => point.x)
+      ),
+      y: new Spline(
+        distance,
+        points.map(point => point.y)
+      ),
     };
     this.getPoint = t => ({
-        x: splines.x.at(t * (1 - shift) + shift),
-        y: splines.y.at(t * (1 - shift) + shift)
-    })
+      x: splines.x.at(t * (1 - shift) + shift),
+      y: splines.y.at(t * (1 - shift) + shift),
+    });
   }
 
   onTick(deltaT: number) {
@@ -95,7 +101,7 @@ class CRandomIllumination {
     this.sources.forEach(source => source.onRender(ctx, width, height));
   }
 
-  onEvent(event: KeyboardEvent) {
+  onEvent(_event: KeyboardEvent) {
     // No keyboard controls - always enabled
   }
 }

@@ -1,6 +1,6 @@
-import type { IGameController } from "../types/ControllerInterface";
-import type { Goal, GoalColors } from "../types/Goal";
-import { DEFAULT_GOAL } from "../types/Goal";
+import type { IGameController } from '../types/ControllerInterface';
+import type { Goal, GoalColors } from '../types/Goal';
+import { DEFAULT_GOAL } from '../types/Goal';
 
 export default class NullController implements IGameController {
   private _goalColors: GoalColors;
@@ -10,7 +10,7 @@ export default class NullController implements IGameController {
     this._goalColors = goalSettings.colors;
   }
 
-  onKeyDown(event: KeyboardEvent): void {
+  onKeyDown(_event: KeyboardEvent): void {
     // No-op
   }
 
@@ -34,7 +34,7 @@ export default class NullController implements IGameController {
     return true;
   }
 
-  doTick(deltaT: number): void {
+  doTick(_deltaT: number): void {
     // No-op for NullController - doesn't track time
   }
 
@@ -48,7 +48,11 @@ export default class NullController implements IGameController {
     return this._goalColors.text;
   }
 
-  drawTarget(canvasCtx: CanvasRenderingContext2D, position: { x: number; y: number }, state: 'active' | 'inactive' | 'paused' = 'active'): void {
+  drawTarget(
+    canvasCtx: CanvasRenderingContext2D,
+    position: { x: number; y: number },
+    state: 'active' | 'inactive' | 'paused' = 'active'
+  ): void {
     // Draw default goal for NullController with user's colors
     const style = this._goalColors[state];
 

@@ -27,12 +27,12 @@ function UserSelector({
       <BaseSelector<User>
         selectedId={userId}
         items={users}
-        onSelect={(user) => doSetUser(user ? user.name : null)}
+        onSelect={user => doSetUser(user?.name || null)}
         onAdd={onAdd}
         onRemove={() => doRemoveUser({ uuid: userId })}
         onRecreate={doRecreateUser}
         labelKey="menu.user"
-        renderItemLabel={(user) => `${user.name} (${user.samples} samples)`}
+        renderItemLabel={user => `${user.name} (${user.samples} samples)`}
         confirmRemoveKey="dialogs.confirmRemoveUser"
         confirmRecreateKey="dialogs.confirmRecreateUser"
         showRecreate={false}

@@ -3,10 +3,12 @@
  */
 
 import { Sample, sampleSize, EYE_SIZE } from '../Sample';
-import { Position } from '../Sample';
+import type { Position } from '../Sample';
+
+type SampleConstructorData = ConstructorParameters<typeof Sample>[0];
 
 describe('Sample Class', () => {
-  let sampleData: any;
+  let sampleData: SampleConstructorData;
 
   beforeEach(() => {
     sampleData = {
@@ -65,7 +67,7 @@ describe('sampleSize() utility', () => {
   test('returns correct size in bytes', () => {
     const size = sampleSize();
     // 8 (time) + 2304*2 (eyes) + 3824 (points) + 8 (goal)
-    const expected = 8 + (EYE_SIZE * EYE_SIZE * 2) + (4 * 2 * 478) + 8;
+    const expected = 8 + EYE_SIZE * EYE_SIZE * 2 + 4 * 2 * 478 + 8;
     expect(size).toBe(expected);
   });
 

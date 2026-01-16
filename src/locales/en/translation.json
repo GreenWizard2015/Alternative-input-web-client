@@ -77,14 +77,8 @@
     "circleMovingPurpose": "This mode intended to stabilize gaze predictions in motion.",
     "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: {{keys}}. If you press the correct key, the circle will turn red, and recordings will be saved.",
     "keyboardShortcuts": {
-      "lookAt": [
-        "Esc - return to main menu",
-        "P / Enter / Space - toggle pause"
-      ],
-      "spline": [
-        "Esc - return to main menu",
-        "P / Enter / Space - toggle pause"
-      ],
+      "lookAt": ["Esc - return to main menu", "P / Enter / Space - toggle pause"],
+      "spline": ["Esc - return to main menu", "P / Enter / Space - toggle pause"],
       "circleMoving": [
         "Numpad + - increase path radius",
         "Numpad - - decrease path radius",

@@ -19,7 +19,7 @@ export default function FPSDisplay({ fps }: FPSDisplayProps) {
               index,
               captureFps: stats.inputFps?.toFixed(2) || '0.00',
               processingFps: stats.processingFps?.toFixed(2) || '0.00',
-              samples: stats.samplesTotal > 0 ? ` [${stats.samplesTotal}]` : ''
+              samples: stats.samplesTotal > 0 ? ` [${stats.samplesTotal}]` : '',
             })}
           </span>
         </div>

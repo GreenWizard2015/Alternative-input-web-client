@@ -9,19 +9,21 @@ describe('serialize()', () => {
   let samples: Sample[];
 
   beforeEach(() => {
-    samples = Array.from({ length: 3 }, (_, i) =>
-      new Sample({
-        time: 1000 + i * 100,
-        leftEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(128 + i),
-        rightEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(100 + i),
-        points: new Float32Array(478 * 2).fill(0.5 + i * 0.1),
-        goal: { x: 0.1 + i * 0.01, y: -0.1 - i * 0.01 },
-        userId: 'user-1234567890123456789012345678901',
-        placeId: 'place-123456789012345678901234567890',
-        screenId: 'screen-12345678901234567890123456789',
-        cameraId: 'camera-12345678901234567890123456789',
-        monitorId: 'monitor-1234567890123456789012345678',
-      })
+    samples = Array.from(
+      { length: 3 },
+      (_, i) =>
+        new Sample({
+          time: 1000 + i * 100,
+          leftEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(128 + i),
+          rightEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(100 + i),
+          points: new Float32Array(478 * 2).fill(0.5 + i * 0.1),
+          goal: { x: 0.1 + i * 0.01, y: -0.1 - i * 0.01 },
+          userId: 'user-1234567890123456789012345678901',
+          placeId: 'place-123456789012345678901234567890',
+          screenId: 'screen-12345678901234567890123456789',
+          cameraId: 'camera-12345678901234567890123456789',
+          monitorId: 'monitor-1234567890123456789012345678',
+        })
     );
   });
 
@@ -73,19 +75,21 @@ describe('serialize()', () => {
   });
 
   test('serializes large batch', () => {
-    const largeBatch = Array.from({ length: 100 }, (_, i) =>
-      new Sample({
-        time: 1000 + i,
-        leftEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(128),
-        rightEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(100),
-        points: new Float32Array(478 * 2).fill(0.5),
-        goal: { x: 0.1, y: -0.1 },
-        userId: 'user-1234567890123456789012345678901',
-        placeId: 'place-123456789012345678901234567890',
-        screenId: 'screen-12345678901234567890123456789',
-        cameraId: 'camera-12345678901234567890123456789',
-        monitorId: 'monitor-1234567890123456789012345678',
-      })
+    const largeBatch = Array.from(
+      { length: 100 },
+      (_, i) =>
+        new Sample({
+          time: 1000 + i,
+          leftEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(128),
+          rightEye: new Uint8ClampedArray(EYE_SIZE * EYE_SIZE).fill(100),
+          points: new Float32Array(478 * 2).fill(0.5),
+          goal: { x: 0.1, y: -0.1 },
+          userId: 'user-1234567890123456789012345678901',
+          placeId: 'place-123456789012345678901234567890',
+          screenId: 'screen-12345678901234567890123456789',
+          cameraId: 'camera-12345678901234567890123456789',
+          monitorId: 'monitor-1234567890123456789012345678',
+        })
     );
     const buffer = serialize(largeBatch);
     expect(buffer.byteLength).toBeGreaterThan(0);
