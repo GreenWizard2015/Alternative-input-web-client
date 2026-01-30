@@ -4,6 +4,7 @@ import UserDialog from './UserDialog';
 import PlaceDialog from './PlaceDialog';
 import MonitorDialog from './MonitorDialog';
 import StartConfirmDialog from './StartConfirmDialog';
+import ControlsDialog from './ControlsDialog';
 import GoalDialog from './GoalDialog';
 import MainMenu from './MainMenu';
 import { selectDefaultValues, addPlace, setUser, addMonitor } from '../store/slices/UI';
@@ -54,6 +55,7 @@ function UI({
     isMonitorDialog,
     isStartDialog,
     isGameConfirmDialog,
+    isGameControlsDialog,
     isGoalDialog,
     pendingGameMode,
     onGameStartConfirm,
@@ -78,7 +80,19 @@ function UI({
       )}
 
       {isGameConfirmDialog && pendingGameMode && onGameStartConfirm && (
-        <StartConfirmDialog gameMode={pendingGameMode} onConfirm={onGameStartConfirm} />
+        <StartConfirmDialog gameMode={pendingGameMode} />
+      )}
+
+      {isGameControlsDialog && pendingGameMode && onGameStartConfirm && (
+        <ControlsDialog
+          gameMode={pendingGameMode}
+          onConfirm={() => {
+            // ULTRATHINK NOTE: This is where onConfirm finally gets called
+            // It was stored in hook when UIStart called openGameConfirmDialog
+            onGameStartConfirm(pendingGameMode);
+            closeDialog();
+          }}
+        />
       )}
 
       {isUserDialog && (

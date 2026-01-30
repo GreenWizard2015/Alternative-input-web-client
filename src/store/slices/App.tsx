@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { CameraConfig } from '../../types/camera';
+import type { AppMode } from '../../modes/AppMode';
 import { toJSON, fromJSON } from '../json';
 
 type EAppMode = 'menu' | 'game' | 'intro';
@@ -10,7 +11,10 @@ type DialogType =
   | 'START_DIALOG'
   | 'MONITOR_DIALOG'
   | 'GAME_CONFIRM_DIALOG'
-  | 'GOAL_DIALOG';
+  | 'GOAL_DIALOG'
+  | 'GAME_CONTROLS_DIALOG';
+
+type GameModeType = 'lookAt' | 'spline' | 'circleMoving';
 
 interface IScreen {
   left: number;
@@ -33,6 +37,10 @@ interface AppState {
   dialogType: DialogType;
   tempName: string;
   tempCameraId: string;
+
+  // Game mode state (ephemeral) - for controls dialog flow
+  gameMode: AppMode | null;
+  gameModeType: GameModeType | null;
 }
 
 const SMOOTHING_FACTOR = 0.9;
@@ -45,6 +53,8 @@ const initialState: AppState = {
   dialogType: 'IDLE',
   tempName: '',
   tempCameraId: '',
+  gameMode: null,
+  gameModeType: null,
 };
 
 interface IChangeActiveUploads {
@@ -190,10 +200,25 @@ export const AppSlice = createSlice({
       state.dialogType = 'GOAL_DIALOG';
     },
 
+    openGameControlsDialog: state => {
+      state.dialogType = 'GAME_CONTROLS_DIALOG';
+    },
+
+    setGameMode: (state, action: PayloadAction<AppMode>) => {
+      state.gameMode = action.payload;
+      // Derive mode type from gameMode for serialization safety
+      const modeName = action.payload.constructor.name;
+      if (modeName === 'LookAtMode') state.gameModeType = 'lookAt';
+      else if (modeName === 'SplineMode') state.gameModeType = 'spline';
+      else if (modeName === 'CircleMovingMode') state.gameModeType = 'circleMoving';
+    },
+
     closeDialog: state => {
       state.dialogType = 'IDLE';
       state.tempName = '';
       state.tempCameraId = '';
+      state.gameMode = null;
+      state.gameModeType = null;
     },
 
     setTempName: (state, action: PayloadAction<string>) => {
@@ -222,6 +247,8 @@ export const {
   openStartDialog,
   openGameConfirmDialog,
   openGoalDialog,
+  openGameControlsDialog,
+  setGameMode,
   closeDialog,
   setTempName,
   setTempCameraId,

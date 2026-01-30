@@ -8,6 +8,8 @@ import {
   openStartDialog as openStartDialogAction,
   openGameConfirmDialog as openGameConfirmDialogAction,
   openGoalDialog as openGoalDialogAction,
+  openGameControlsDialog as openGameControlsDialogAction,
+  setGameMode as setGameModeAction,
   closeDialog as closeDialogAction,
   setTempName as setTempNameAction,
   setTempCameraId as setTempCameraIdAction,
@@ -46,6 +48,7 @@ export function useDialogStateMachine({
   const isStartDialog = dialogType === 'START_DIALOG';
   const isGameConfirmDialog = dialogType === 'GAME_CONFIRM_DIALOG';
   const isGoalDialog = dialogType === 'GOAL_DIALOG';
+  const isGameControlsDialog = dialogType === 'GAME_CONTROLS_DIALOG';
 
   const openGameConfirmDialog = useCallback(
     (gameMode: AppMode, onConfirm: (mode: AppMode) => void) => {
@@ -67,6 +70,17 @@ export function useDialogStateMachine({
     setOnGameStartConfirm(null);
   }, [dispatch]);
 
+  const openGameControlsDialogCallback = useCallback(() => {
+    dispatch(openGameControlsDialogAction());
+  }, [dispatch]);
+
+  const setGameModeCallback = useCallback(
+    (mode: AppMode) => {
+      dispatch(setGameModeAction(mode));
+    },
+    [dispatch]
+  );
+
   return {
     // Dispatchers
     openUserDialog: () => dispatch(openUserDialogAction()),
@@ -75,6 +89,8 @@ export function useDialogStateMachine({
     openStartDialog: () => dispatch(openStartDialogAction()),
     openGameConfirmDialog,
     openGoalDialog: () => dispatch(openGoalDialogAction()),
+    openGameControlsDialog: openGameControlsDialogCallback,
+    setGameMode: setGameModeCallback,
     closeDialog,
     setTempName: (name: string) => dispatch(setTempNameAction(name)),
     setTempCameraId: (cameraId: string) => dispatch(setTempCameraIdAction(cameraId)),
@@ -86,6 +102,7 @@ export function useDialogStateMachine({
     isStartDialog,
     isGameConfirmDialog,
     isGoalDialog,
+    isGameControlsDialog,
     // Raw values
     tempName,
     tempCameraId,

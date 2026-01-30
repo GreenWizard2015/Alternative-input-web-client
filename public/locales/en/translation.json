@@ -50,9 +50,6 @@
     "circleMovingHelp": "In this mode you should concentrate on the red circle while it moving.",
     "circleMovingPurpose": "This mode intended to stabilize gaze predictions in motion.",
     "gamificationWarning": "This mode includes elements of gamification. You need to press the keys that appear inside or near the circle. The keys are: Z, A, S, and X. If you press the correct key, the circle will turn red, and recordings will be saved.",
-    "augmentations": "Augmentations",
-    "illumination": "I - toggle random illumination",
-    "background": "B - toggle random background",
     "keyboardShortcuts": {
       "lookAt": [
         "Esc - return to main menu",
@@ -63,14 +60,15 @@
         "P / Enter / Space - toggle pause"
       ],
       "circleMoving": [
-        "Arrow Up - increase level of difficulty",
-        "Arrow Down - decrease level of difficulty",
-        "Arrow Left - activate the circle",
-        "Z, A, S, X - press the correct key to activate",
+        "Numpad + - increase circle radius",
+        "Numpad - - decrease circle radius",
+        "Numpad Enter - activate the circle",
+        "{{keys}} - press the correct key to activate",
         "Esc - return to main menu",
         "P / Enter / Space - toggle pause"
       ]
     },
+    "activateWithSymbols": "Press {{symbols}} to activate",
     "dataCollection": "Data collection is started after the first activation of the circle."
   },
   "intro": {

@@ -80,13 +80,15 @@
       "lookAt": ["Esc - return to main menu", "P / Enter / Space - toggle pause"],
       "spline": ["Esc - return to main menu", "P / Enter / Space - toggle pause"],
       "circleMoving": [
-        "Numpad + - increase path radius",
-        "Numpad - - decrease path radius",
+        "Numpad + - increase circle radius",
+        "Numpad - - decrease circle radius",
         "Numpad Enter - activate the circle",
+        "{{keys}} - press the correct key to activate",
         "Esc - return to main menu",
         "P / Enter / Space - toggle pause"
       ]
     },
+    "activateWithSymbols": "Press {{symbols}} to activate",
     "dataCollection": "Data collection is started after the first activation of the circle."
   },
   "intro": {

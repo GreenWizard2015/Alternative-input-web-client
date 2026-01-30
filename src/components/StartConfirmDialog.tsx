@@ -9,30 +9,32 @@ import {
   selectUsers,
   selectMonitors,
 } from '../store/selectors';
-import { closeDialog } from '../store/slices/App';
+import { closeDialog, setGameMode, openGameControlsDialog } from '../store/slices/App';
 import type { RootState } from '../store';
 import type { Dispatch } from 'redux';
 
 interface StartConfirmDialogProps {
   gameMode: AppMode;
-  onConfirm: (mode: AppMode) => void;
   userId: string;
   monitorId: string;
   selectedCameras: ReturnType<typeof selectSelectedCameras>;
   users: ReturnType<typeof selectUsers>;
   monitors: ReturnType<typeof selectMonitors>;
   onCloseDialog: () => void;
+  setGameMode: (mode: AppMode) => void;
+  openGameControlsDialog: () => void;
 }
 
 function StartConfirmDialog({
   gameMode,
-  onConfirm,
   userId,
   monitorId,
   selectedCameras,
   users,
   monitors,
   onCloseDialog,
+  setGameMode: setGameModeDispatch,
+  openGameControlsDialog: openGameControlsDialogDispatch,
 }: StartConfirmDialogProps) {
   const { t } = useTranslation();
 
@@ -43,9 +45,12 @@ function StartConfirmDialog({
 
   // Redux actions
   const handleConfirm = useCallback(() => {
-    onConfirm(gameMode);
-    onCloseDialog();
-  }, [gameMode, onConfirm, onCloseDialog]);
+    // NEW FLOW: Don't call onConfirm immediately
+    // Instead: Store game mode and show controls dialog
+    setGameModeDispatch(gameMode);
+    openGameControlsDialogDispatch();
+    // Note: onConfirm will be called from ControlsDialog in UI.tsx
+  }, [gameMode, setGameModeDispatch, openGameControlsDialogDispatch]);
 
   const handleCancel = useCallback(() => {
     onCloseDialog();
@@ -106,5 +111,7 @@ export default connect(
   }),
   (dispatch: Dispatch) => ({
     onCloseDialog: () => dispatch(closeDialog()),
+    setGameMode: (mode: AppMode) => dispatch(setGameMode(mode)),
+    openGameControlsDialog: () => dispatch(openGameControlsDialog()),
   })
 )(StartConfirmDialog);

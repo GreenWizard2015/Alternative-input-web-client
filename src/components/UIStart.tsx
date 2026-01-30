@@ -66,13 +66,6 @@ function UIStart({ onStart, onBack, goalSettings }: UIStartProps) {
     return displayed.slice(0, -1).join(', ') + ` or ${displayed[displayed.length - 1]}`;
   }, [goalSettings.symbols]);
   const [useGamification, setUseGamification] = useState<boolean>(true);
-  const gamificationNote: ReactNode = React.useMemo(() => {
-    if (!useGamification) return null;
-
-    return (
-      <div className="text-red">{t('gameStart.gamificationWarning', { keys: symbolsString })}</div>
-    );
-  }, [useGamification, t, symbolsString]);
 
   const createController = useCallback((): MiniGameController | NullController => {
     if (useGamification) {
@@ -109,14 +102,6 @@ function UIStart({ onStart, onBack, goalSettings }: UIStartProps) {
           <h1>{t('gameStart.lookAtMode')}</h1>
           <p>{t('gameStart.lookAtHelp')}</p>
           <p>{t('gameStart.lookAtPurpose')}</p>
-          {gamificationNote}
-          <ul>
-            {(t('gameStart.keyboardShortcuts.lookAt', { returnObjects: true }) as string[]).map(
-              shortcut => (
-                <li key={shortcut}>{shortcut}</li>
-              )
-            )}
-          </ul>
           <button onClick={handleStartLookAt}>{t('common.start')}</button>
           {back}
         </div>
@@ -128,44 +113,18 @@ function UIStart({ onStart, onBack, goalSettings }: UIStartProps) {
           <h1>{t('gameStart.splineMode')}</h1>
           <p>{t('gameStart.splineHelp')}</p>
           <p>{t('gameStart.splinePurpose')}</p>
-          {gamificationNote}
-          <ul>
-            {(t('gameStart.keyboardShortcuts.spline', { returnObjects: true }) as string[]).map(
-              shortcut => (
-                <li key={shortcut}>{shortcut}</li>
-              )
-            )}
-          </ul>
           <button onClick={handleStartSpline}>{t('common.start')}</button>
           {back}
         </div>
       );
 
     case 'circleMoving': {
-      // Get static shortcuts and insert dynamic activate line with actual symbols
-      const baseShortcuts = t('gameStart.keyboardShortcuts.circleMoving', {
-        returnObjects: true,
-      }) as string[];
-      const circleMovingShortcuts = [
-        baseShortcuts[0], // Numpad +
-        baseShortcuts[1], // Numpad -
-        baseShortcuts[2], // Numpad Enter
-        `Press ${symbolsString} to activate`, // Dynamic symbols from goal settings
-        baseShortcuts[3], // Esc
-        baseShortcuts[4], // P / Enter / Space
-      ];
       return (
         <div className="ui-help">
           <h1>{t('gameStart.circleMovingMode')}</h1>
           <p>{t('gameStart.circleMovingHelp')}</p>
           <p>{t('gameStart.circleMovingPurpose')}</p>
-          {gamificationNote}
           <div className="text-red">{t('gameStart.dataCollection')}</div>
-          <ul>
-            {circleMovingShortcuts.map(shortcut => (
-              <li key={shortcut}>{shortcut}</li>
-            ))}
-          </ul>
           <button onClick={handleStartCircleMoving}>{t('common.start')}</button>
           {back}
         </div>
