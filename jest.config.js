@@ -26,4 +26,5 @@ module.exports = {
   testEnvironmentOptions: {
     'import.meta.url': 'http://localhost',
   },
+  testTimeout: 30000, // Increase timeout to 30 seconds for neural network tests
 };

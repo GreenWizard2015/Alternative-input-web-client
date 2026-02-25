@@ -7,6 +7,9 @@
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/tasks-vision": "^0.10.13",
     "@reduxjs/toolkit": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^13.5.0",
@@ -20,6 +23,7 @@
     "cubic-spline": "^3.0.3",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
+    "jszip": "^3.10.1",
     "murmur-128": "^1.0.0",
     "react": "^19.0.0",
     "react-bootstrap": "^2.10.3",
@@ -47,7 +51,8 @@
     "prettier": "^3.8.0",
     "react-app-rewired": "^2.2.1",
     "ts-jest": "^29.1.1",
-    "worker-loader": "^3.0.8"
+    "worker-loader": "^3.0.8",
+    "yauzl": "^3.2.0"
   },
   "scripts": {
     "dev": "react-app-rewired start",
@@ -55,6 +60,7 @@
     "start": "react-app-rewired start",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:models": "jest src/models/__tests__/",
     "eject": "react-scripts eject",
     "lint": "eslint src/ --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint src/ --ext .ts,.tsx,.js,.jsx --fix",

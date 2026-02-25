@@ -61,7 +61,8 @@ export class CameraSampleBucket {
     inRange.sort((a, b) => a.time - b.time);
 
     // Extract up to maxSize from sorted in-range samples
-    const toSend = inRange.splice(0, maxSize);
+    const actualMaxSize = Math.min(maxSize, inRange.length);
+    const toSend = inRange.splice(0, actualMaxSize);
     const remaining = inRange.concat(outOfRange);
 
     this.samples = remaining;
