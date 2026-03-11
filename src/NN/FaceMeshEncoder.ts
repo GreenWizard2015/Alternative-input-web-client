@@ -55,8 +55,9 @@ export class FaceMeshEncoder {
 
   constructor(config: FaceMeshEncoderConfig) {
     this.latentSize = config.latentSize ?? 64;
-    this.internalLatentSize = config.internalLatentSize ?? 32;
     this.scaleMult = config.scaleMult ?? 1.0;
+    // ✅ FIXED: Calculate internalLatentSize like Python: 8 + int(2 * scale_mult)
+    this.internalLatentSize = 8 + Math.floor(2 * this.scaleMult);
     this.name = config.name;
 
     if (this.scaleMult <= 0) {
@@ -79,9 +80,11 @@ export class FaceMeshEncoder {
     // ✅ FIXED: Common coordinate encoding (DEFAULT_POSITIONAL_ENCODING_CHANNELS dims from Python)
     // Use name directly for consistency with dont-change implementations
     // Set raw=true to match Python implementation and weight dimensions
+    // Use hiddenN=0.3125 to match actual weight shape (32 * 0.3125 = 10)
     this.coordEncoding = new CoordsEncodingLayer({
       N: DEFAULT_POSITIONAL_ENCODING_CHANNELS,
       raw: true,
+      hiddenN: 0.3125, // 32 * 0.3125 = 10 to match Python weights
       name: `${this.name}/coord_encoding`,
     });
 
@@ -102,7 +105,7 @@ export class FaceMeshEncoder {
     // Use name directly for consistency
     this.attentionPool = new LinearAttentionMixer({
       n_outputs: 1,
-      n_heads: ATTENTION_HEADS_DEFAULT,
+      max_dim: 16, // Use max_dim=16 to get similar head calculation
       name: `${this.name}/attention_pool`,
     });
 

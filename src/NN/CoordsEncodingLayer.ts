@@ -150,12 +150,18 @@ export class CoordsEncodingLayer {
 
     const namePrefix = this.namePrefix;
 
-    // Bottleneck projection to output dimension
+    // Bottleneck projection to output dimension - calculate input dim based on raw flag
+    const coordDim = inputShape[2]; // Input coordinate dimension
+    const bottleneckInputDim = this.config.raw ? this.internalN + coordDim : this.internalN;
+
+    console.log(`[CoordsEncodingLayer.${this.name}] Bottleneck config: coordDim=${coordDim}, internalN=${this.internalN}, raw=${this.config.raw}, bottleneckInputDim=${bottleneckInputDim}`);
+
     this.bottleneck = tfl.layers.dense({
-      units: this.N,
+      units: this.internalN, // Project to internal dimension, not final N
       useBias: false,
       activation: null,
       name: `${namePrefix}bottleneck`,
+      inputShape: [bottleneckInputDim], // Specify input shape to match Python
     });
 
     // Dropout layer - support bands_dropout
@@ -250,14 +256,22 @@ export class CoordsEncodingLayer {
       const freqTensor = this.frequency!;
       const freqScale = tf.softplus(freqTensor);
 
-      // Combine: (base + tanh(deltas)) * softplus(frequency)
-      // Like Python: base_freq + tf.nn.tanh(self._freq_deltas) * freq_range (but freq_range is 0 in our case)
-      const coefficients = tf.add(baseTensor, tanhDeltas);
-      const scaled = tf.mul(coefficients, freqScale);
+      // Compute freq_range like Python: max_frequency - base_frequency
+      const baseMax = tf.scalar(this.maxFrequency);
+      const baseMin = tf.scalar(0);
+      const freqRange = tf.sub(baseMax, baseMin);
 
-      // Like Python: return coefficients[None, None, None] * frequency[None, None, None]
-      // Shape: (1, 1, N, 1) to match Python broadcast pattern
-      return tf.expandDims(tf.expandDims(scaled, 0), 0);
+      // Modulate coefficients like Python: base + tanh(deltas) * freq_range
+      const coefficients = tf.add(baseTensor, tf.mul(tanhDeltas, freqRange));
+
+      // Final coefficients: coefficients * softplus(frequency)
+      // Broadcasting like Python: [None, None, None] pattern
+      const expandedCoefficients = tf.expandDims(tf.expandDims(coefficients, 0), 0);
+      const expandedFreq = tf.expandDims(tf.expandDims(freqScale, 0), 0);
+
+      const result = tf.mul(expandedCoefficients, expandedFreq);
+
+      return tf.expandDims(result, 0); // Final: (1, 1, 1, internalN) to match Python
     });
   }
 
@@ -384,7 +398,22 @@ export class CoordsEncodingLayer {
       const pattern = `weights/${name}/CEL_freq_deltas`;
       const tensor = weightsMap.get(pattern);
       if (tensor) {
-        this.freqDeltas.assign(tensor);
+        // Handle shape mismatch for freqDeltas - check if we can reshape
+        const currentShape = this.freqDeltas.shape;
+        const targetShape = tensor.shape;
+
+        if (currentShape.length !== targetShape.length) {
+          console.warn(`[CoordsEncodingLayer.${name}] Shape mismatch for freq_deltas: current=${currentShape}, target=${targetShape}`);
+          // If the total number of elements matches, reshape to the target shape
+          if (currentShape.reduce((a, b) => a * b) === targetShape.reduce((a, b) => a * b)) {
+            console.warn(`[CoordsEncodingLayer.${name}] Reshaping freq_deltas to target shape ${targetShape}`);
+            this.freqDeltas.assign(tf.reshape(tensor, targetShape));
+          } else {
+            throw new Error(`[CoordsEncodingLayer.${name}] Element count mismatch for freq_deltas: current=${currentShape.reduce((a, b) => a * b)}, target=${targetShape.reduce((a, b) => a * b)}`);
+          }
+        } else {
+          this.freqDeltas.assign(tensor);
+        }
         console.log(`[CoordsEncodingLayer.${name}] CEL_freq_deltas: ✓ Loaded`);
       } else {
         throw new Error(`[CoordsEncodingLayer.${name}] Required weights not found: ${pattern}`);

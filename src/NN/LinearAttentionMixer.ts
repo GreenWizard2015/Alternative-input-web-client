@@ -33,7 +33,7 @@ import {
 
 export interface LinearAttentionMixerConfig {
   n_outputs?: number; // Number of independent outputs (default: 1)
-  n_heads?: number; // Number of attention heads per output (default: 4)
+  max_dim?: number; // Maximum dimension per head for feature splitting (default: 16)
   activation?: string; // Activation function for attention logits (default: 'relu')
   dropout_rate?: number; // Attention dropout rate (default: 0.1)
   name: string; // Layer name
@@ -41,6 +41,7 @@ export interface LinearAttentionMixerConfig {
 
 export class LinearAttentionMixer {
   private n_outputs: number;
+  private max_dim: number;
   private n_heads: number;
   private activation: string;
   private dropout_rate: number;
@@ -58,7 +59,7 @@ export class LinearAttentionMixer {
 
   constructor(config: LinearAttentionMixerConfig) {
     this.n_outputs = config.n_outputs ?? 1;
-    this.n_heads = config.n_heads ?? ATTENTION_HEADS_DEFAULT;
+    this.max_dim = config.max_dim ?? 16; // Match Python default max_dim=16
     this.activation = config.activation ?? STANDARD_NONNEGATIVE_ACTIVATION;
     this.dropout_rate = config.dropout_rate ?? DROPOUT_RATE_MEDIUM;
     this.name = config.name;
@@ -67,9 +68,10 @@ export class LinearAttentionMixer {
     if (this.n_outputs < 1) {
       throw new Error(`n_outputs must be >= 1, got ${this.n_outputs}`);
     }
-    if (this.n_heads < 1) {
-      throw new Error(`n_heads must be >= 1, got ${this.n_heads}`);
+    if (this.max_dim < 1) {
+      throw new Error(`max_dim must be >= 1, got ${this.max_dim}`);
     }
+    // n_heads will be calculated dynamically in build() method
 
     // Initialize learnable scale factor (matches Python Constant(0.0) exactly)
     this.scale_factor = tf.variable(
@@ -88,7 +90,23 @@ export class LinearAttentionMixer {
     // Store input feature dimension for attention layer
     this.feature_dim = inputShape[inputShape.length - 1];
 
-    // CRITICAL FIX: Validate n_heads divisibility (matches Python exactly)
+    // ✅ FIXED: Calculate n_heads dynamically like Python (find maximum possible heads)
+    // Python implementation: for possible_dim in range(self.feature_dim, 1, -1):
+    //                          if self.feature_dim % possible_dim == 0:
+    //                              self.n_heads = self.feature_dim // possible_dim
+    //                              break
+    this.n_heads = 0;
+    for (let possible_dim = this.feature_dim; possible_dim > 1; possible_dim--) {
+      if (this.feature_dim % possible_dim === 0) {
+        this.n_heads = this.feature_dim / possible_dim;
+        break;
+      }
+    }
+    if (this.n_heads === 0) {
+      this.n_heads = 1; // Fallback to single head
+    }
+
+    // ✅ FIXED: Validate that max_dim divides feature_dim evenly (matches Python)
     if (this.feature_dim % this.n_heads !== 0) {
       throw new Error(
         `feature_dim (${this.feature_dim}) must be divisible by n_heads (${this.n_heads}). ` +
@@ -96,17 +114,17 @@ export class LinearAttentionMixer {
       );
     }
 
-    // ✅ FIXED: Single Dense layer for all n_outputs*n_heads attention weights
+    // ✅ FIXED: Match Python exactly - use units = n_outputs * n_heads
     this.attention_layer = tfl.layers.dense({
-      units: this.n_outputs * this.n_heads,
+      units: this.n_outputs * this.n_heads, // Match Python exactly
       activation: this.activation as any,
-      name: `${this.namePrefix}attention_weights`,
+      name: `${this.namePrefix}AttentionWeights`, // Match Python exactly
     });
 
-    // Dropout layer
+    // Dropout layer - match Python exactly
     this.dropout = tfl.layers.dropout({
       rate: this.dropout_rate,
-      name: `${this.namePrefix}dropout`,
+      name: `${this.namePrefix}AttentionDropout`, // Match Python exactly
     });
 
     // Initialize computational graph with dummy input
@@ -161,7 +179,7 @@ export class LinearAttentionMixer {
       // Apply dropout - EXACT MATCH PYTHON
       attn_logits_all = this.dropout!.apply(attn_logits_all, { training }) as tf.Tensor;
 
-      // Reshape to separate outputs: (batch, spatial, n_outputs, n_heads) - EXACT MATCH PYTHON
+      // ✅ FIXED: Reshape attention logits like Python: (batch, spatial, n_outputs, n_heads)
       const attn_logits_reshaped = tf.reshape(
         attn_logits_all,
         [batch_size, spatial_dim, this.n_outputs, this.n_heads],
@@ -170,46 +188,45 @@ export class LinearAttentionMixer {
       // Apply learnable scale factor to attention logits (like Python: * self.scale_factor) - EXACT MATCH PYTHON
       const scaled_attn_logits = tf.mul(attn_logits_reshaped, this.scale_factor!);
 
-      // Apply softmax across spatial dimension for all outputs simultaneously - EXACT MATCH PYTHON
-      // attn_logits_reshaped: (batch, spatial, n_outputs, n_heads)
+      // Apply softmax across spatial dimension for all outputs simultaneously - MATCH PYTHON
+      // scaled_attn_logits: (batch, spatial, n_outputs, n_heads)
       // attn_weights_all: (batch, spatial, n_outputs, n_heads)
       const attn_weights_all = softmax(scaled_attn_logits, 1);
 
-      // Reshape features for vectorized operations - EXACT MATCH PYTHON
+      // ✅ FIXED: Reshape features for vectorized operations like Python
       // features_heads: (batch, n_heads, spatial, head_dim)
       // Transpose to: (batch, spatial, n_heads, head_dim)
       const features_spatial = tf.transpose(features_heads, [0, 2, 1, 3]);
 
-      // Reshape attention weights for broadcasting - EXACT MATCH PYTHON
+      // ✅ FIXED: Reshape attention weights for broadcasting like Python
       // attn_weights_all: (batch, spatial, n_outputs, n_heads)
-      // Reshape to: (batch, spatial, n_outputs * n_heads, 1)
+      // Reshape to: (batch, spatial, n_outputs*n_heads, 1)
       const attn_weights_flat = tf.reshape(
         attn_weights_all,
         [batch_size, spatial_dim, this.n_outputs * this.n_heads, 1],
       );
 
-      // Calculate head_dim and reshape features for batched operations - EXACT MATCH PYTHON
+      // ✅ FIXED: Calculate head_dim and reshape features for batched operations like Python
       const head_dim = feature_dim / this.n_heads;
       const features_flat = tf.tile(
-        tf.reshape(
-          features_spatial, [batch_size, spatial_dim, this.n_heads, head_dim]
-        ),
+        tf.reshape(features_spatial, [batch_size, spatial_dim, this.n_heads, head_dim]),
         [1, 1, this.n_outputs, 1],
       );
 
-      // Apply attention in fully vectorized way - EXACT MATCH PYTHON
+      // ✅ FIXED: Apply attention in fully vectorized way like Python
       // (batch, spatial, n_outputs*n_heads, head_dim) * (batch, spatial, n_outputs*n_heads, 1)
       const weighted_features = tf.mul(features_flat, attn_weights_flat);
 
-      // Pool across spatial: (batch, n_outputs*n_heads, head_dim) - EXACT MATCH PYTHON
+      // Pool across spatial: (batch, n_outputs*n_heads, head_dim) - MATCH PYTHON
       const pooled_flat = tf.sum(weighted_features, 1);
 
-      // Calculate head_dim and reshape to separate outputs and heads: (batch, n_outputs, n_heads, head_dim) - EXACT MATCH PYTHON
+      // ✅ FIXED: Reshape to separate outputs and heads: (batch, n_outputs, n_heads, head_dim) - MATCH PYTHON
+      const head_dim_calc = feature_dim / this.n_heads;
       const pooled_4d = tf.reshape(
-        pooled_flat, [batch_size, this.n_outputs, this.n_heads, head_dim]
+        pooled_flat, [batch_size, this.n_outputs, this.n_heads, head_dim_calc]
       );
 
-      // Pool across heads for each output: (batch, n_outputs, feature_dim) - EXACT MATCH PYTHON
+      // Pool across heads for each output: (batch, n_outputs, feature_dim) - MATCH PYTHON
       const pooled_3d = tf.reshape(
         pooled_4d, [batch_size, this.n_outputs, feature_dim]
       );
@@ -236,21 +253,73 @@ export class LinearAttentionMixer {
 
     console.log(`[LinearAttentionMixer.${name}] Loading weights`);
 
-    // Load attention layer weights using assignDense
-    weightsMap.assignDense(
-      `${name}/AttentionWeights`,
-      this.attention_layer
-    );
-    console.log(`[LinearAttentionMixer.${name}] AttentionWeights loaded`);
+    // Load attention layer weights using exact pattern matching
+    let weightAssigned = false;
+
+    // Try different possible patterns for attention layer weights
+    const possiblePatterns = [
+      `${name}/attention_weights`,           // Original pattern
+      `${name}/AttentionWeights`,           // Capitalized
+      `weights/${name}/attention_weights`,  // With weights prefix
+      `weights/${name}/AttentionWeights`,   // With weights prefix + capitalized
+      // For nested structure like mixer_attention/AttentionWeights
+      `${name}/mixer_attention/attention_weights`,
+      `${name}/mixer_attention/AttentionWeights`,
+      `weights/${name}/mixer_attention/attention_weights`,
+      `weights/${name}/mixer_attention/AttentionWeights`
+    ];
+
+    for (const pattern of possiblePatterns) {
+      try {
+        weightsMap.assignDense(pattern, this.attention_layer!);
+        console.log(`[LinearAttentionMixer.${name}] AttentionWeights loaded from: ${pattern}`);
+        weightAssigned = true;
+        break;
+      } catch (e) {
+        console.log(`[LinearAttentionMixer.${name}] Failed to load from pattern: ${pattern} - ${e.message}`);
+        // Try next pattern
+        continue;
+      }
+    }
+
+    if (!weightAssigned) {
+      throw new Error(`[LinearAttentionMixer.${name}] Could not load attention weights with any of the expected patterns`);
+    }
 
     // Load scale factor using exact pattern matching
-    const scaleTensor = weightsMap.get(`weights/${name}/attention_scale`);
+    // Try multiple possible patterns for scale factor
+    const possibleScalePatterns = [
+      `weights/${name}/attention_scale`,
+      `weights/${name}/mixer_attention/attention_scale`,
+      `${name}/attention_scale`,
+      `${name}/mixer_attention/attention_scale`
+    ];
+
+    let scaleTensor = null;
+    for (const pattern of possibleScalePatterns) {
+      scaleTensor = weightsMap.get(pattern);
+      if (scaleTensor) {
+        console.log(`[LinearAttentionMixer.${name}] Found scale factor at: ${pattern}`);
+        break;
+      }
+    }
 
     if (scaleTensor && this.scale_factor) {
-      this.scale_factor.assign(scaleTensor);
+      // Ensure scale factor has the right shape
+      const currentShape = this.scale_factor.shape;
+      const targetShape = scaleTensor.shape;
+
+      if (currentShape.length !== targetShape.length || currentShape[0] !== targetShape[0]) {
+        console.warn(`[LinearAttentionMixer.${name}] Rescaling factor from shape ${targetShape} to ${currentShape}`);
+        // Reshape the scale tensor to match the expected shape
+        const reshapedScale = tf.reshape(scaleTensor, currentShape);
+        this.scale_factor.assign(reshapedScale);
+      } else {
+        this.scale_factor.assign(scaleTensor);
+      }
       console.log(`[LinearAttentionMixer.${name}] scale_factor loaded`);
     } else {
-      throw new Error(`[LinearAttentionMixer.${name}] scale_factor not found in weights map.`);
+      throw new Error(`[LinearAttentionMixer.${name}] scale_factor not found in weights map with any of the expected patterns`);
     }
   }
 

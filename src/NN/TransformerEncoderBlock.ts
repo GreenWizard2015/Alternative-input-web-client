@@ -12,11 +12,12 @@
  * Architecture:
  * x → LayerNorm → MultiHeadAttention → Residual → LayerNorm → sMLP → Residual → output
  *
+ * Note: num_heads is calculated dynamically in build() method based on d_model
+ *
  * Usage:
  * ```typescript
  * const block = new TransformerEncoderBlock({
  *   d_model: 64,
- *   num_heads: 8,
  *   dff: 256
  * });
  * const output = block.apply(inputs);
@@ -26,11 +27,10 @@
 import * as tf from '@tensorflow/tfjs';
 import * as tfl from '@tensorflow/tfjs-layers';
 import { MultiHeadAttention } from './MultiHeadAttention';
-import { disposeAll, TensorMap, hashCode } from './utils/tensorflow';
+import { disposeAll, TensorMap } from './utils/tensorflow';
 
 export interface TransformerEncoderBlockConfig {
   d_model: number; // Embedding dimension (model size)
-  num_heads: number; // Number of attention heads
   dff?: number; // Feed-forward dimension (default: 4 * d_model)
   dropout_rate?: number; // Dropout rate (default: 0.1)
   name: string; // Layer name
@@ -58,10 +58,10 @@ export class TransformerEncoderBlock {
 
     this.config = config;
     this.d_model = config.d_model;
-    this.num_heads = config.num_heads;
     this.dff = config.dff ?? 4 * config.d_model;
     this.dropout_rate = config.dropout_rate ?? 0.1;
 
+    // num_heads will be calculated dynamically in build() method like Python
     this.initializeLayers();
   }
 
@@ -70,10 +70,6 @@ export class TransformerEncoderBlock {
    */
   private validateConfig(config: TransformerEncoderBlockConfig): void {
     if (config.d_model < 1) throw new Error('d_model must be >= 1');
-    if (config.num_heads < 1) throw new Error('num_heads must be >= 1');
-    if (config.d_model % config.num_heads !== 0) {
-      throw new Error('d_model must be divisible by num_heads');
-    }
     if (config.dff && config.dff < 1) throw new Error('dff must be >= 1');
     if (config.dropout_rate && (config.dropout_rate < 0 || config.dropout_rate > 1)) {
       throw new Error('dropout_rate must be between 0 and 1');
@@ -284,9 +280,31 @@ export class TransformerEncoderBlock {
       return;
     }
 
-    // Build internal MultiHeadAttention component
+    // Calculate num_heads dynamically like Python (find maximum possible heads)
+    // Python implementation: for possible_dim in range(self.d_model, 1, -1):
+    //                          if self.d_model % possible_dim == 0:
+    //                              self.num_heads = self.d_model // possible_dim
+    //                              break
+    this.num_heads = 0;
+    for (let possible_dim = this.d_model; possible_dim > 1; possible_dim--) {
+      if (this.d_model % possible_dim === 0) {
+        this.num_heads = this.d_model / possible_dim;
+        break;
+      }
+    }
+    if (this.num_heads === 0) {
+      this.num_heads = 1; // Fallback to single head
+    }
+
+    console.log(`[TransformerEncoderBlock.${this.config.name}] Calculated num_heads: ${this.num_heads}`);
+
+    // ✅ FIXED: Pass the correct feature dimension to MultiHeadAttention
+    const featureShape = [...inputShape];
+    featureShape[featureShape.length - 1] = this.d_model;
+
+    // Build internal MultiHeadAttention component with correct feature dimension
     if (this.attention) {
-      this.attention.build(inputShape, inputShape, inputShape);
+      this.attention.build(featureShape, featureShape, featureShape);
     }
 
     // Set built flag BEFORE calling apply() to allow dummy input test

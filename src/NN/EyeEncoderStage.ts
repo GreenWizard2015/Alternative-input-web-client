@@ -97,7 +97,7 @@ export class EyeEncoderStage {
     // Initialize mixer as LinearAttentionMixer to match Python exactly
     this.mixer = new LinearAttentionMixer({
       n_outputs: 1, // Single output (matches Python behavior)
-      n_heads: 1, // Use 1 head (explicitly set in Python EyeEncoderStage)
+      max_dim: 64, // Use max_dim to get 1 head (64 // 64 = 1)
       activation: STANDARD_NONNEGATIVE_ACTIVATION, // Use standard activation
       name: `${this.name}/stage_mixer`, // Base path - LinearAttentionMixer adds _attention_weights suffix
     });

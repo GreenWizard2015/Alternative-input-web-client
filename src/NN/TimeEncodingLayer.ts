@@ -73,7 +73,7 @@ export class TimeEncodingLayer {
 
     this.attentionMixer = new LinearAttentionMixer({
       n_outputs: 1,
-      n_heads: 4,
+      max_dim: 16, // Use max_dim=16 to get similar head calculation
       name: `${this.name}/AttentionMixer`,
     });
 

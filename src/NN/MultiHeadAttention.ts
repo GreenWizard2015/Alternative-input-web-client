@@ -27,7 +27,7 @@ import { ATTENTION_MASK_VALUE } from './Constants';
 
 export interface MultiHeadAttentionConfig {
   featureSize: number; // Total feature size
-  nHeads: number; // Number of attention heads
+  nHeads?: number; // Number of attention heads (optional - will be calculated dynamically)
   d_model?: number; // Alias for featureSize (for compatibility)
   headSize?: number; // Size per head (default: featureSize / nHeads)
   useBias?: boolean; // Use bias in projections (default: true)
@@ -68,8 +68,26 @@ export class MultiHeadAttention {
       featureSize,
     };
     this.featureSize = featureSize;
-    this.nHeads = config.nHeads;
-    this.headSize = config.headSize ?? Math.floor(featureSize / config.nHeads);
+
+    // ✅ FIXED: Calculate n_heads dynamically like Python (find maximum possible heads)
+    // Python implementation: for possible_dim in range(self.feature_size, 1, -1):
+    //                          if self.feature_size % possible_dim == 0:
+    //                              self.n_heads = self.feature_size // possible_dim
+    //                              break
+    this.nHeads = config.nHeads || 0;
+    if (!config.nHeads) {
+      for (let possibleDim = this.featureSize; possibleDim > 1; possibleDim--) {
+        if (this.featureSize % possibleDim === 0) {
+          this.nHeads = this.featureSize / possibleDim;
+          break;
+        }
+      }
+      if (this.nHeads === 0) {
+        this.nHeads = 1; // Fallback to single head
+      }
+    }
+
+    this.headSize = config.headSize ?? Math.floor(featureSize / this.nHeads);
     this.dropout = config.dropout ?? 0.0;
 
     if (this.headSize * this.nHeads !== this.featureSize) {
@@ -84,7 +102,7 @@ export class MultiHeadAttention {
    */
   private validateConfig(config: MultiHeadAttentionConfig): void {
     if (config.featureSize < 1) throw new Error('featureSize must be >= 1');
-    if (config.nHeads < 1) throw new Error('nHeads must be >= 1');
+    if (config.nHeads && config.nHeads < 1) throw new Error('nHeads must be >= 1');
     if (config.headSize && config.headSize < 1) throw new Error('headSize must be >= 1');
     if (config.dropout && (config.dropout < 0 || config.dropout > 1)) {
       throw new Error('dropout must be between 0 and 1');

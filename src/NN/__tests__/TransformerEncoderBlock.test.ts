@@ -23,11 +23,10 @@ describe('TransformerEncoderBlock - Complete Pipeline Integration', () => {
   });
   test('should run inference with ZIP data and validate outputs', async () => {
     // Initialize TransformerEncoderBlock with correct parameters based on Python ground truth
-    // Python TransformerEncoderBlock uses d_model=64
+    // Python TransformerEncoderBlock uses d_model=64, num_heads calculated dynamically
     const model = new TransformerEncoderBlock({
       name: 'TransformerEncoderBlock_layer',
       d_model: 64,
-      num_heads: 8, // Required parameter
       dropout_rate: 0,
     });
     const path = require('path');

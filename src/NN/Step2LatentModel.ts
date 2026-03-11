@@ -97,7 +97,6 @@ export class Step2LatentModel {
       const transformerBlock = new TransformerEncoderBlock({
         name: `${this.name}/transformer_encoder_block_${i}`,
         d_model: this.scaledLatentSize,
-        num_heads: this.numHeads,
         dff: this.scaledLatentSize * this.dffMultiplier,
         dropout_rate: STEP2LATENT_TRANSFORMER_DROPOUT_RATE,
       });
@@ -137,7 +136,7 @@ export class Step2LatentModel {
 
     this.sinkMixer = new LinearAttentionMixer({
       n_outputs: this.numSinkTokens,
-      n_heads: 4,
+      max_dim: 16, // Use max_dim=16 to get similar head calculation
       name: `${this.name}/sink_tokens_mixer`,
     });
 

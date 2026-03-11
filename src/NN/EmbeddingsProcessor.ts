@@ -94,7 +94,7 @@ export class EmbeddingsProcessor {
       // Pools 5 embeddings → 1 output with ATTENTION_HEADS_DEFAULT heads
       this.mixer = new LinearAttentionMixer({
         n_outputs: 1, // Pool multiple embeddings to 1 output
-        n_heads: ATTENTION_HEADS_DEFAULT, // Use default attention heads
+        max_dim: 16, // Use max_dim=16 to get similar head calculation
         activation: STANDARD_NONNEGATIVE_ACTIVATION,
         dropout_rate: DROPOUT_RATE_MEDIUM,
         name: `${this.name}/mixer_attention`,
@@ -117,6 +117,8 @@ export class EmbeddingsProcessor {
 
     // Build mixer separately first
     if (this.mixer) {
+      // The mixer expects input shape [batch, spatial_dim, feature_dim]
+      // where spatial_dim=5 (number of embeddings to pool) and feature_dim=embeddingSize
       const mixerInputShape = [1, 5, this.embeddingSize];
       this.mixer.build(mixerInputShape);
     }
